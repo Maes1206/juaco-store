@@ -6737,9 +6737,13 @@ table p {
 }
 .aside-cart-wrapper .aside-cart-product-list .product-list-item a img {
   float: left;
+  height: 78px;
   max-width: 70px;
   margin-right: 20px;
   border: 1px solid #eee;
+  object-fit: contain;
+  padding: 4px;
+  background-color: #fff;
 }
 .aside-cart-wrapper .aside-cart-product-list .product-list-item a:hover {
   color: #eb3e32;
@@ -6801,16 +6805,17 @@ table p {
   border: 1px solid #e6edf5;
   border-radius: 4px;
   color: #172033;
-  display: inline-flex;
+  display: flex;
   font-size: 13px;
   font-weight: 800;
   gap: 6px;
   height: 34px;
   justify-content: center;
-  margin-top: 4px;
+  margin: 4px 0 0 auto;
   min-width: 132px;
   padding: 0 14px;
   text-decoration: none;
+  width: max-content;
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
   transition: all 0.25s ease-out;
 }
