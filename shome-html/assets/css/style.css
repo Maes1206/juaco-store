@@ -6795,6 +6795,38 @@ table p {
   background-color: #eb3e32;
   border-color: #eb3e32;
 }
+.aside-cart-wrapper .bold-checkout-btn {
+  align-items: center;
+  background-color: #fff;
+  border: 1px solid #e6edf5;
+  border-radius: 4px;
+  color: #172033;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 800;
+  gap: 6px;
+  height: 34px;
+  justify-content: center;
+  margin-top: 4px;
+  min-width: 132px;
+  padding: 0 14px;
+  text-decoration: none;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+  transition: all 0.25s ease-out;
+}
+.aside-cart-wrapper .bold-checkout-btn span,
+.bold-inline-logo {
+  background: linear-gradient(90deg, #0b4dff 0%, #2c48ff 36%, #ff2f74 68%, #ff213d 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+.aside-cart-wrapper .bold-checkout-btn:hover {
+  color: #172033;
+  box-shadow: 0 10px 22px rgba(56, 189, 248, 0.22);
+  transform: translateY(-1px);
+}
 .aside-cart-wrapper.offcanvas {
   -webkit-box-shadow: 0px 0px 87px 0px rgba(0, 0, 0, 0.09);
           box-shadow: 0px 0px 87px 0px rgba(0, 0, 0, 0.09);
