@@ -1,0 +1,24 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: juaco-store-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-juaco_store}
+      POSTGRES_USER: ${POSTGRES_USER:-juaco}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-juaco_dev_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - juaco_postgres_data:/var/lib/postgresql/data
+      - ./database/migrations/001_initial_schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./database/migrations/002_inventory_functions.sql:/docker-entrypoint-initdb.d/02-inventory-functions.sql:ro
+      - ./database/seeds/001_catalog.sql:/docker-entrypoint-initdb.d/03-catalog.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-juaco} -d ${POSTGRES_DB:-juaco_store}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  juaco_postgres_data:

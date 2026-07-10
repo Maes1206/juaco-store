@@ -128,9 +128,16 @@
     var productSliderCol4 = new Swiper('.product-slider-col4-container', {
       slidesPerView : 4,
       slidesPerGroup: 1,
-      allowTouchMove: false,
+      allowTouchMove: true,
+      autoplay: {
+        delay: 4200,
+        disableOnInteraction: false,
+        pauseOnMouseEnter: true,
+      },
+      grabCursor: true,
+      loop: true,
       spaceBetween: 30,
-      speed: 600,
+      speed: 800,
       navigation: {
         nextEl: '.product-swiper-btn-next',
         prevEl: '.product-swiper-btn-prev',
@@ -144,33 +151,21 @@
           slidesPerView : 4,
           spaceBetween: 30,
           allowTouchMove: true,
-          autoplay: {
-            delay: 5000,
-          },
         },
         992: {
           slidesPerView : 3,
           spaceBetween: 30,
           allowTouchMove: true,
-          autoplay: {
-            delay: 5000,
-          },
         },
         576: {
           slidesPerView : 2,
           spaceBetween: 30,
           allowTouchMove: true,
-          autoplay: {
-            delay: 5000,
-          },
         },
         0: {
           slidesPerView : 1,
           spaceBetween: 30,
           allowTouchMove: true,
-          autoplay: {
-            delay: 5000,
-          },
         },
       }
     });
@@ -222,7 +217,7 @@
     var proQty = $(".pro-qty");
     proQty.append('<div class= "dec qty-btn">-</div>');
     proQty.append('<div class="inc qty-btn">+</div>');
-    $('.qty-btn').on('click', function (e) {
+  $('.qty-btn').on('click', function (e) {
       e.preventDefault();
       var $button = $(this);
       var oldValue = $button.parent().find('input').val();
@@ -237,7 +232,104 @@
         }
       }
       $button.parent().find('input').val(newVal);
+      $(this).closest('.shopping-cart-area').trigger('cart:updated');
     });
+
+  // Carrito dinamico: eliminar productos, vaciar el carrito y recalcular totales.
+  var $cartArea = $('.shopping-cart-area');
+  if ($cartArea.length) {
+    var formatCop = function (value) {
+      return '$' + Math.round(value).toLocaleString('es-CO') + ' COP';
+    };
+
+    var updateCart = function () {
+      var total = 0;
+      var itemCount = 0;
+      var $items = $cartArea.find('tbody .cart-product-item');
+
+      $items.each(function () {
+        var $item = $(this);
+        var price = parseInt(($item.find('.product-price .price').text() || '').replace(/[^0-9]/g, ''), 10) || 0;
+        var quantity = parseInt($item.find('.quantity').val(), 10) || 1;
+        quantity = Math.max(1, quantity);
+        $item.find('.quantity').val(quantity);
+        $item.find('.product-subtotal .price').text(formatCop(price * quantity));
+        total += price * quantity;
+        itemCount += quantity;
+      });
+
+      $cartArea.find('.cart-subtotal .price, .order-total .price').text(formatCop(total));
+      $('.shop-count').text(String(itemCount).padStart(2, '0'));
+
+      var $freeShipping = $cartArea.find('#radio2');
+      var $fixedShipping = $cartArea.find('#radio1');
+      var freeShippingThreshold = parseInt($freeShipping.data('free-shipping-threshold'), 10) || 400000;
+      var freeShippingAvailable = total > freeShippingThreshold;
+      $freeShipping.prop('disabled', !freeShippingAvailable);
+      $freeShipping.closest('li').toggleClass('is-available', freeShippingAvailable);
+      if (freeShippingAvailable) {
+        $freeShipping.prop('checked', true);
+        $fixedShipping.prop('checked', false);
+      } else {
+        $freeShipping.prop('checked', false);
+        $fixedShipping.prop('checked', true);
+      }
+
+      var $emptyRow = $cartArea.find('.cart-empty-row');
+      if (!$items.length) {
+        if (!$emptyRow.length) {
+          $cartArea.find('tbody').prepend('<tr class="cart-empty-row"><td colspan="6">Tu carrito está vacío.</td></tr>');
+        }
+        $cartArea.find('.actions').hide();
+      } else {
+        $emptyRow.remove();
+        $cartArea.find('.actions').show();
+      }
+    };
+
+    $cartArea.on('click', '.product-remove a', function (event) {
+      event.preventDefault();
+      $(this).closest('.cart-product-item').fadeOut(220, function () {
+        $(this).remove();
+        updateCart();
+      });
+    });
+
+    $cartArea.on('input change', '.quantity', updateCart);
+    $cartArea.on('cart:updated', updateCart);
+    $cartArea.on('click', '.clear-cart', function (event) {
+      event.preventDefault();
+      $cartArea.find('.cart-product-item').remove();
+      updateCart();
+    });
+
+    updateCart();
+  }
+
+  // Zoom de detalle en la imagen principal de producto.
+  var productZoomSlides = document.querySelectorAll('.product-single-thumb .single-product-thumb .swiper-slide');
+  if (productZoomSlides.length && window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    productZoomSlides.forEach(function (slide) {
+      var image = slide.querySelector('img');
+      if (!image) return;
+
+      slide.addEventListener('mouseenter', function () {
+        slide.classList.add('is-zooming');
+      });
+
+      slide.addEventListener('mousemove', function (event) {
+        var bounds = slide.getBoundingClientRect();
+        var x = ((event.clientX - bounds.left) / bounds.width) * 100;
+        var y = ((event.clientY - bounds.top) / bounds.height) * 100;
+        image.style.transformOrigin = x + '% ' + y + '%';
+      });
+
+      slide.addEventListener('mouseleave', function () {
+        slide.classList.remove('is-zooming');
+        image.style.transformOrigin = 'center center';
+      });
+    });
+  }
 
   // Slider Range Js
     $('#price-range').slider({
@@ -296,6 +388,218 @@
     });
 
   // scrollToTop Js
+    var featuredProducts = document.querySelectorAll('.featured-products-section .product-item');
+    if (featuredProducts.length) {
+      var revealProduct = function(product) {
+        product.classList.add('is-visible');
+      };
+
+      if ('IntersectionObserver' in window) {
+        var productObserver = new IntersectionObserver(function(entries, observer) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              revealProduct(entry.target);
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.12 });
+
+        featuredProducts.forEach(function(product, index) {
+          product.classList.add('product-entry');
+          product.style.transitionDelay = Math.min(index * 90, 450) + 'ms';
+          productObserver.observe(product);
+        });
+      } else {
+        featuredProducts.forEach(function(product) {
+          product.classList.add('product-entry');
+          revealProduct(product);
+        });
+      }
+    }
+
+    var bestSellerElements = document.querySelectorAll('.best-seller-section .section-title, .best-seller-section .product-slider-wrap');
+    if (bestSellerElements.length) {
+      var revealBestSeller = function(element) {
+        element.classList.add('is-visible');
+      };
+
+      if ('IntersectionObserver' in window) {
+        var bestSellerObserver = new IntersectionObserver(function(entries, observer) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              revealBestSeller(entry.target);
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.15 });
+
+        bestSellerElements.forEach(function(element, index) {
+          element.classList.add('best-seller-entry');
+          element.style.transitionDelay = (index * 140) + 'ms';
+          bestSellerObserver.observe(element);
+        });
+      } else {
+        bestSellerElements.forEach(function(element) {
+          element.classList.add('best-seller-entry');
+          revealBestSeller(element);
+        });
+      }
+    }
+
+    var categoryPromoItems = document.querySelectorAll('.category-promo-section .divider-thumb-content > .thumb, .category-promo-section .promo-extra-thumb');
+    if (categoryPromoItems.length) {
+      var revealCategoryPromo = function(element) {
+        element.classList.add('is-visible');
+      };
+
+      if ('IntersectionObserver' in window) {
+        var categoryPromoObserver = new IntersectionObserver(function(entries, observer) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              revealCategoryPromo(entry.target);
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.12 });
+
+        categoryPromoItems.forEach(function(element, index) {
+          element.classList.add('category-promo-entry');
+          element.style.transitionDelay = (index * 130) + 'ms';
+          categoryPromoObserver.observe(element);
+        });
+      } else {
+        categoryPromoItems.forEach(function(element) {
+          element.classList.add('category-promo-entry');
+          revealCategoryPromo(element);
+        });
+      }
+    }
+
+    var collectionItems = document.querySelectorAll('.collection-entry-section .product-collection, .collection-feature-section .feature-content-box');
+    if (collectionItems.length) {
+      var revealCollection = function(element) {
+        window.requestAnimationFrame(function() {
+          window.requestAnimationFrame(function() {
+            element.classList.add('is-visible');
+          });
+        });
+      };
+
+      if ('IntersectionObserver' in window) {
+        var collectionObserver = new IntersectionObserver(function(entries, observer) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              revealCollection(entry.target);
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.15 });
+
+        collectionItems.forEach(function(element, index) {
+          element.classList.add('collection-entry');
+          element.style.transitionDelay = (index * 130) + 'ms';
+          collectionObserver.observe(element);
+        });
+      } else {
+        collectionItems.forEach(function(element) {
+          element.classList.add('collection-entry');
+          revealCollection(element);
+        });
+      }
+    }
+
+    var aboutStoreLogo = document.querySelector('.about-store-logo');
+    if (aboutStoreLogo) {
+      var revealAboutLogo = function() {
+        window.requestAnimationFrame(function() {
+          window.requestAnimationFrame(function() {
+            aboutStoreLogo.classList.add('is-visible');
+          });
+        });
+      };
+
+      aboutStoreLogo.classList.add('about-logo-entry');
+      if ('IntersectionObserver' in window) {
+        var aboutLogoObserver = new IntersectionObserver(function(entries, observer) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              revealAboutLogo();
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.2 });
+        aboutLogoObserver.observe(aboutStoreLogo);
+      } else {
+        revealAboutLogo();
+      }
+    }
+
+    var teamElements = document.querySelectorAll('.team-area .section-title, .team-area .team-item');
+    if (teamElements.length) {
+      var revealTeam = function(element) {
+        window.requestAnimationFrame(function() {
+          window.requestAnimationFrame(function() {
+            element.classList.add('is-visible');
+          });
+        });
+      };
+
+      if ('IntersectionObserver' in window) {
+        var teamObserver = new IntersectionObserver(function(entries, observer) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              revealTeam(entry.target);
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.15 });
+
+        teamElements.forEach(function(element, index) {
+          element.classList.add('team-entry');
+          element.style.transitionDelay = (index * 140) + 'ms';
+          teamObserver.observe(element);
+        });
+      } else {
+        teamElements.forEach(function(element) {
+          element.classList.add('team-entry');
+          revealTeam(element);
+        });
+      }
+    }
+
+    var testimonialElements = document.querySelectorAll('.testimonial-area .section-title, .testimonial-area .testimonial-slider-container');
+    if (testimonialElements.length) {
+      var revealTestimonial = function(element) {
+        window.requestAnimationFrame(function() {
+          window.requestAnimationFrame(function() {
+            element.classList.add('is-visible');
+          });
+        });
+      };
+
+      if ('IntersectionObserver' in window) {
+        var testimonialObserver = new IntersectionObserver(function(entries, observer) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              revealTestimonial(entry.target);
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.15 });
+
+        testimonialElements.forEach(function(element, index) {
+          element.classList.add('testimonial-entry');
+          element.style.transitionDelay = (index * 140) + 'ms';
+          testimonialObserver.observe(element);
+        });
+      } else {
+        testimonialElements.forEach(function(element) {
+          element.classList.add('testimonial-entry');
+          revealTestimonial(element);
+        });
+      }
+    }
+
     function scrollToTop() {
       var $scrollUp = $('#scroll-to-top'),
         $lastScrollTop = 0,
