@@ -9,6 +9,40 @@
 
   var brand = catalog.collections[product.brand];
   document.title = product.name + ' | Juaco Store';
+
+  function setMeta(attribute, key, value) {
+    var selector = 'meta[' + attribute + '="' + key + '"]';
+    var meta = document.head.querySelector(selector);
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.setAttribute(attribute, key);
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute('content', value);
+  }
+
+  var productUrl = new URL('single-product.html?producto=' + encodeURIComponent(product.id), window.location.href).href;
+  var productImage = new URL(product.image, window.location.href).href;
+  setMeta('name', 'description', product.description);
+  setMeta('property', 'og:type', 'product');
+  setMeta('property', 'og:title', product.name + ' | Juaco Store');
+  setMeta('property', 'og:description', product.description);
+  setMeta('property', 'og:image', productImage);
+  setMeta('property', 'og:image:alt', product.name);
+  setMeta('property', 'og:url', productUrl);
+  setMeta('name', 'twitter:card', 'summary_large_image');
+  setMeta('name', 'twitter:title', product.name + ' | Juaco Store');
+  setMeta('name', 'twitter:description', product.description);
+  setMeta('name', 'twitter:image', productImage);
+
+  var canonical = document.head.querySelector('link[rel="canonical"]');
+  if (!canonical) {
+    canonical = document.createElement('link');
+    canonical.setAttribute('rel', 'canonical');
+    document.head.appendChild(canonical);
+  }
+  canonical.setAttribute('href', productUrl);
+
   document.querySelector('.product-single-info .main-title').textContent = product.name;
   document.querySelector('.product-single-info .price').textContent = product.price + ' COP';
   document.querySelector('.product-single-info > p').textContent = product.description;

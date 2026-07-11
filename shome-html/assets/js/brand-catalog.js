@@ -112,7 +112,7 @@
     var colorData = product.colorAnalysis ? ' data-dominant-color="' + product.colorAnalysis.category + '" data-color-percentage="' + product.colorAnalysis.percentage + '" data-product-colors="' + product.colorAnalysis.colors.map(function (color) { return color.category; }).join(',') + '"' : '';
     return '<div class="col-sm-6 col-lg-4 catalog-product" style="--card-delay:' + (index * 55) + 'ms" data-brand="' + brand + '"' + colorData + '><div class="product-item"><div class="inner-content">' +
       '<div class="product-thumb"><a href="' + detailUrl + '"><img src="' + product.image + '" width="270" height="274" alt="' + product.name + '"></a>' +
-      '<div class="product-action"><a class="btn-product-wishlist" href="shop-wishlist.html"><i class="fa fa-heart"></i></a><a class="btn-product-cart" href="shop-cart.html"><i class="fa fa-shopping-cart"></i></a></div></div>' +
+      '<div class="product-action"><a class="btn-product-wishlist" href="shop-wishlist.html"><i class="fa fa-heart"></i></a><a class="btn-product-cart" href="shop-cart.html"><i class="fa fa-shopping-cart"></i></a><button class="btn-product-share" type="button" data-product-share aria-label="Compartir producto" title="Compartir producto"><i class="fa fa-share-alt"></i></button></div></div>' +
       '<div class="product-info"><div class="category"><ul><li><a href="shop.html?marca=' + brand + '">' + collection.label + '</a></li></ul></div>' +
       '<h4 class="title"><a href="' + detailUrl + '">' + product.name + '</a></h4><div class="prices"><span class="price">' + product.price + '</span></div></div>' +
       '</div></div></div>';

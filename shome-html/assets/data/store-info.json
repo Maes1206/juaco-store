@@ -1,7 +1,6 @@
 {
   "headerItems": [
-    { "kind": "number", "icon": "fa-phone", "label": "+00 123 456 789", "href": "tel:+00123456789" },
-    { "kind": "email", "icon": "fa-envelope", "label": "demo@example.com", "href": "mailto:demo@example.com" },
+    { "kind": "support", "icon": "fa-comments", "label": "Canales de atención", "href": "contact.html" },
     { "kind": "account", "icon": "fa-user", "label": "Cuenta", "href": "account-login.html" }
   ]
 }

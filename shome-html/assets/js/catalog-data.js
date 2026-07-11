@@ -3,7 +3,8 @@ window.JuacoCatalog = {
   collections: {
     jordan: { label: 'Jordan', banner: 'assets/img/jordan.png' },
     adidas: { label: 'Adidas', banner: 'assets/img/adidas.png' },
-    puma: { label: 'Puma', banner: 'assets/img/puma.png' }
+    puma: { label: 'Puma', banner: 'assets/img/puma.png' },
+    nike: { label: 'Nike', banner: 'assets/img/shop/storesneaker.png' }
   },
   products: [
     { id: 'jordan-4-paris-olympics', brand: 'jordan', name: 'Air Jordan 4 Retro SE Paris Olympics', price: '$241.000', image: 'assets/img/shop/jordan423.png', sizes: ['38', '39', '40', '41', '42'], description: 'Air Jordan 4 Retro SE con una silueta clásica, amortiguación Air visible y detalles inspirados en la edición Paris Olympics.' },
@@ -14,10 +15,13 @@ window.JuacoCatalog = {
     { id: 'jordan-4-j-balvin', brand: 'jordan', name: 'Jordan 4 J Balvin', price: '$450.000', image: 'assets/img/shop/727340.png', sizes: ['38', '39', '40', '41', '42'], description: 'Jordan 4 J Balvin con colores vibrantes, lengüeta distintiva y detalles gráficos exclusivos de la colaboración.' },
     { id: 'adidas-forum-low-green-white', brand: 'adidas', name: 'Adidas Forum Low Green / White', price: '$190.000', image: 'assets/img/shop/Sin título (270 x 274 px) (5).png', sizes: ['38', '39', '40', '41', '42', '43'], description: 'Adidas Forum Low en blanco y verde, inspirada en el baloncesto de los años 80 con su clásica tira de ajuste.' },
     { id: 'adidas-adizero-adios-pro', brand: 'adidas', name: 'Adidas Adizero Adios Pro', price: '$220.000', image: 'assets/img/shop/Sin título (270 x 274 px) (2).png', sizes: ['39', '40', '41', '42', '43'], description: 'Adidas Adizero Adios Pro, zapatilla ligera de running diseñada para ofrecer impulso y comodidad en distancias largas.' },
-    { id: 'adidas-country-og', brand: 'adidas', name: 'Adidas Country OG', price: '$190.000', image: 'assets/img/shop/Sin título (270 x 274 px) (3).png', sizes: ['38', '39', '40', '41', '42'], description: 'Adidas Country OG con perfil retro, suela de goma y materiales ligeros para un look clásico de todos los días.' },
+    { id: 'nike-air-force-1-triple-white', brand: 'nike', name: 'Nike Air Force 1 Low Triple White', price: '$230.000', image: 'assets/img/shop/Sin título (270 x 274 px) (3).png', sizes: ['38', '39', '40', '41', '42', '43'], description: 'Nike Air Force 1 Low Triple White con cuero blanco, perforaciones en la puntera y la clásica amortiguación Air para uso diario.' },
     { id: 'adidas-sl-72', brand: 'adidas', name: 'Adidas SL 72', price: '$195.000', image: 'assets/img/shop/Sin título (270 x 274 px) (1).png', sizes: ['38', '39', '40', '41', '42', '43'], description: 'Adidas SL 72 de inspiración running vintage, con una silueta baja y detalles que recuperan el diseño original.' },
     { id: 'adidas-campus', brand: 'adidas', name: 'Adidas Campus', price: '$210.000', image: 'assets/img/shop/adidas.png', sizes: ['39', '40', '41', '42', '43', '44'], description: 'Adidas Campus con parte superior de gamuza y las tres franjas laterales, una referencia imprescindible del estilo urbano.' },
     { id: 'puma-suede-classic', brand: 'puma', name: 'Puma Suede Classic', price: '$140.000', image: 'assets/img/shop/puma-suede-white.png', sizes: ['38', '39', '40', '41', '42', '43'], description: 'Puma Suede Classic con empeine de gamuza, Formstrip lateral y una silueta atemporal nacida en la cultura urbana.' },
-    { id: 'puma-palermo', brand: 'puma', name: 'Puma Palermo', price: '$175.000', image: 'assets/img/shop/Sin título (270 x 274 px).png', sizes: ['38', '39', '40', '41', '42'], description: 'Puma Palermo de perfil bajo, inspirada en los clásicos de terraza y terminada con detalles retro de la marca.' }
+    { id: 'puma-palermo', brand: 'puma', name: 'Puma Palermo', price: '$175.000', image: 'assets/img/shop/Sin título (270 x 274 px).png', sizes: ['38', '39', '40', '41', '42'], description: 'Puma Palermo de perfil bajo, inspirada en los clásicos de terraza y terminada con detalles retro de la marca.' },
+    { id: 'nike-dunk-low-year-rabbit', brand: 'nike', name: 'Nike Dunk Low Retro PRM Year of the Rabbit', price: '$250.000', image: 'assets/img/shop/816619.png', sizes: ['38', '39', '40', '41', '42', '43'], description: 'Nike Dunk Low Retro PRM Year of the Rabbit con cuero blanco, detalles en tonos tierra y acabados inspirados en esta edición especial.' },
+    { id: 'nike-sb-dunk-low-travis-scott', brand: 'nike', name: 'Nike SB Dunk Low x Travis Scott Cactus Jack', price: '$260.000', image: 'assets/img/shop/27734.png', sizes: ['38', '39', '40', '41', '42', '43'], description: 'Nike SB Dunk Low x Travis Scott Cactus Jack con paneles de gamuza, estampados distintivos y una combinación de tonos tierra y verde.' },
+    { id: 'nike-calm-mule', brand: 'nike', name: 'Nike Calm Mule', price: '$180.000', image: 'assets/img/shop/Sin título (270 x 274 px) (4).png', sizes: ['38', '39', '40', '41', '42', '43'], description: 'Nike Calm Mule de espuma ligera con diseño slip-on, plantilla contorneada y una silueta cómoda para el día a día.' }
   ]
 };

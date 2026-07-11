@@ -11,7 +11,7 @@
       var headerItems = storeInfo.headerItems || [];
       window.JuacoStoreConfig = window.JuacoStoreConfig || {};
       window.JuacoStoreConfig.headerItems = headerItems;
-      document.querySelectorAll('[data-header-info]').forEach(function (container) {
+      document.querySelectorAll('[data-header-info], .header-top .header-info-items .info-items').forEach(function (container) {
         container.innerHTML = '<ul>' + headerItems.map(function (item) {
           return '<li class="' + item.kind + '"><i class="fa ' + item.icon + '"></i><a href="' + item.href + '">' + item.label + '</a></li>';
         }).join('') + '</ul>';

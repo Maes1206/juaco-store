@@ -10,6 +10,46 @@
       element.css('background-image', 'url(' + bgSource + ')');
     });
 
+  // Parallax suave y reutilizable para todos los banners de cabecera.
+    var parallaxHeaders = document.querySelectorAll('.page-header-area[data-bg-img], .page-header-area[data-parallax-img]');
+    if (parallaxHeaders.length) {
+      parallaxHeaders.forEach(function (header) {
+        var source = header.getAttribute('data-parallax-img') || header.getAttribute('data-bg-img');
+        var imageUrl = new URL(source, window.location.href).href;
+        var imagePosition = source === 'assets/img/shop/bannerblog.png' ? 'right bottom' : 'center center';
+        header.classList.add('has-parallax-background');
+        header.style.setProperty('--page-parallax-image', 'url("' + imageUrl + '")');
+        header.style.setProperty('--page-parallax-position', imagePosition);
+      });
+
+      if (!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+        var parallaxTicking = false;
+
+        function updatePageHeaderParallax() {
+          parallaxHeaders.forEach(function (header) {
+            var bounds = header.getBoundingClientRect();
+            var progress = Math.max(0, Math.min(1, -bounds.top / bounds.height));
+            var parallaxDistance = header.classList.contains('contact-page-header') ? 32 : 56;
+            header.style.setProperty('--page-parallax-offset', (progress * parallaxDistance).toFixed(1) + 'px');
+            if (header.classList.contains('about-page-header')) {
+              header.style.setProperty('--about-parallax-offset', (progress * 56).toFixed(1) + 'px');
+            }
+          });
+          parallaxTicking = false;
+        }
+
+        function requestPageHeaderParallax() {
+          if (parallaxTicking) return;
+          parallaxTicking = true;
+          window.requestAnimationFrame(updatePageHeaderParallax);
+        }
+
+        updatePageHeaderParallax();
+        window.addEventListener('scroll', requestPageHeaderParallax, { passive: true });
+        window.addEventListener('resize', requestPageHeaderParallax);
+      }
+    }
+
   // Background Color Js
     const Bgcolorcl = $("[data-bg-color]");
     Bgcolorcl.each(function (index, elem) {
@@ -167,6 +207,28 @@
           spaceBetween: 30,
           allowTouchMove: true,
         },
+      }
+    });
+
+  // Artículos destacados: navegación táctil y responsive.
+    var featuredProductsSlider = new Swiper('.featured-products-carousel', {
+      slidesPerView: 4,
+      slidesPerGroup: 1,
+      allowTouchMove: true,
+      autoplay: {
+        delay: 5000,
+        disableOnInteraction: true
+      },
+      grabCursor: true,
+      loop: true,
+      simulateTouch: true,
+      spaceBetween: 30,
+      speed: 650,
+      breakpoints: {
+        1400: { slidesPerView: 4, spaceBetween: 30 },
+        992: { slidesPerView: 3, spaceBetween: 30 },
+        576: { slidesPerView: 2, spaceBetween: 24 },
+        0: { slidesPerView: 1, spaceBetween: 18 }
       }
     });
 
@@ -329,6 +391,66 @@
         image.style.transformOrigin = 'center center';
       });
     });
+  }
+
+  // En móviles, mantener pulsada una imagen muestra las acciones del producto.
+  if (window.matchMedia && window.matchMedia('(hover: none), (pointer: coarse)').matches) {
+    var longPressTimer;
+    var longPressTriggered = false;
+    var suppressProductClickUntil = 0;
+
+    function hideProductActions(except) {
+      document.querySelectorAll('.product-thumb.is-actions-visible').forEach(function (thumb) {
+        if (thumb !== except) thumb.classList.remove('is-actions-visible');
+      });
+    }
+
+    function clearLongPress() {
+      window.clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+
+    document.addEventListener('touchstart', function (event) {
+      var thumb = event.target.closest('.product-item .product-thumb');
+      if (!thumb || event.target.closest('.product-action')) return;
+
+      clearLongPress();
+      longPressTriggered = false;
+      longPressTimer = window.setTimeout(function () {
+        hideProductActions(thumb);
+        thumb.classList.add('is-actions-visible');
+        longPressTriggered = true;
+        suppressProductClickUntil = Date.now() + 700;
+      }, 550);
+    }, { passive: true });
+
+    document.addEventListener('touchmove', clearLongPress, { passive: true });
+    document.addEventListener('touchend', function (event) {
+      clearLongPress();
+      if (longPressTriggered) event.preventDefault();
+    }, { passive: false });
+    document.addEventListener('touchcancel', clearLongPress, { passive: true });
+
+    document.addEventListener('contextmenu', function (event) {
+      if (event.target.closest('.product-item .product-thumb')) {
+        event.preventDefault();
+      }
+    });
+
+    document.addEventListener('click', function (event) {
+      var thumb = event.target.closest('.product-item .product-thumb');
+      if (thumb && Date.now() < suppressProductClickUntil && !event.target.closest('.product-action')) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+
+      if (event.target.closest('.product-action')) {
+        window.setTimeout(function () { hideProductActions(); }, 180);
+      } else if (!thumb) {
+        hideProductActions();
+      }
+    }, true);
   }
 
   // Slider Range Js

@@ -11,7 +11,10 @@
 
   window.JuacoStoreConfig = window.JuacoStoreConfig || {};
   window.JuacoStoreConfig.paymentMethods = paymentMethods;
-  document.querySelectorAll('[data-payment-methods]').forEach(function (container) {
+  // Cada ruta conserva su propio footer, por eso se monta en cualquier bloque
+  // de pagos del pie de página y no depende de HTML duplicado.
+  document.querySelectorAll('.footer-bottom .payment, [data-payment-methods]').forEach(function (container) {
+    container.setAttribute('data-payment-methods', '');
     container.innerHTML = paymentMethods.map(function (method) {
       return '<a class="payment-card payment-card-' + method.id + '" href="shop-checkout.html" aria-label="' + method.label + '">' + method.content + '</a>';
     }).join('');
