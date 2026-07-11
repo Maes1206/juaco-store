@@ -1,4 +1,9 @@
 .playwright-mcp/
+.venv/
+__pycache__/
+*.py[cod]
+db.sqlite3
+staticfiles/
 .env
 .env.*
 !.env.example

@@ -1,0 +1,9 @@
+.git
+.gitignore
+.venv
+.env
+db.sqlite3
+staticfiles
+__pycache__
+*.pyc
+.playwright-mcp
