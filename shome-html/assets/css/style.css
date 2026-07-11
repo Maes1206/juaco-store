@@ -4342,13 +4342,30 @@ table p {
   width: 100%;
 }
 .product-single-item .product-single-thumb .single-product-thumb .swiper-slide {
+  align-items: center;
+  aspect-ratio: 1 / 1;
+  background: #fff;
+  display: flex;
+  justify-content: center;
+}
+.product-single-item .product-single-thumb .single-product-thumb .swiper-slide .lightbox-image {
+  align-items: center;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  width: 100%;
+}
+.product-single-item .product-single-thumb .single-product-thumb .swiper-slide {
   overflow: hidden;
   cursor: zoom-in;
 }
 .product-single-item .product-single-thumb .single-product-thumb .swiper-slide img {
   display: block;
+  height: 100%;
+  object-fit: contain;
   transition: transform 0.35s ease-out;
   will-change: transform;
+  width: 100%;
 }
 @media (hover: hover) and (pointer: fine) {
   .product-single-item .product-single-thumb .single-product-thumb .swiper-slide.is-zooming img {
@@ -4364,6 +4381,9 @@ table p {
 .product-single-item .product-single-thumb .single-product-nav .swiper-slide img {
   border-radius: 10px;
   border: 2px solid #e1e1e1;
+  aspect-ratio: 1 / 1;
+  background: #fff;
+  object-fit: contain;
   transition: all 0.3s ease-out;
   -webkit-transition: all 0.3s ease-out;
   -moz-transition: all 0.3s ease-out;
@@ -10385,6 +10405,39 @@ table p {
 }
 #catalog-products {
   scroll-margin-top: 20px;
+}
+.catalog-results {
+  scroll-margin-top: 26px;
+}
+.catalog-results .catalog-product .product-thumb {
+  aspect-ratio: 270 / 274;
+}
+.catalog-results .catalog-product .product-thumb > a {
+  align-items: center;
+  background: #fff;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  width: 100%;
+}
+.catalog-results .catalog-product .product-thumb img {
+  height: 100%;
+  object-fit: contain;
+  width: 100%;
+}
+.catalog-results.is-filtering .catalog-product {
+  animation: catalog-card-reveal .42s cubic-bezier(.2, .75, .25, 1) both;
+  animation-delay: var(--card-delay, 0ms);
+}
+@keyframes catalog-card-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* Barra del catálogo: controles compactos, legibles y sin saltos de línea. */
