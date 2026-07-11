@@ -14,6 +14,7 @@ services:
       - ./database/migrations/001_initial_schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - ./database/migrations/002_inventory_functions.sql:/docker-entrypoint-initdb.d/02-inventory-functions.sql:ro
       - ./database/seeds/001_catalog.sql:/docker-entrypoint-initdb.d/03-catalog.sql:ro
+      - ./database/migrations/003_catalog_price_filter.sql:/docker-entrypoint-initdb.d/04-catalog-price-filter.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-juaco} -d ${POSTGRES_DB:-juaco_store}"]
       interval: 5s

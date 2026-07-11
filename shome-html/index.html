@@ -60,13 +60,7 @@
               </div>
               <div class="header-top-align-end">
                 <div class="header-info-items">
-                  <div class="info-items">
-                    <ul>
-                      <li class="number"><i class="fa fa-phone"></i><a href="tel://0123456789">+00 123 456 789</a></li>
-                      <li class="email"><i class="fa fa-envelope"></i><a href="mailto://demo@example.com">demo@example.com</a></li>
-                      <li class="account"><i class="fa fa-user"></i><a href="account-login.html">Cuenta</a></li>
-                    </ul>
-                  </div>
+                  <div class="info-items" data-header-info></div>
                 </div>
               </div>
             </div>
@@ -291,12 +285,12 @@
               <div class="inner-content">
                 <div class="product-collection-content">
                   <div class="content">
-                    <h3 class="title"><a href="shop.html">Jordan 1</a></h3>
+                    <h3 class="title"><a href="shop.html?marca=jordan">Jordan 1</a></h3>
                     <h4 class="price">Desde $190.00</h4>
                   </div>
                 </div>
                 <div class="product-collection-thumb" data-bg-img="assets/img/shop/jordanpanda.png" style="background-position: center center;"></div>
-                <a class="banner-link-overlay" href="shop.html"></a>
+                <a class="banner-link-overlay" href="shop.html?marca=jordan" aria-label="Ver colección Jordan"></a>
               </div>
             </div>
             <!--== End Product Collection Item ==-->
@@ -307,12 +301,12 @@
               <div class="inner-content">
                 <div class="product-collection-content">
                   <div class="content">
-                    <h3 class="title"><a href="shop.html">Adidas</a></h3>
+                    <h3 class="title"><a href="shop.html?marca=adidas">Adidas</a></h3>
                     <h4 class="price">Desde $140.000</h4>
                   </div>
                 </div>
                 <div class="product-collection-thumb" data-bg-img="assets/img/shop/adidas.png" style="background-position: center center;"></div>
-                <a class="banner-link-overlay" href="shop.html"></a>
+                <a class="banner-link-overlay" href="shop.html?marca=adidas" aria-label="Ver colección Adidas"></a>
               </div>
             </div>
             <!--== End Product Collection Item ==-->
@@ -323,12 +317,12 @@
               <div class="inner-content">
                 <div class="product-collection-content">
                   <div class="content">
-                    <h3 class="title"><a href="shop.html">Puma</a></h3>
+                    <h3 class="title"><a href="shop.html?marca=puma">Puma</a></h3>
                     <h4 class="price">Desde $140.000</h4>
                   </div>
                 </div>
                 <div class="product-collection-thumb" data-bg-img="assets/img/shop/puma.png" style="background-position: center center;"></div>
-                <a class="banner-link-overlay" href="shop.html"></a>
+                <a class="banner-link-overlay" href="shop.html?marca=puma" aria-label="Ver colección Puma"></a>
               </div>
             </div>
             <!--== End Product Collection Item ==-->
@@ -1197,13 +1191,7 @@
             <p class="copyright">© 2026. Juaco Store. Hecho con amor por <a class="digital-brain-link" href="#" aria-label="Digital Brain"><img class="digital-brain-icon" src="assets/img/logdb.png" width="20" height="20" alt=""><span class="digital-brain-text">Digital Brain.</span></a></p>
           </div>
           <div class="col-md-5 col-lg-6">
-            <div class="payment">
-              <a class="payment-card payment-card-amex" href="account-login.html" aria-label="American Express">AMERICAN<br>EXPRESS</a>
-              <a class="payment-card payment-card-paypal" href="account-login.html" aria-label="PayPal">PayPal</a>
-              <a class="payment-card payment-card-mastercard" href="account-login.html" aria-label="Mastercard"><span></span><span></span></a>
-              <a class="payment-card payment-card-bold" href="account-login.html" aria-label="Pago con Bold"><span>Bold</span></a>
-              <a class="payment-card payment-card-visa" href="account-login.html" aria-label="Visa">VISA</a>
-            </div>
+            <div class="payment" data-payment-methods></div>
           </div>
         </div>
       </div>
@@ -1432,6 +1420,8 @@
 
 <!--=== jQuery Custom Js ===-->
 <script src="assets/js/custom.js"></script>
+<script src="assets/js/header-info.js"></script>
+<script src="assets/js/payment-methods.js"></script>
 <script src="assets/js/blog-posts.js"></script>
 <script src="assets/js/home-blog.js"></script>
 

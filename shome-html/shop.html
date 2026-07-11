@@ -55,18 +55,12 @@
             <div class="header-top-align">
               <div class="header-top-align-start">
                 <div class="desc">
-                  <p>World Wide Completely Free Returns and Free Shipping</p>
+                  <p>Envíos nacionales gratis por compras superiores a $400.000 COP</p>
                 </div>
               </div>
               <div class="header-top-align-end">
                 <div class="header-info-items">
-                  <div class="info-items">
-                    <ul>
-                      <li class="number"><i class="fa fa-phone"></i><a href="tel://0123456789">+00 123 456 789</a></li>
-                      <li class="email"><i class="fa fa-envelope"></i><a href="mailto://demo@example.com">demo@example.com</a></li>
-                      <li class="account"><i class="fa fa-user"></i><a href="account-login.html">Account</a></li>
-                    </ul>
-                  </div>
+                  <div class="info-items" data-header-info></div>
                 </div>
               </div>
             </div>
@@ -82,15 +76,15 @@
               <div class="header-middle-align-start">
                 <div class="header-logo-area">
                   <a href="index.html">
-                    <img class="logo-main" src="assets/img/logo.webp" width="131" height="34" alt="Logo" />
-                    <img class="logo-light" src="assets/img/logo-light.webp" width="131" height="34" alt="Logo" />
+                    <img class="logo-main" src="assets/img/shop/logohorizontal.png" width="199" height="55" alt="JUACO Store" />
+                    <img class="logo-light" src="assets/img/shop/logohorizontal.png" width="199" height="55" alt="JUACO Store" />
                   </a>
                 </div>
               </div>
               <div class="header-middle-align-center">
                 <div class="header-search-area">
                   <form class="header-searchbox">
-                    <input type="search" class="form-control" placeholder="Search">
+                    <input type="search" class="form-control" placeholder="Buscar">
                     <button class="btn-submit" type="submit"><i class="pe-7s-search"></i></button>
                   </form>
                 </div>
@@ -128,14 +122,14 @@
             <div class="header-align">
               <div class="header-navigation-area position-relative">
                 <ul class="main-menu nav">
-                  <li class="has-submenu"><a href="#/"><span>Home</span></a>
+                  <li class="has-submenu"><a href="#/"><span>Inicio</span></a>
                     <ul class="submenu-nav">
                       <li><a href="index.html"><span>Home One</span></a></li>
                       <li><a href="index-two.html"><span>Home Two</span></a></li>
                     </ul>
                   </li>
-                  <li><a href="about-us.html"><span>About</span></a></li>
-                  <li class="has-submenu"><a href="#/"><span>Pages</span></a>
+                  <li><a href="about-us.html"><span>Nosotros</span></a></li>
+                  <li class="has-submenu"><a href="#/"><span>Páginas</span></a>
                     <ul class="submenu-nav">
                       <li><a href="account.html"><span>Account</span></a></li>
                       <li><a href="account-login.html"><span>Login</span></a></li>
@@ -143,7 +137,7 @@
                       <li><a href="page-not-found.html"><span>Page Not Found</span></a></li>
                     </ul>
                   </li>
-                  <li class="has-submenu position-static"><a href="#/"><span>Shop</span></a>
+                  <li class="has-submenu position-static"><a href="#/"><span>Tienda</span></a>
                     <ul class="submenu-nav submenu-nav-mega column-3">
                       <li class="mega-menu-item"><a href="#/" class="mega-title"><span>Shop Layout</span></a>
                         <ul>
@@ -189,7 +183,7 @@
                       </li>
                     </ul>
                   </li>
-                  <li><a href="contact.html"><span>Contact</span></a></li>
+                  <li><a href="contact.html"><span>Contacto</span></a></li>
                 </ul>
               </div>
             </div>
@@ -202,17 +196,17 @@
   
   <main class="main-content">
     <!--== Start Page Header Area Wrapper ==-->
-    <div class="page-header-area" data-bg-img="assets/img/photos/bg3.webp">
+    <div class="page-header-area" id="catalog-page-header" data-bg-img="assets/img/photos/bg3.webp">
       <div class="container pt--0 pb--0">
         <div class="row">
           <div class="col-12">
             <div class="page-header-content">
-              <h2 class="title" data-aos="fade-down" data-aos-duration="1000">Product Page</h2>
+              <h2 class="title" id="catalog-title" data-aos="fade-down" data-aos-duration="1000">Todos los sneakers</h2>
               <nav class="breadcrumb-area" data-aos="fade-down" data-aos-duration="1200">
                 <ul class="breadcrumb">
-                  <li><a href="index.html">Home</a></li>
+                  <li><a href="index.html">Inicio</a></li>
                   <li class="breadcrumb-sep">//</li>
-                  <li>Product Page</li>
+                  <li id="catalog-breadcrumb">Tienda</li>
                 </ul>
               </nav>
             </div>
@@ -223,7 +217,7 @@
     <!--== End Page Header Area Wrapper ==-->
 
     <!--== Start Product Area Wrapper ==-->
-    <section class="product-area product-default-area">
+    <section class="product-area product-default-area" id="catalog-products">
       <div class="container">
         <div class="row flex-xl-row-reverse justify-content-between">
           <div class="col-xl-9">
@@ -231,7 +225,7 @@
               <div class="col-12">
                 <div class="shop-top-bar">
                   <div class="shop-top-left">
-                    <p class="pagination-line"><a href="shop.html">12</a> Product Found of <a href="shop.html">30</a></p>
+                    <p class="pagination-line" id="catalog-count">12 productos encontrados</p>
                   </div>
                   <div class="shop-top-center">
                     <nav class="product-nav">
@@ -243,13 +237,12 @@
                   </div>
                   <div class="shop-top-right">
                     <div class="shop-sort">
-                      <span>Sort By :</span>
-                      <select class="form-select" aria-label="Sort select example">
-                        <option selected>Default</option>
-                        <option value="1">Popularity</option>
-                        <option value="2">Average Rating</option>
-                        <option value="3">Newsness</option>
-                        <option value="4">Price Low to High</option>
+                      <label for="product-sort">Ordenar por</label>
+                      <select class="form-select" id="product-sort" aria-label="Ordenar productos">
+                        <option value="default">Predeterminado</option>
+                        <option value="price-asc">Precio: menor a mayor</option>
+                        <option value="price-desc">Precio: mayor a menor</option>
+                        <option value="name-asc">Nombre: A a Z</option>
                       </select>
                     </div>
                   </div>
@@ -994,72 +987,51 @@
           </div>
           <div class="col-xl-3">
             <div class="shop-sidebar">
-              <div class="shop-sidebar-category">
-                <h4 class="sidebar-title">Top Categories</h4>
-                <div class="sidebar-category">
-                  <ul class="category-list mb--0">
-                    <li><a href="shop.html">Shoes <span>(6)</span></a></li>
-                    <li><a href="shop.html">Computer <span>(4)</span></a></li>
-                    <li><a href="shop.html">Covid-19 <span>(2)</span></a></li>
-                    <li><a href="shop.html">Electronics <span>(6)</span></a></li>
-                    <li><a href="shop.html">Frame Sunglasses <span>(12)</span></a></li>
-                    <li><a href="shop.html">Furniture <span>(7)</span></a></li>
-                    <li><a href="shop.html">Genuine Leather <span>(9)</span></a></li>
+              <div class="shop-sidebar-size shop-sidebar-size-primary">
+                <h4 class="sidebar-title">Filtrar por talla</h4>
+                <div class="sidebar-size">
+                  <ul class="size-list sneaker-size-list" aria-label="Seleccionar talla">
+                    <li><button type="button" class="size-filter" data-size="35">35</button></li>
+                    <li><button type="button" class="size-filter" data-size="36">36</button></li>
+                    <li><button type="button" class="size-filter" data-size="37">37</button></li>
+                    <li><button type="button" class="size-filter" data-size="38">38</button></li>
+                    <li><button type="button" class="size-filter" data-size="39">39</button></li>
+                    <li><button type="button" class="size-filter" data-size="40">40</button></li>
+                    <li><button type="button" class="size-filter" data-size="41">41</button></li>
+                    <li><button type="button" class="size-filter" data-size="42">42</button></li>
+                    <li><button type="button" class="size-filter" data-size="43">43</button></li>
+                    <li><button type="button" class="size-filter" data-size="44">44</button></li>
+                    <li><button type="button" class="size-filter" data-size="45">45</button></li>
                   </ul>
                 </div>
               </div>
 
               <div class="shop-sidebar-price-range">
-                <h4 class="sidebar-title">Price Filter</h4>
-                <div class="sidebar-price-range">   
-                  <div id="price-range"></div>
+                <h4 class="sidebar-title">Filtro de precio</h4>
+                <div class="sidebar-price-range" data-catalog-price-filter>
+                  <div class="price-range-labels" aria-live="polite">
+                    <span id="price-min-label">Desde $0</span>
+                    <span id="price-max-label">Hasta $0</span>
+                  </div>
+                  <div id="price-range" aria-label="Rango de precio"></div>
                 </div>
               </div>
 
               <div class="shop-sidebar-color">
                 <h4 class="sidebar-title">Color</h4>
                 <div class="sidebar-color">
-                  <ul class="color-list">
-                    <li data-bg-color="#39ed8c" class="active"></li>
-                    <li data-bg-color="#a6ed42"></li>
-                    <li data-bg-color="#daed39"></li>
-                    <li data-bg-color="#eed739"></li>
-                    <li data-bg-color="#eca23a"></li>
-                    <li data-bg-color="#f36768"></li>
-                    <li data-bg-color="#e14755"></li>
-                    <li data-bg-color="#dc83a3"></li>
-                    <li data-bg-color="#dc82da"></li>
-                    <li data-bg-color="#9a82dd"></li>
-                    <li data-bg-color="#82c2db"></li>
-                    <li data-bg-color="#6bd6b0"></li>
-                    <li data-bg-color="#9ed76b"></li>
-                    <li data-bg-color="#c8c289"></li>
-                  </ul>
-                </div>
-              </div>
-
-              <div class="shop-sidebar-size">
-                <h4 class="sidebar-title">Size</h4>
-                <div class="sidebar-size">
-                  <ul class="size-list">
-                    <li><a href="shop.html">S <span>(6)</span></a></li>
-                    <li><a href="shop.html">M <span>(4)</span></a></li>
-                    <li><a href="shop.html">L <span>(2)</span></a></li>
-                    <li><a href="shop.html">XL <span>(6)</span></a></li>
-                    <li><a href="shop.html">XXL <span>(12)</span></a></li>
-                  </ul>
+                  <ul class="color-list" id="catalog-color-filter" aria-label="Filtrar por color"></ul>
+                  <div class="color-filter-actions">
+                    <button type="button" id="clear-color-filter" class="clear-color-filter">Limpiar</button>
+                  </div>
                 </div>
               </div>
 
               <div class="shop-sidebar-brand">
-                <h4 class="sidebar-title">Brand</h4>
+                <h4 class="sidebar-title">Marca</h4>
                 <div class="sidebar-brand">
                   <ul class="brand-list mb--0">
-                    <li><a href="shop.html">Lakmeetao <span>(6)</span></a></li>
-                    <li><a href="shop.html">Beautifill <span>(4)</span></a></li>
-                    <li><a href="shop.html">Made In GD <span>(2)</span></a></li>
-                    <li><a href="shop.html">Pecifico <span>(6)</span></a></li>
-                    <li><a href="shop.html">Xlovgtir <span>(12)</span></a></li>
+                    <li><a id="active-brand-filter" href="shop.html?marca=jordan">Jordan <span>(6)</span></a></li>
                   </ul>
                 </div>
               </div>
@@ -1083,15 +1055,14 @@
               <div class="about-widget-wrap">
                 <div class="widget-logo-area">
                   <a href="index.html">
-                    <img class="logo-main" src="assets/img/logo-light.webp" width="131" height="34" alt="Logo" />
+                    <img class="footer-logo-horizontal" src="assets/img/shop/logohorizontal-footer.png" width="240" height="66" alt="JUACO Store" />
                   </a>
                 </div>
-                <p class="desc">Lorem ipsum dolor sit amet consl adipisi elit, sed do eiusmod templ incididunt ut labore</p>
+                <p class="desc">Sneakers seleccionados para todos los estilos, con envíos nacionales y atención personalizada.</p>
                 <div class="social-icons">
-                  <a href="https://www.facebook.com/" target="_blank" rel="noopener"><i class="fa fa-facebook"></i></a>
-                  <a href="https://dribbble.com/" target="_blank" rel="noopener"><i class="fa fa-dribbble"></i></a>
-                  <a href="https://www.pinterest.com/" target="_blank" rel="noopener"><i class="fa fa-pinterest-p"></i></a>
-                  <a href="https://twitter.com/" target="_blank" rel="noopener"><i class="fa fa-twitter"></i></a>
+                  <a href="https://www.facebook.com/" target="_blank" rel="noopener" aria-label="Facebook"><i class="fa fa-facebook"></i></a>
+                  <a href="https://www.instagram.com/" target="_blank" rel="noopener" aria-label="Instagram"><i class="fa fa-instagram"></i></a>
+                  <a href="contact.html" aria-label="Contacto"><i class="fa fa-envelope"></i></a>
                 </div>
               </div>
             </div>
@@ -1100,17 +1071,17 @@
           <div class="col-md-6 col-lg-3">
             <!--== Start widget Item ==-->
             <div class="widget-item widget-services-item">
-              <h4 class="widget-title">Services</h4>
-              <h4 class="widget-collapsed-title collapsed" data-bs-toggle="collapse" data-bs-target="#widgetId-1">Services</h4>
+              <h4 class="widget-title">Servicios</h4>
+              <h4 class="widget-collapsed-title collapsed" data-bs-toggle="collapse" data-bs-target="#widgetId-1">Servicios</h4>
               <div id="widgetId-1" class="collapse widget-collapse-body">
                 <div class="collapse-body">
                   <div class="widget-menu-wrap">
                     <ul class="nav-menu">
-                      <li><a href="contact.html">Home monitoring</a></li>
-                      <li><a href="contact.html">Air Filters</a></li>
-                      <li><a href="contact.html">Professional installation</a></li>
-                      <li><a href="contact.html">Smart Buildings</a></li>
-                      <li><a href="contact.html">For contractors</a></li>
+                      <li><a href="contact.html">Seguimiento de pedidos</a></li>
+                      <li><a href="contact.html">Cambios y devoluciones</a></li>
+                      <li><a href="contact.html">Asesoría personalizada</a></li>
+                      <li><a href="contact.html">Envíos nacionales</a></li>
+                      <li><a href="contact.html">Ventas al por mayor</a></li>
                     </ul>
                   </div>
                 </div>
@@ -1121,17 +1092,17 @@
           <div class="col-md-6 col-lg-3">
             <!--== Start widget Item ==-->
             <div class="widget-item widget-account-item">
-              <h4 class="widget-title">My Account</h4>
-              <h4 class="widget-collapsed-title collapsed" data-bs-toggle="collapse" data-bs-target="#widgetId-2">My Account</h4>
+              <h4 class="widget-title">Mi cuenta</h4>
+              <h4 class="widget-collapsed-title collapsed" data-bs-toggle="collapse" data-bs-target="#widgetId-2">Mi cuenta</h4>
               <div id="widgetId-2" class="collapse widget-collapse-body">
                 <div class="collapse-body">
                   <div class="widget-menu-wrap">
                     <ul class="nav-menu">
-                      <li><a href="account-login.html">My Account</a></li>
-                      <li><a href="contact.html">Contact</a></li>
-                      <li><a href="shop-cart.html">Shopping cart</a></li>
-                      <li><a href="shop.html">Shop</a></li>
-                      <li><a href="account-login.html">Services Login</a></li>
+                      <li><a href="account-login.html">Mi cuenta</a></li>
+                      <li><a href="contact.html">Contacto</a></li>
+                      <li><a href="shop-cart.html">Carrito de compras</a></li>
+                      <li><a href="shop.html">Tienda</a></li>
+                      <li><a href="account-login.html">Iniciar sesión</a></li>
                     </ul>
                   </div>
                 </div>
@@ -1142,16 +1113,16 @@
           <div class="col-md-6 col-lg-3">
             <!--== Start widget Item ==-->
             <div class="widget-item">
-              <h4 class="widget-title">Contact Info</h4>
-              <h4 class="widget-collapsed-title collapsed" data-bs-toggle="collapse" data-bs-target="#widgetId-3">Contact Info</h4>
+              <h4 class="widget-title">Información de compra</h4>
+              <h4 class="widget-collapsed-title collapsed" data-bs-toggle="collapse" data-bs-target="#widgetId-3">Información de compra</h4>
               <div id="widgetId-3" class="collapse widget-collapse-body">
                 <div class="collapse-body">
                   <div class="widget-contact-wrap">
                     <ul>
-                      <li><span>Address:</span> Your address goes here.</li>
-                      <li><span>Phone//fax:</span> <a href="tel://0123456789">0123456789</a></li>
-                      <li><span>Email:</span> <a href="mailto://demo@example.com">demo@example.com</a></li>
-                      <li><a target="_blank" href="https://www.hasthemes.com">www.example.com</a></li>
+                      <li><span>Cobertura:</span> Envíos a toda Colombia.</li>
+                      <li><span>Envío gratis:</span> Desde $400.000 COP.</li>
+                      <li><span>Asesoría:</span> <a href="contact.html">Contáctanos aquí</a></li>
+                      <li><a href="contact.html">Ver canales de atención</a></li>
                     </ul>
                   </div>
                 </div>
@@ -1172,9 +1143,7 @@
             <p class="copyright">&copy; 2026. Juaco Store. Hecho con amor por <a class="digital-brain-link" href="#" aria-label="Digital Brain"><img class="digital-brain-icon" src="assets/img/logdb.png" width="20" height="20" alt=""><span class="digital-brain-text">Digital Brain.</span></a></p>
           </div>
           <div class="col-md-5 col-lg-6">
-            <div class="payment">
-              <a href="account-login.html"><img src="assets/img/photos/payment-card.webp" width="192" height="21" alt="Payment Logo"></a>
-            </div>
+            <div class="payment" data-payment-methods></div>
           </div>
         </div>
       </div>
@@ -1415,6 +1384,12 @@
 
 <!--=== jQuery Custom Js ===-->
 <script src="assets/js/custom.js"></script>
+<script src="assets/js/catalog-data.js"></script>
+<script src="assets/js/image-color-analyzer.js"></script>
+<script src="assets/js/header-info.js"></script>
+<script src="assets/js/payment-methods.js"></script>
+<!--=== Catálogo por marca ===-->
+<script src="assets/js/brand-catalog.js"></script>
 
 </body>
 

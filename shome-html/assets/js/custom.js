@@ -332,6 +332,7 @@
   }
 
   // Slider Range Js
+  if (!document.querySelector('[data-catalog-price-filter]')) {
     $('#price-range').slider({
       range: true,
       min: 0,
@@ -344,6 +345,7 @@
     });
     $('.ui-slider-handle:eq(0)').html( '<span>' + '$' + $( "#price-range" ).slider( "values", 0 ) + '</span>' );
     $('.ui-slider-handle:eq(1)').html( '<span>' + '$' + $( "#price-range" ).slider( "values", 1 ) + '</span>' );
+  }
     
   // Review Form JS
     $(".review-write-btn").on('click', function() {

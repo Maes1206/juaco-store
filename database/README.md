@@ -51,6 +51,20 @@ postgresql://juaco:TU_CLAVE@localhost:5432/juaco_store
 
 ## Comprobaciones útiles
 
+### Filtro de catálogo por precio
+
+La función `catalog_products` aplica marca, talla y rango de precio sobre variantes activas con inventario disponible. La API debe pasar los valores como parámetros preparados:
+
+```sql
+SELECT * FROM catalog_products('jordan', 230000, 300000, '40');
+```
+
+En una base que ya exista, aplica la nueva función una sola vez con:
+
+```bash
+docker compose exec -T db psql -U juaco -d juaco_store -f /docker-entrypoint-initdb.d/04-catalog-price-filter.sql
+```
+
 ```sql
 SELECT p.name, v.sku, v.size, v.price_cop, i.stock_available
 FROM products p
