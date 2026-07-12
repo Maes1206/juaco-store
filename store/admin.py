@@ -7,7 +7,7 @@ from .models import Address, BlogCategory, BlogPost, Cart, CartItem, Favorite, O
 class ProductAdmin(admin.ModelAdmin):
     list_display = ("name", "brand", "price", "stock", "is_active")
     list_filter = ("brand", "is_active")
-    search_fields = ("name", "slug")
+    search_fields = ("name", "brand", "slug", "description", "tags")
 
 
 class CartItemInline(admin.TabularInline):

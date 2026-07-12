@@ -14,6 +14,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 
 from .forms import AccountDetailsForm, AddressForm, CheckoutForm, EmailOrUsernameAuthenticationForm, RegisterForm
 from .models import Address, BlogCategory, BlogPost, CartItem, Favorite, Order, OrderItem, Product
+from .search import UnifiedSearchService
 from .services import CheckoutError, create_order_from_cart, ensure_session_key, get_cart, shipping_cost_for
 
 
@@ -32,6 +33,12 @@ def page(request, name):
     if not template:
         raise Http404
     return render(request, f"store/{template}")
+
+
+@ensure_csrf_cookie
+def search(request):
+    results = UnifiedSearchService().search(request.GET.get("q"))
+    return render(request, "store/search.html", {"search_results": results})
 
 
 @ensure_csrf_cookie
@@ -408,6 +415,23 @@ def favorite_move_to_cart_api(request, favorite_id):
         item.save(update_fields=["quantity", "updated_at"])
     favorite.delete()
     return JsonResponse({"favorites": _favorite_payload(request.user), "cart": _cart_payload(cart)})
+
+@require_http_methods(["GET"])
+def session_info(request):
+    if request.user.is_authenticated:
+        return JsonResponse({
+            "authenticated": True,
+            "username": request.user.first_name or request.user.username,
+            "label": "Mi cuenta",
+            "href": "account.html",
+        })
+    return JsonResponse({
+        "authenticated": False,
+        "username": "",
+        "label": "Cuenta",
+        "href": "account-login.html",
+    })
+
 
 def health(request):
     return JsonResponse({"status": "ok"})

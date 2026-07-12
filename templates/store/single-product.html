@@ -91,8 +91,8 @@
               </div>
               <div class="header-middle-align-center">
                 <div class="header-search-area">
-                  <form class="header-searchbox">
-                    <input type="search" class="form-control" placeholder="Buscar">
+                  <form class="header-searchbox" action="buscar/" method="get" role="search">
+                    <input type="search" name="q" class="form-control" placeholder="Buscar productos y artículos" aria-label="Buscar productos y artículos" maxlength="100" required>
                     <button class="btn-submit" type="submit"><i class="pe-7s-search"></i></button>
                   </form>
                 </div>
@@ -351,13 +351,13 @@
                             </div>
                             <div class="col-md-12">
                               <div class="form-group">
-                                <label for="for_email">Email</label>
+                                <label for="for_email">Correo electrónico</label>
                                 <input id="for_email" class="form-control" type="email" placeholder="john.smith@example.com">
                               </div>
                             </div>
                             <div class="col-md-12">
                               <div class="form-group">
-                                <span class="title">Calificacion</span>
+                                <span class="title">Calificación</span>
                                 <ul class="review-rating">
                                   <li class="fa fa-star-o"></li>
                                   <li class="fa fa-star-o"></li>
@@ -369,19 +369,19 @@
                             </div>
                             <div class="col-md-12">
                               <div class="form-group">
-                                <label for="for_review-title">Titulo de la reseña</label>
-                                <input id="for_review-title" class="form-control" type="text" placeholder="Escribe un titulo para tu reseña">
+                                <label for="for_review-title">Título de la reseña</label>
+                                <input id="for_review-title" class="form-control" type="text" placeholder="Escribe un título para tu reseña">
                               </div>
                             </div>
                             <div class="col-md-12">
                               <div class="form-group">
                                 <label for="for_comment">Comentario (1500)</label>
-                                <textarea id="for_comment" class="form-control" placeholder="Escribe tu comentario aqui"></textarea>
+                                <textarea id="for_comment" class="form-control" placeholder="Escribe tu comentario aquí"></textarea>
                               </div>
                             </div>
                             <div class="col-md-12">
                               <div class="form-submit-btn">
-                                <button type="submit" class="btn-submit">Publicar comentario</button>
+                                <button type="submit" class="btn-submit">Publicar reseña</button>
                               </div>
                             </div>
                           </div>
@@ -400,10 +400,10 @@
                           <li class="fa fa-star"></li>
                           <li class="fa fa-star"></li>
                         </ul>
-                        <h3 class="title">Awesome shipping service!</h3>
-                        <h5 class="sub-title"><span>Nantu Nayal</span> no <span>Sep 30, 2022</span></h5>
-                        <p>It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</p>
-                        <a href="#/">Report as Inappropriate</a>
+                        <h3 class="title">Excelente servicio de envío</h3>
+                        <h5 class="sub-title"><span>Nantu Nayal</span> el <span>30 de septiembre de 2022</span></h5>
+                        <p>El envío fue rápido y el producto llegó muy bien protegido. La presentación, el empaque y la atención durante todo el proceso fueron excelentes.</p>
+                        <a href="#/">Reportar reseña</a>
                       </div>
                       <!--== End Reviews Content Item ==-->
 
@@ -416,10 +416,10 @@
                           <li class="fa fa-star-o"></li>
                           <li class="fa fa-star-o"></li>
                         </ul>
-                        <h3 class="title">Low Quality</h3>
-                        <h5 class="sub-title"><span>Oliv hala</span> no <span>Sep 30, 2022</span></h5>
-                        <p>My Favorite White Sneakers From Splurge To Save the 1500s is reproduced below for those interested. Sections 1.10.32 and 1.10.33 from "de Finibus Bonorum et Malorum" by Cicero are also reproduced in their exact original form, accompanied by English versions from the 1914 translation by H. Rackham.</p>
-                        <a href="#/">Report as Inappropriate</a>
+                        <h3 class="title">Calidad baja</h3>
+                        <h5 class="sub-title"><span>Olivia H.</span> el <span>30 de septiembre de 2022</span></h5>
+                        <p>El producto no cumplió por completo mis expectativas. La talla fue un poco diferente a la esperada y el acabado podría mejorar.</p>
+                        <a href="#/">Reportar reseña</a>
                       </div>
                       <!--== End Reviews Content Item ==-->
 
@@ -432,10 +432,10 @@
                           <li class="fa fa-star"></li>
                           <li class="fa fa-star"></li>
                         </ul>
-                        <h3 class="title">Excellent services!</h3>
-                        <h5 class="sub-title"><span>Halk Marron</span> no <span>Sep 30, 2022</span></h5>
-                        <p>The first line of Lorem Ipsum, "Lorem ipsum dolor sit amet..", comes from a line in section 1.10.32.</p>
-                        <a href="#/">Report as Inappropriate</a>
+                        <h3 class="title">Excelente atención</h3>
+                        <h5 class="sub-title"><span>Halk Marron</span> el <span>30 de septiembre de 2022</span></h5>
+                        <p>Muy buena atención y entrega puntual. El equipo resolvió mis dudas antes de la compra.</p>
+                        <a href="#/">Reportar reseña</a>
                       </div>
                       <!--== End Reviews Content Item ==-->
 
@@ -448,10 +448,10 @@
                           <li class="fa fa-star-o"></li>
                           <li class="fa fa-star-o"></li>
                         </ul>
-                        <h3 class="title">Price is very high</h3>
-                        <h5 class="sub-title"><span>Musa</span> no <span>Sep 30, 2022</span></h5>
-                        <p>Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old.</p>
-                        <a href="#/">Report as Inappropriate</a>
+                        <h3 class="title">El precio es muy alto</h3>
+                        <h5 class="sub-title"><span>Musa</span> el <span>30 de septiembre de 2022</span></h5>
+                        <p>El producto es de buena calidad, aunque considero que el precio podría ser más competitivo.</p>
+                        <a href="#/">Reportar reseña</a>
                       </div>
                       <!--== End Reviews Content Item ==-->
 
@@ -465,9 +465,9 @@
                           <li class="fa fa-star-o"></li>
                         </ul>
                         <h3 class="title">Normal</h3>
-                        <h5 class="sub-title"><span>Muhammad</span> no <span>Sep 30, 2022</span></h5>
-                        <p>There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour</p>
-                        <a href="#/">Report as Inappropriate</a>
+                        <h5 class="sub-title"><span>Muhammad</span> el <span>30 de septiembre de 2022</span></h5>
+                        <p>Buen producto para el uso diario. Es cómodo, se ve bien y corresponde a las fotos mostradas.</p>
+                        <a href="#/">Reportar reseña</a>
                       </div>
                       <!--== End Reviews Content Item ==-->
                     </div>
@@ -476,7 +476,7 @@
                     <div class="review-pagination">
                       <span class="pagination-pag">1</span>
                       <span class="pagination-pag">2</span>
-                      <span class="pagination-next">Next »</span>
+                      <span class="pagination-next">Siguiente »</span>
                     </div>
                     <!--== End Reviews Pagination Item ==-->
                   </div>
@@ -880,7 +880,7 @@
                 <del class="price-old">$85.00</del>
                 <span class="price">$70.00</span>
               </div>
-              <p>Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia,</p>
+              <p>El producto es de buena calidad, aunque considero que el precio podría ser más competitivo. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia,</p>
               <div class="quick-view-select">
                 <div class="quick-view-select-item">
                   <label for="forSize" class="form-label">Size:</label>
@@ -921,7 +921,7 @@
   <div class="aside-cart-wrapper offcanvas offcanvas-end" tabindex="-1" id="AsideOffcanvasCart" aria-labelledby="offcanvasRightLabel">
     <div class="offcanvas-header">
       <h1 id="offcanvasRightLabel"></h1>
-      <button class="btn-aside-cart-close" data-bs-dismiss="offcanvas" aria-label="Close">Shopping Cart <i class="fa fa-chevron-right"></i></button>
+      <button class="btn-aside-cart-close" data-bs-dismiss="offcanvas" aria-label="Cerrar">Carrito de compras <i class="fa fa-chevron-right"></i></button>
     </div>
     <div class="offcanvas-body">
       <ul class="aside-cart-product-list">
@@ -943,8 +943,8 @@
         </li>
       </ul>
       <p class="cart-total"><span>Subtotal:</span><span class="amount">$430.000 COP</span></p>
-      <a class="btn-theme" data-margin-bottom="10" href="shop-cart.html">View cart</a>
-      <a class="btn-theme" href="shop-checkout.html">Checkout</a>
+      <a class="btn-theme" data-margin-bottom="10" href="shop-cart.html">Ver carrito</a>
+      <a class="btn-theme" href="shop-checkout.html">Finalizar compra</a>
       <a class="bold-checkout-btn" href="shop-checkout.html" aria-label="Pagar con Bold">Pagar con <span>Bold</span></a>
     </div>
   </div>
@@ -954,18 +954,18 @@
   <aside class="aside-search-box-wrapper offcanvas offcanvas-top" tabindex="-1" id="AsideOffcanvasSearch" aria-labelledby="offcanvasTopLabel">
     <div class="offcanvas-header">
       <h5 class="d-none" id="offcanvasTopLabel">Aside Search</h5>
-      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"><i class="pe-7s-close"></i></button>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"><i class="pe-7s-close"></i></button>
     </div>
     <div class="offcanvas-body">
       <div class="container pt--0 pb--0">
         <div class="search-box-form-wrap">
           <div class="search-note">
-            <p>Start typing and press Enter to search</p>
+            <p>Escribe y presiona Enter para buscar</p>
           </div>
-          <form action="#" method="post">
+          <form action="buscar/" method="get" role="search">
             <div class="search-form position-relative">
-              <label for="search-input" class="visually-hidden">Search</label>
-              <input id="search-input" type="search" class="form-control" placeholder="Search entire store…">
+              <label for="search-input" class="visually-hidden">Buscar</label>
+              <input id="search-input" name="q" type="search" class="form-control" placeholder="Buscar productos y artículos" aria-label="Buscar productos y artículos" maxlength="100" required>
               <button class="search-button"><i class="fa fa-search"></i></button>
             </div>
           </form>
@@ -979,7 +979,7 @@
   <div class="off-canvas-wrapper offcanvas offcanvas-start" tabindex="-1" id="AsideOffcanvasMenu" aria-labelledby="offcanvasExampleLabel">
     <div class="offcanvas-header">
       <h1 id="offcanvasExampleLabel"></h1>
-      <button class="btn-menu-close" data-bs-dismiss="offcanvas" aria-label="Close">menu <i class="fa fa-chevron-left"></i></button>
+      <button class="btn-menu-close" data-bs-dismiss="offcanvas" aria-label="Cerrar">menu <i class="fa fa-chevron-left"></i></button>
     </div>
     <div class="offcanvas-body">
       <div class="info-items">

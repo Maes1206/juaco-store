@@ -3,7 +3,7 @@ import json
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from .models import Address, BlogPost, Cart, CartItem, Favorite, Order, Product
+from .models import Address, BlogCategory, BlogPost, Cart, CartItem, Favorite, Order, OrderItem, Product
 
 
 User = get_user_model()
@@ -38,6 +38,31 @@ class StoreFlowTests(TestCase):
         detail = self.client.get(f"/blog/{post.slug}/")
         self.assertContains(detail, post.summary)
         self.assertContains(detail, "Categorías")
+
+    def test_unified_search_matches_product_and_blog_tags_without_accents(self):
+        self.product.tags = ["Edición limitada", "Colección urbana"]
+        self.product.save(update_fields=["tags"])
+        product_response = self.client.get("/buscar/?q=edicion+limitada")
+        self.assertEqual(product_response.status_code, 200)
+        self.assertContains(product_response, self.product.name)
+        self.assertContains(product_response, "Edición limitada")
+
+        category = BlogCategory.objects.create(name="Guías expertas", slug="guias-expertas")
+        post = BlogPost.objects.create(
+            category=category,
+            title="Cómo limpiar tus sneakers blancos",
+            slug="limpiar-sneakers-blancos-test",
+            summary="Una guía clara para conservar tus tenis.",
+            content="Pasos de limpieza para materiales delicados.",
+            image="assets/img/blog/juaco-blog-cover-02.png",
+            image_alt="Sneakers blancos limpios",
+            tags=["Cuidado premium", "Limpieza profunda"],
+            published_at="2026-07-12T12:00:00Z",
+        )
+        blog_response = self.client.get("/buscar/?q=cuidado+premium")
+        self.assertEqual(blog_response.status_code, 200)
+        self.assertContains(blog_response, post.title)
+        self.assertContains(blog_response, "Cuidado premium")
 
     def test_registration_redirects_to_account(self):
         response = self.client.post(
@@ -184,6 +209,22 @@ class StoreFlowTests(TestCase):
         self.assertEqual(Order.objects.count(), 0)
         self.assertContains(response, "términos y condiciones")
 
+    def test_account_orders_show_product_preview_and_link(self):
+        user = User.objects.create_user(username="historial", password="ClaveSegura123!")
+        order = Order.objects.create(
+            user=user, number="JS-PREVIEW-0001", recipient_name="Cliente Prueba", phone="300",
+            address_line_1="Calle 1", department="Antioquia", city="Medellín",
+            subtotal=self.product.price, total=self.product.price,
+        )
+        OrderItem.objects.create(
+            order=order, product=self.product, product_name=self.product.name,
+            product_image=self.product.image, unit_price=self.product.price, quantity=1,
+        )
+        self.client.force_login(user)
+        response = self.client.get("/account.html?tab=orders")
+        self.assertContains(response, self.product.name)
+        self.assertContains(response, self.product.image)
+        self.assertContains(response, f"single-product.html?producto={self.product.slug}")
     def test_order_detail_scoped_to_owner(self):
         owner = User.objects.create_user(username="dueno", password="ClaveSegura123!")
         other = User.objects.create_user(username="ajeno", password="ClaveSegura123!")

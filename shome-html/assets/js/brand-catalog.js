@@ -57,8 +57,14 @@
   document.getElementById('catalog-breadcrumb').textContent = collection.label;
 
   var pageHeader = document.getElementById('catalog-page-header');
+  // El catálogo usa banners propios por marca. Se desactiva el parallax
+  // genérico de la cabecera para que no sobrescriba esta imagen estática.
+  pageHeader.classList.remove('has-parallax-background');
+  pageHeader.style.removeProperty('--page-parallax-image');
+  pageHeader.style.removeProperty('--page-parallax-position');
+  pageHeader.style.removeProperty('--page-parallax-offset');
   pageHeader.style.backgroundImage = 'url("' + collection.banner + '")';
-  pageHeader.style.backgroundPosition = 'center';
+  pageHeader.style.backgroundPosition = 'center center';
   pageHeader.style.backgroundRepeat = 'no-repeat';
   pageHeader.style.backgroundSize = 'cover';
 

@@ -9,6 +9,7 @@ urlpatterns = [
     path("index.html", views.page, {"name": "home"}),
     path("about-us.html", views.page, {"name": "about"}, name="about"),
     path("contact.html", views.page, {"name": "contact"}, name="contact"),
+    path("buscar/", views.search, name="search"),
     path("blog.html", views.blog, name="blog"),
     path("blog-details.html", views.blog_detail, name="blog_detail_legacy"),
     path("blog/<slug:slug>/", views.blog_detail, name="blog_detail"),
@@ -35,6 +36,7 @@ urlpatterns = [
     path("api/cart/", views.cart_api, name="cart_api"),
     path("api/cart/items/", views.cart_add_api, name="cart_add_api"),
     path("api/cart/items/<int:item_id>/", views.cart_item_api, name="cart_item_api"),
+    path("api/session/", views.session_info, name="session_info"),
 ]
 
 handler404 = views.not_found

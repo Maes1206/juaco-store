@@ -90,8 +90,8 @@
               </div>
               <div class="header-middle-align-center">
                 <div class="header-search-area">
-                  <form class="header-searchbox">
-                    <input type="search" class="form-control" placeholder="Buscar">
+                  <form class="header-searchbox" action="buscar/" method="get" role="search">
+                    <input type="search" name="q" class="form-control" placeholder="Buscar productos y artículos" aria-label="Buscar productos y artículos" maxlength="100" required>
                     <button class="btn-submit" type="submit"><i class="pe-7s-search"></i></button>
                   </form>
                 </div>
@@ -180,7 +180,7 @@
         <div class="row">
           <div class="col-md-12">
             <div class="shopping-cart-form table-responsive">
-              <form action="#" method="post">
+              <form action="buscar/" method="get" role="search">
                 <table class="table text-center">
                   <thead>
                     <tr>
@@ -305,7 +305,7 @@
               </div>
               <span data-bs-toggle="collapse" data-bs-target="#CategoriesTwo" aria-expanded="true" role="button">Calcular env&iacute;o</span>
               <div id="CategoriesTwo" class="collapse show" data-bs-parent="#CategoriesAccordion">
-                <form action="#" method="post">
+                <form action="buscar/" method="get" role="search">
                   <div class="row row-gutter-50">
                     <div class="col-md-12">
                       <div class="form-group">
@@ -352,7 +352,7 @@
                   <p>Ingresa tu c&oacute;digo de descuento si tienes uno.</p>
                 </div>
               </div>
-              <form action="#" method="post">
+              <form action="buscar/" method="get" role="search">
                 <div class="row">
                   <div class="col-md-12">
                     <div class="form-group">
@@ -643,7 +643,7 @@
   <aside class="aside-search-box-wrapper offcanvas offcanvas-top" tabindex="-1" id="AsideOffcanvasSearch" aria-labelledby="offcanvasTopLabel">
     <div class="offcanvas-header">
       <h5 class="d-none" id="offcanvasTopLabel">Aside Search</h5>
-      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"><i class="pe-7s-close"></i></button>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"><i class="pe-7s-close"></i></button>
     </div>
     <div class="offcanvas-body">
       <div class="container pt--0 pb--0">
@@ -651,10 +651,10 @@
           <div class="search-note">
             <p>Escribe y presiona Enter para buscar</p>
           </div>
-          <form action="#" method="post">
+          <form action="buscar/" method="get" role="search">
             <div class="search-form position-relative">
               <label for="search-input" class="visually-hidden">Buscar</label>
-              <input id="search-input" type="search" class="form-control" placeholder="Buscar en toda la tienda...">
+              <input id="search-input" name="q" type="search" class="form-control" placeholder="Buscar productos y artículos" aria-label="Buscar productos y artículos" maxlength="100" required>
               <button class="search-button"><i class="fa fa-search"></i></button>
             </div>
           </form>

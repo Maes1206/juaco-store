@@ -143,6 +143,34 @@ body {
 .text-danger,
 .checkout-field-error { display: block; margin-top: 6px; line-height: 1.45; }
 
+/* Vista previa del producto dentro del historial de pedidos. */
+.orders-table .order-product-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 230px;
+  color: var(--juaco-ink);
+  text-align: left;
+}
+.orders-table .order-product-preview:hover { color: var(--juaco-red); }
+.orders-table .order-product-preview img {
+  width: 64px;
+  height: 64px;
+  flex: 0 0 64px;
+  border: 1px solid var(--juaco-line);
+  border-radius: 8px;
+  background: var(--juaco-soft);
+  object-fit: contain;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.orders-table .order-product-preview:hover img {
+  border-color: rgba(235, 62, 50, 0.45);
+  transform: scale(1.03);
+}
+.order-product-preview__body { display: flex; min-width: 0; flex-direction: column; gap: 4px; }
+.order-product-preview__body strong { max-width: 190px; font-size: 13.5px; line-height: 1.4; }
+.order-product-preview__body small { color: var(--juaco-muted); font-size: 12px; }
+.order-product-unavailable { color: var(--juaco-muted); font-size: 13px; }
 /* Ajustes táctiles y responsive. */
 @media (hover: none) {
   .product-item:hover { box-shadow: none; transform: none; }
@@ -174,3 +202,82 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Búsqueda unificada: resultados de productos, categorías y etiquetas del blog. */
+.search-results-area { padding: 84px 0 92px; }
+.search-results-form { max-width: 860px; margin: 0 auto 30px; }
+.search-results-form > label { display: block; margin-bottom: 10px; color: var(--juaco-ink); font-weight: 600; }
+.search-results-form__control { display: flex; gap: 10px; }
+.search-results-form__control input { min-width: 0; width: 100%; height: 52px; padding: 0 17px; border: 1px solid var(--juaco-line); border-radius: 6px; color: var(--juaco-ink); }
+.search-results-form__control input:focus { border-color: var(--juaco-red); box-shadow: 0 0 0 3px rgba(235, 62, 50, 0.13); outline: 0; }
+.search-results-form__control .btn-theme { min-width: 142px; padding: 0 19px; border: 0; white-space: nowrap; }
+.search-results-summary { max-width: 860px; margin: 0 auto 42px; color: var(--juaco-muted); line-height: 1.65; }
+.search-results-summary strong { color: var(--juaco-ink); }
+.search-result-group { margin-top: 46px; }
+.search-result-group__heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; padding-bottom: 13px; border-bottom: 1px solid var(--juaco-line); }
+.search-result-group__heading h2 { margin: 0; font-size: 25px; }
+.search-result-group__count { color: var(--juaco-muted); font-size: 18px; font-weight: 500; white-space: nowrap; }
+.search-product-card { display: flex; gap: 17px; margin-bottom: 25px; }
+.search-product-card__image { display: flex; width: 116px; height: 128px; flex: 0 0 116px; align-items: center; justify-content: center; border: 1px solid var(--juaco-line); border-radius: 8px; background: #fff; overflow: hidden; }
+.search-product-card__image img { width: 100%; height: 100%; object-fit: contain; transition: transform .2s ease; }
+.search-product-card:hover .search-product-card__image img { transform: scale(1.04); }
+.search-product-card__body { min-width: 0; padding: 5px 0; }
+.search-product-card__body > p { margin: 0 0 5px; color: var(--juaco-red); font-size: 12px; font-weight: 700; text-transform: uppercase; }
+.search-product-card h3, .search-blog-card h3 { margin: 0 0 8px; font-size: 16px; line-height: 1.45; }
+.search-product-card h3 a, .search-blog-card h3 a { color: var(--juaco-ink); }
+.search-product-card h3 a:hover, .search-blog-card h3 a:hover { color: var(--juaco-red); }
+.search-product-card strong { font-size: 14px; }
+.search-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 11px 0 0; padding: 0; list-style: none; }
+.search-tags li { padding: 3px 8px; border-radius: 999px; background: var(--juaco-soft); color: var(--juaco-muted); font-size: 11px; line-height: 1.35; }
+.search-blog-card { display: flex; gap: 18px; margin-bottom: 28px; }
+.search-blog-card__image { width: 150px; height: 116px; flex: 0 0 150px; overflow: hidden; border-radius: 8px; background: var(--juaco-soft); }
+.search-blog-card__image img { width: 100%; height: 100%; object-fit: cover; transition: transform .2s ease; }
+.search-blog-card:hover .search-blog-card__image img { transform: scale(1.04); }
+.search-blog-card__body { min-width: 0; }
+.search-blog-card__meta { margin: 0 0 6px; color: var(--juaco-red); font-size: 12px; font-weight: 600; }
+.search-blog-card__body > p:not(.search-blog-card__meta) { margin-bottom: 0; color: var(--juaco-muted); font-size: 13px; line-height: 1.55; }
+@media only screen and (max-width: 575px) {
+  .search-results-area { padding: 52px 0 60px; }
+  .search-results-form__control { flex-direction: column; }
+  .search-results-form__control .btn-theme { min-height: 48px; }
+  .search-product-card, .search-blog-card { gap: 13px; }
+  .search-product-card__image { width: 94px; height: 106px; flex-basis: 94px; }
+  .search-blog-card__image { width: 108px; height: 96px; flex-basis: 108px; }
+}
+/* El buscador conserva el botón plano original, sin elevación ni sombras translúcidas. */
+.search-results-form__control input:focus { box-shadow: none; }
+.search-results-form__control .btn-theme,
+.search-results-form__control .btn-theme:hover,
+.search-results-form__control .btn-theme:active {
+  box-shadow: none;
+  transform: none;
+}
+.search-results-form__control .btn-theme:hover {
+  background-color: #fff;
+  border-color: var(--juaco-red);
+  color: var(--juaco-red);
+}
+.search-results-form__control .btn-theme:focus-visible {
+  box-shadow: none;
+  outline: 2px solid var(--juaco-ink);
+  outline-offset: 2px;
+}
+/* Iconografía de resumen de cuenta: clara, funcional y sin decoración excesiva. */
+.account-stat-icon { display: block; margin-bottom: 9px; color: var(--juaco-red); font-size: 19px; line-height: 1; }
+.account-stat-icon i { display: inline-block; min-width: 20px; }
+/* Menú de cuenta: un único contorno continuo, incluido el formulario de salida. */
+.myaccount-tab-menu.nav-tabs {
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.myaccount-tab-menu.nav-tabs .nav-link {
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-bottom: 1px solid #e5e5e5;
+}
+.myaccount-tab-menu.nav-tabs form { display: block; width: 100%; margin: 0; }
+.myaccount-tab-menu.nav-tabs form .nav-link { border-bottom: 0; }
+/* El hover nativo ya anima imagen y acciones; no elevar la tarjeta completa. */
+.product-item:hover { box-shadow: none; transform: none; }

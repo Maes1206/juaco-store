@@ -11,6 +11,7 @@ class Product(models.Model):
     description = models.TextField(blank=True)
     price = models.DecimalField(max_digits=12, decimal_places=2)
     image = models.CharField(max_length=255)
+    tags = models.JSONField("etiquetas", default=list, blank=True)
     sizes = models.JSONField(default=list, blank=True)
     stock = models.PositiveIntegerField(default=20)
     is_active = models.BooleanField(default=True)
