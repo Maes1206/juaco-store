@@ -1,0 +1,41 @@
+<div class="tab-pane fade{% if active_tab == 'addresses' %} show active{% endif %}" id="addresses" role="tabpanel" aria-labelledby="addresses-tab">
+  <div class="myaccount-content">
+    <h3>Direcciones</h3>
+    <p class="saved-message">Te quedan <strong>{{ remaining_address_slots }} de 5</strong> entradas para tus direcciones.</p>
+    {% for message in messages %}<p class="saved-message">{{ message }}</p>{% endfor %}
+
+    <div class="row mb-4">
+      {% for address in addresses %}
+      <div class="col-lg-6 mb-3">
+        <div class="border p-4 h-100">
+          <p class="mb-2"><strong>{{ address.label }}</strong>{% if address.is_default %} <span class="text-danger">· Principal</span>{% endif %}</p>
+          <p class="mb-3">{{ address.recipient_name }}<br>{{ address.address_line_1 }}{% if address.address_line_2 %}, {{ address.address_line_2 }}{% endif %}<br>{{ address.city }}, {{ address.department }}{% if address.postal_code %} · {{ address.postal_code }}{% endif %}<br>Tel. {{ address.phone }}</p>
+          <a href="?editar={{ address.id }}&tab=addresses" class="check-btn sqr-btn">Editar</a>
+          <form action="account-addresses/{{ address.id }}/delete/" method="post" class="d-inline">{% csrf_token %}<button class="check-btn sqr-btn" type="submit">Eliminar</button></form>
+        </div>
+      </div>
+      {% empty %}
+      <div class="col-12"><p class="mb-0">Aún no tienes direcciones guardadas.</p></div>
+      {% endfor %}
+    </div>
+
+    <div class="account-details-form border p-4">
+      <h4>{% if editing_address %}Editar dirección{% else %}Nueva dirección{% endif %}</h4>
+      <form action="{% if editing_address %}account-addresses/{{ editing_address.id }}/{% else %}account-addresses/{% endif %}" method="post">
+        {% csrf_token %}
+        <div class="row">
+          {% for field in address_form %}
+          <div class="{% if field.name == 'address_line_1' or field.name == 'address_line_2' %}col-12{% else %}col-lg-6{% endif %}">
+            <div class="single-input-item">
+              {% if field.name == 'is_default' %}<label>{{ field }} Usar como dirección principal</label>{% else %}<label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>{{ field }}{% endif %}
+              {% for error in field.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <button type="submit" class="btn-theme btn-sm">{% if editing_address %}Guardar cambios{% else %}Guardar dirección{% endif %}</button>
+        {% if editing_address %}<a href="account.html?tab=addresses" class="check-btn sqr-btn">Cancelar</a>{% endif %}
+      </form>
+    </div>
+  </div>
+</div>

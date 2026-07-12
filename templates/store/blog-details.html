@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zxx">
+<html lang="es">
 
 <head>
     <base href="/">
@@ -10,7 +10,7 @@
     <meta name="keywords" content="footwear, shoes, modern, shop, store, ecommerce, responsive, e-commerce"/>
     <meta name="author" content="codecarnival"/>
 
-    <title>Blog Details :: Shome - Shoes eCommerce Website Template</title>
+    <title>{{ post.title }} | Juaco Store</title>
 
     <!--== Favicon ==-->
     <link rel="icon" type="image/png" href="assets/img/favicon.png" />
@@ -35,6 +35,7 @@
 
     <!--== Main Style CSS ==-->
     <link href="assets/css/style.css" rel="stylesheet" />
+    <link href="assets/css/juaco-ux.css" rel="stylesheet" />
 
     <!--[if lt IE 9]>
     <script src="//oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
@@ -108,7 +109,7 @@
                   <div class="shopping-cart">
                     <button class="shopping-cart-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#AsideOffcanvasCart" aria-controls="offcanvasRightLabel">
                       <i class="pe-7s-shopbag icon"></i>
-                      <sup class="shop-count">02</sup>
+                      <sup class="shop-count" aria-label="{{ global_cart_count }} artículos en el carrito">{{ global_cart_count }}</sup>
                     </button>
                   </div>
                   <button class="btn-menu" type="button" data-bs-toggle="offcanvas" data-bs-target="#AsideOffcanvasMenu" aria-controls="AsideOffcanvasMenu">
@@ -144,24 +145,7 @@
                     </ul>
                   </li>
 
-                  <li class="has-submenu"><a href="#/"><span>Blog</span></a>
-                    <ul class="submenu-nav submenu-nav-mega">
-                      <li class="mega-menu-item"><a href="#/" class="mega-title">Blog Layout</a>
-                        <ul>
-                          <li><a href="blog.html">Blog Grid</a></li>
-                          <li><a href="blog.html">Blog Left Sidebar</a></li>
-                          <li><a href="blog.html">Blog Right Sidebar</a></li>
-                        </ul>
-                      </li>
-                      <li class="mega-menu-item"><a href="#/" class="mega-title">Single Blog</a>
-                        <ul>
-                          <li><a href="blog-details.html">Blog Details</a></li>
-                          <li><a href="blog-details.html">Blog Details Left Sidebar</a></li>
-                          <li><a href="blog-details.html">Blog Details Right Sidebar</a></li>
-                        </ul>
-                      </li>
-                    </ul>
-                  </li>
+                  <li><a href="blog.html"><span>Blog</span></a></li>
                   <li><a href="contact.html"><span>Contacto</span></a></li>
                 </ul>
               </div>
@@ -180,12 +164,12 @@
         <div class="row">
           <div class="col-12">
             <div class="page-header-content">
-              <h2 class="title" data-aos="fade-down" data-aos-duration="1000">Blog Details</h2>
+              <h2 class="title" data-aos="fade-down" data-aos-duration="1000">Artículo</h2>
               <nav class="breadcrumb-area" data-aos="fade-down" data-aos-duration="1200">
                 <ul class="breadcrumb">
                   <li><a href="index.html">Inicio</a></li>
                   <li class="breadcrumb-sep">//</li>
-                  <li>Blog Details</li>
+                  <li>Artículo</li>
                 </ul>
               </nav>
             </div>
@@ -199,6 +183,39 @@
     <section class="blog-details-area">
       <div class="container">
         <div class="row justify-content-between">
+          <div class="col-xl-8" data-aos="fade-right">
+            <article class="blog-details-content-wrap">
+              <div class="blog-details-item">
+                <div class="blog-details-thumb"><img src="{{ post.image }}" width="750" height="459" alt="{{ post.image_alt }}"></div>
+                <div class="blog-meta-post"><ul>
+                  <li class="post-date"><i class="fa fa-calendar"></i><a href="{% url 'blog' %}">{{ post.published_at|date:"j F Y" }}</a></li>
+                  <li class="author-info"><i class="fa fa-user"></i><span>{{ post.author }}</span></li>
+                </ul></div>
+                <h1 class="main-title">{{ post.title }}</h1>
+                <div class="details-wrapper details-wrapper-style1" data-margin-bottom="38">
+                  <p>{{ post.summary }}</p>
+                  <blockquote><div class="inner-content"><p>Una buena elección no sigue una tendencia a ciegas: se adapta a tu forma de vivir la ciudad.</p><span class="user-name">{{ post.author }}</span><img class="inner-shape" src="assets/img/icons/quote2.webp" width="82" height="59" alt="Comillas"></div></blockquote>
+                  <p>{{ post.content|linebreaksbr }}</p>
+                </div>
+                <div class="blog-details-footer">
+                  <div class="tage-list"><span>Etiquetas:</span>{% for tag in post.tags %} <a href="{% url 'blog' %}">{{ tag }}</a>{% if not forloop.last %},{% endif %}{% endfor %}</div>
+                  <div class="social-icons"><span>{{ post.reading_time }} min de lectura</span></div>
+                </div>
+              </div>
+            </article>
+          </div>
+          <aside class="col-xl-4" data-aos="fade-left">
+            <div class="blog-sidebar">
+              <div class="blog-sidebar-search"><div class="sidebar-search-form"><form method="get" action="{% url 'blog' %}"><input type="search" name="q" placeholder="Buscar en el blog" aria-label="Buscar en el blog"><button type="submit" aria-label="Buscar"><i class="fa fa-search"></i></button></form></div></div>
+              <div class="blog-sidebar-wrap">
+                <div class="blog-sidebar-category"><h2 class="sidebar-title" data-margin-bottom="23">Categorías</h2><div class="sidebar-category"><ul class="category-list">{% for category in categories %}<li><a href="{% url 'blog' %}?categoria={{ category.slug }}">{{ category.name }}<span> ({{ category.published_count }})</span></a></li>{% endfor %}</ul></div></div>
+                <div class="blog-sidebar-post"><h2 class="sidebar-title">Artículos recientes</h2><div class="sidebar-post">{% for recent in recent_posts %}<div class="single-post"><div class="post-thumb"><a href="{% url 'blog_detail' recent.slug %}"><img src="{{ recent.image }}" width="98" height="101" alt="{{ recent.image_alt }}"></a></div><div class="post-content"><span class="date"><a href="{% url 'blog_detail' recent.slug %}"><i class="fa fa-calendar"></i>{{ recent.published_at|date:"d M Y" }}</a></span><h3 class="title"><a href="{% url 'blog_detail' recent.slug %}">{{ recent.title }}</a></h3></div></div>{% endfor %}</div></div>
+                <div class="blog-sidebar-tags"><h2 class="sidebar-title">Temas</h2><div class="sidebar-tags"><ul class="tags-list mb--0">{% for tag in tags %}<li><a href="{% url 'blog' %}">{{ tag }}</a></li>{% endfor %}</ul></div></div>
+              </div>
+            </div>
+          </aside>
+        </div>
+        <div class="row justify-content-between" style="display: none" aria-hidden="true">
           <div class="col-xl-8" data-aos="fade-right">
             <div class="blog-details-content-wrap">
               <div class="blog-details-item">
@@ -778,8 +795,6 @@
 
 <!--=== jQuery Custom Js ===-->
 <script src="assets/js/catalog-data.js"></script>
-<script src="assets/js/blog-articles.js"></script>
-<script src="assets/js/blog-detail.js"></script>
 <script src="assets/js/custom.js"></script>
 <script src="assets/js/product-share.js"></script>
 <script src="assets/js/footer-info.js"></script>

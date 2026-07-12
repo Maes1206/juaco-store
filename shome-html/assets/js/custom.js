@@ -15,7 +15,10 @@
     if (parallaxHeaders.length) {
       parallaxHeaders.forEach(function (header) {
         var source = header.getAttribute('data-parallax-img') || header.getAttribute('data-bg-img');
-        var imageUrl = new URL(source, window.location.href).href;
+        // Resuelve las imágenes desde el <base> del sitio. Con rutas como
+        // /blog/<slug>/ usar window.location.href convertiría "assets/..."
+        // en /blog/<slug>/assets/..., donde el banner no existe.
+        var imageUrl = new URL(source, document.baseURI).href;
         var imagePosition = source === 'assets/img/shop/bannerblog.png' ? 'right bottom' : 'center center';
         header.classList.add('has-parallax-background');
         header.style.setProperty('--page-parallax-image', 'url("' + imageUrl + '")');

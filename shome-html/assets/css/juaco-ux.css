@@ -1,0 +1,176 @@
+/* Juaco Store — capa de refinamiento UI/UX sobre el tema base. */
+:root {
+  --juaco-red: #eb3e32;
+  --juaco-ink: #1f2226;
+  --juaco-muted: #686b70;
+  --juaco-line: #e7e8ea;
+  --juaco-soft: #f7f7f8;
+  --juaco-radius: 10px;
+  --juaco-shadow: 0 12px 34px rgba(31, 34, 38, 0.09);
+}
+
+html { scroll-behavior: smooth; }
+body {
+  color: var(--juaco-ink);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+::selection { background: rgba(235, 62, 50, 0.2); color: var(--juaco-ink); }
+
+/* Estados de teclado visibles y coherentes. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid rgba(235, 62, 50, 0.32);
+  outline-offset: 3px;
+}
+:where(button, a, input, select, textarea) { touch-action: manipulation; }
+:where(button, input, select, textarea):disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+/* Botones: misma identidad, mejor tacto y lectura. */
+.btn-theme,
+.btn-theme-border,
+.btn-cart,
+.btn-login,
+.check-btn,
+.sqr-btn {
+  border-radius: 6px;
+  transition: color 0.2s ease, background-color 0.2s ease,
+    border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+.btn-theme:hover,
+.btn-theme-border:hover,
+.btn-cart:hover,
+.btn-login:hover {
+  box-shadow: 0 8px 20px rgba(235, 62, 50, 0.18);
+  transform: translateY(-1px);
+}
+.btn-theme:active,
+.btn-theme-border:active,
+.btn-cart:active,
+.btn-login:active { box-shadow: none; transform: translateY(0); }
+
+/* Encabezado: acciones más claras sin cambiar su estructura. */
+.header-action-area a,
+.header-action-area button {
+  transition: color 0.2s ease, background-color 0.2s ease,
+    border-color 0.2s ease, transform 0.2s ease;
+}
+.header-action-area a:hover,
+.header-action-area button:hover { color: var(--juaco-red); transform: translateY(-1px); }
+.shop-count { box-shadow: 0 0 0 2px #fff; }
+
+/* Tarjetas de producto: elevación discreta y consistente. */
+.product-item {
+  border-radius: var(--juaco-radius);
+  transition: transform 0.24s ease, box-shadow 0.24s ease;
+}
+.product-item:hover {
+  box-shadow: var(--juaco-shadow);
+  transform: translateY(-4px);
+}
+.product-item .product-thumb { border-radius: var(--juaco-radius); overflow: hidden; }
+.product-item .product-info .title a { transition: color 0.2s ease; }
+.product-item .product-info .title a:hover { color: var(--juaco-red); }
+
+/* Formularios: foco claro y superficies más cómodas. */
+.form-control,
+.form-select,
+.single-input-item input,
+.single-input-item textarea,
+.single-input-item select,
+.checkout-block input,
+.checkout-block textarea,
+.checkout-block select {
+  border-radius: 6px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+.form-control:focus,
+.form-select:focus,
+.single-input-item input:focus,
+.single-input-item textarea:focus,
+.single-input-item select:focus,
+.checkout-block input:focus,
+.checkout-block textarea:focus,
+.checkout-block select:focus {
+  border-color: var(--juaco-red) !important;
+  box-shadow: 0 0 0 3px rgba(235, 62, 50, 0.11) !important;
+  outline: 0;
+}
+.login-form-content,
+.register-form-content,
+.myaccount-content,
+.checkout-block,
+.checkout-summary {
+  border-radius: var(--juaco-radius);
+}
+
+/* Cuenta, carrito y favoritos: lectura y estados vacíos. */
+.myaccount-content { transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+.myaccount-tab-menu { border-radius: 8px; overflow: hidden; }
+.myaccount-tab-menu.nav-tabs .nav-link { min-height: 50px; }
+.myaccount-tab-menu.nav-tabs .nav-link.active { font-weight: 600; }
+.shopping-cart-table,
+.shopping-wishlist-table,
+.myaccount-table { border-radius: var(--juaco-radius); }
+.shopping-cart-form .table tbody tr,
+.shopping-wishlist-table .table tbody tr,
+.myaccount-table tbody tr { transition: background-color 0.18s ease; }
+.shopping-cart-form .table tbody tr:hover,
+.shopping-wishlist-table .table tbody tr:hover,
+.myaccount-table tbody tr:hover { background-color: rgba(235, 62, 50, 0.035); }
+.cart-empty-row td,
+.favorite-empty-row td,
+.checkout-empty {
+  color: var(--juaco-muted);
+  padding: 48px 24px !important;
+}
+.cart-empty-row a,
+.favorite-empty-row a { color: var(--juaco-red); font-weight: 600; }
+
+/* Mensajes de sistema más fáciles de identificar. */
+.alert,
+.checkout-alert,
+.saved-message {
+  border: 0;
+  border-left: 4px solid var(--juaco-red);
+  border-radius: 6px;
+  line-height: 1.55;
+}
+.alert-success { border-left-color: #198754; }
+.text-danger,
+.checkout-field-error { display: block; margin-top: 6px; line-height: 1.45; }
+
+/* Ajustes táctiles y responsive. */
+@media (hover: none) {
+  .product-item:hover { box-shadow: none; transform: none; }
+  .btn-theme:hover,
+  .btn-theme-border:hover,
+  .btn-cart:hover,
+  .btn-login:hover { box-shadow: none; transform: none; }
+}
+
+@media only screen and (max-width: 767px) {
+  .page-header-content .title { font-size: 30px; line-height: 1.18; }
+  .page-header-content .breadcrumb { justify-content: center; }
+  .my-account-area { padding-top: 48px; padding-bottom: 60px; }
+  .myaccount-content { padding: 22px 18px; }
+  .checkout-block,
+  .checkout-summary { padding: 22px 18px; }
+  .account-stats { gap: 10px; }
+  .account-stat { min-width: calc(50% - 5px); padding: 18px 12px; }
+  .order-confirmation-actions .btn-theme,
+  .checkout-place-order { width: 100%; text-align: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -35,6 +35,7 @@
 
     <!--== Main Style CSS ==-->
     <link href="assets/css/style.css" rel="stylesheet" />
+    <link href="assets/css/juaco-ux.css" rel="stylesheet" />
 
     <!--[if lt IE 9]>
     <script src="//oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
@@ -108,7 +109,7 @@
                   <div class="shopping-cart">
                     <button class="shopping-cart-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#AsideOffcanvasCart" aria-controls="offcanvasRightLabel">
                       <i class="pe-7s-shopbag icon"></i>
-                      <sup class="shop-count">02</sup>
+                      <sup class="shop-count" aria-label="{{ global_cart_count }} artículos en el carrito">{{ global_cart_count }}</sup>
                     </button>
                   </div>
                   <button class="btn-menu" type="button" data-bs-toggle="offcanvas" data-bs-target="#AsideOffcanvasMenu" aria-controls="AsideOffcanvasMenu">
@@ -139,24 +140,7 @@
                     </ul>
                   </li>
 
-                  <li class="has-submenu"><a href="#/"><span>Blog</span></a>
-                    <ul class="submenu-nav submenu-nav-mega">
-                      <li class="mega-menu-item"><a href="#/" class="mega-title">Blog Layout</a>
-                        <ul>
-                          <li><a href="blog.html">Blog Grid</a></li>
-                          <li><a href="blog.html">Blog Left Sidebar</a></li>
-                          <li><a href="blog.html">Blog Right Sidebar</a></li>
-                        </ul>
-                      </li>
-                      <li class="mega-menu-item"><a href="#/" class="mega-title">Single Blog</a>
-                        <ul>
-                          <li><a href="blog-details.html">Blog Details</a></li>
-                          <li><a href="blog-details.html">Blog Details Left Sidebar</a></li>
-                          <li><a href="blog-details.html">Blog Details Right Sidebar</a></li>
-                        </ul>
-                      </li>
-                    </ul>
-                  </li>
+                  <li><a href="blog.html"><span>Blog</span></a></li>
                   <li><a href="contact.html"><span>Contacto</span></a></li>
                 </ul>
               </div>
@@ -205,32 +189,26 @@
             <div class="register-form-content">
               <form action="account-register.html" method="post">
                 {% csrf_token %}
-                {% if form.errors %}<div class="alert alert-danger">{{ form.errors }}</div>{% endif %}
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                  {% for error in form.non_field_errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
+                </div>
+                {% endif %}
                 <div class="row">
+                  {% for field in form %}
                   <div class="col-12">
                     <div class="form-group">
-                      <label for="username">Nombre de usuario <span class="required">*</span></label>
-                      <input id="username" name="username" class="form-control" type="text" value="{{ form.username.value|default:'' }}" autocomplete="username" required>
+                      <label for="{{ field.id_for_label }}">{{ field.label }} <span class="required">*</span></label>
+                      {{ field }}
+                      {% if field.name == 'password1' %}
+                      <div class="password-strength-meter"><div class="password-strength-meter-bar" id="password-strength-bar"></div></div>
+                      <small class="password-strength-label" id="password-strength-label"></small>
+                      {% endif %}
+                      {% if field.help_text %}<small class="form-text text-muted d-block mt-1">{{ field.help_text|safe }}</small>{% endif %}
+                      {% for error in field.errors %}<small class="text-danger d-block mt-1">{{ error }}</small>{% endfor %}
                     </div>
                   </div>
-                  <div class="col-12">
-                    <div class="form-group">
-                      <label for="email">Correo electr&oacute;nico <span class="required">*</span></label>
-                      <input id="email" name="email" class="form-control" type="email" value="{{ form.email.value|default:'' }}" autocomplete="email" required>
-                    </div>
-                  </div>
-                  <div class="col-12">
-                    <div class="form-group">
-                      <label for="password">Contrase&ntilde;a <span class="required">*</span></label>
-                      <input id="password" name="password1" class="form-control" type="password" autocomplete="new-password" required>
-                    </div>
-                  </div>
-                  <div class="col-12">
-                    <div class="form-group">
-                      <label for="password2">Confirmar contrase&ntilde;a <span class="required">*</span></label>
-                      <input id="password2" name="password2" class="form-control" type="password" autocomplete="new-password" required>
-                    </div>
-                  </div>
+                  {% endfor %}
                   <div class="col-12">
                     <div class="form-group mb--0">
                       <button class="btn-register" type="submit">Crear cuenta</button>
@@ -574,6 +552,48 @@
 
 <script src="assets/js/payment-methods.js"></script>
 <script src="assets/js/cart.js"></script>
+<script>
+(function () {
+  var passwordInput = document.getElementById("{{ form.password1.id_for_label }}");
+  var bar = document.getElementById("password-strength-bar");
+  var label = document.getElementById("password-strength-label");
+  if (!passwordInput || !bar || !label) return;
+
+  var levels = [
+    { color: "#dc3545", text: "Muy débil" },
+    { color: "#dc3545", text: "Débil" },
+    { color: "#f0ad4e", text: "Regular" },
+    { color: "#eb3e32", text: "Buena" },
+    { color: "#28a745", text: "Fuerte" },
+  ];
+
+  function scorePassword(value) {
+    if (!value) return 0;
+    var score = 0;
+    if (value.length >= 8) score++;
+    if (value.length >= 12) score++;
+    if (/[a-z]/.test(value) && /[A-Z]/.test(value)) score++;
+    if (/\d/.test(value)) score++;
+    if (/[^A-Za-z0-9]/.test(value)) score++;
+    return Math.min(score, 4);
+  }
+
+  passwordInput.addEventListener("input", function () {
+    var value = passwordInput.value;
+    if (!value) {
+      bar.style.width = "0%";
+      label.textContent = "";
+      return;
+    }
+    var score = scorePassword(value);
+    var level = levels[score];
+    bar.style.width = ((score + 1) / 5 * 100) + "%";
+    bar.style.backgroundColor = level.color;
+    label.textContent = "Seguridad de la contraseña: " + level.text;
+    label.style.color = level.color;
+  });
+})();
+</script>
 </body>
 
 </html>

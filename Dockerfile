@@ -17,4 +17,4 @@ USER django
 EXPOSE 8000
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
-CMD ["gunicorn", "juaco_store.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "60"]
+CMD ["gunicorn", "juaco_store.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--worker-class", "gthread", "--threads", "4", "--keep-alive", "5", "--timeout", "60", "--graceful-timeout", "30", "--access-logfile", "-", "--error-logfile", "-"]

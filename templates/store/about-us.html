@@ -10,7 +10,7 @@
     <meta name="keywords" content="sneakers, tenis, zapatos, calzado, tienda, ecommerce, responsive, e-commerce"/>
     <meta name="author" content="codecarnival"/>
 
-    <title>Nosotros - Juaco sneakers eCommerce</title>
+    <title>Nosotros | Juaco Store</title>
 
     <!--== Favicon ==-->
     <link rel="icon" type="image/png" href="assets/img/favicon.png" />
@@ -35,6 +35,7 @@
 
     <!--== Main Style CSS ==-->
     <link href="assets/css/style.css" rel="stylesheet" />
+    <link href="assets/css/juaco-ux.css" rel="stylesheet" />
 
     <!--[if lt IE 9]>
     <script src="//oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
@@ -108,7 +109,7 @@
                   <div class="shopping-cart">
                     <button class="shopping-cart-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#AsideOffcanvasCart" aria-controls="offcanvasRightLabel">
                       <i class="pe-7s-shopbag icon"></i>
-                      <sup class="shop-count">02</sup>
+                      <sup class="shop-count" aria-label="{{ global_cart_count }} artículos en el carrito">{{ global_cart_count }}</sup>
                     </button>
                   </div>
                   <button class="btn-menu" type="button" data-bs-toggle="offcanvas" data-bs-target="#AsideOffcanvasMenu" aria-controls="AsideOffcanvasMenu">
@@ -139,24 +140,7 @@
                     </ul>
                   </li>
 
-                  <li class="has-submenu"><a href="#/"><span>Blog</span></a>
-                    <ul class="submenu-nav submenu-nav-mega">
-                      <li class="mega-menu-item"><a href="#/" class="mega-title">Diseno del blog</a>
-                        <ul>
-                          <li><a href="blog.html">Blog en cuadricula</a></li>
-                          <li><a href="blog.html">Blog barra izquierda</a></li>
-                          <li><a href="blog.html">Blog barra derecha</a></li>
-                        </ul>
-                      </li>
-                      <li class="mega-menu-item"><a href="#/" class="mega-title">Entrada individual</a>
-                        <ul>
-                          <li><a href="blog-details.html">Detalles del blog</a></li>
-                          <li><a href="blog-details.html">Detalles con barra izquierda</a></li>
-                          <li><a href="blog-details.html">Detalles con barra derecha</a></li>
-                        </ul>
-                      </li>
-                    </ul>
-                  </li>
+                  <li><a href="blog.html"><span>Blog</span></a></li>
                   <li><a href="contact.html"><span>Contacto</span></a></li>
                 </ul>
               </div>
@@ -249,9 +233,9 @@
         <div class="row">
           <div class="col-12">
             <div class="section-title text-center">
-              <h3 class="title">Our Team</h3>
+              <h3 class="title">Nuestro Equipo</h3>
               <div class="desc">
-                <p>There are many variations of passages of Lorem Ipsum available</p>
+                <p>Las personas detrás de Juaco Store</p>
               </div>
             </div>
           </div>
@@ -262,7 +246,7 @@
             <div class="team-item">
               <div class="inner-content">
                 <div class="thumb">
-                  <a href="about-us.html"><img src="assets/img/team/1.webp" width="270" height="270" alt="Image-HasTech"></a>
+                  <a href="about-us.html"><img src="assets/img/shop/emerson.jpeg" width="270" height="270" alt="Camilo Galindez"></a>
                   <div class="member-icons">
                     <a href="https://www.instagram.com/" target="_blank" rel="noopener" aria-label="Instagram"><i class="fa fa-instagram"></i></a>
                     <a href="https://wa.me/" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="fa fa-whatsapp"></i></a>
@@ -282,7 +266,7 @@
             <div class="team-item">
               <div class="inner-content">
                 <div class="thumb">
-                  <a href="about-us.html"><img src="assets/img/team/2.webp" width="270" height="270" alt="Image-HasTech"></a>
+                  <a href="about-us.html"><img src="assets/img/shop/juaco.jpeg" width="270" height="270" alt="Emerson Vivas"></a>
                   <div class="member-icons">
                     <a href="https://www.instagram.com/" target="_blank" rel="noopener" aria-label="Instagram"><i class="fa fa-instagram"></i></a>
                     <a href="https://wa.me/" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="fa fa-whatsapp"></i></a>
@@ -308,9 +292,9 @@
         <div class="row">
           <div class="col-12">
             <div class="section-title text-center">
-              <h3 class="title">Client Feedback</h3>
+              <h3 class="title">Opiniones de Clientes</h3>
               <div class="desc">
-                <p>There are many variations of passages of Lorem Ipsum available</p>
+                <p>Lo que dicen quienes ya compraron en Juaco Store</p>
               </div>
             </div>
           </div>
@@ -327,10 +311,10 @@
                         <img src="assets/img/testimonial/1.webp" width="90" height="90" alt="Image-HasTech">
                       </div>
                       <div class="testi-content">
-                        <p>Lorem ipsum dolor sit amel adipiscing elit, sed do eiusll tempor incididunt ut laborj et dolore magna.</p>
+                        <p>Pedí unas zapatillas un jueves y el sábado ya las tenía en la puerta de mi casa. La calidad es igual a la de las fotos, nada de sorpresas. Sin duda vuelvo a comprar aquí.</p>
                         <div class="testi-author">
                           <div class="testi-info">
-                            <span class="name"><a href="about-us.html">Jaren Hammer</a></span>
+                            <span class="name"><a href="about-us.html">Andrés Ríos</a></span>
                           </div>
                         </div>
                         <div class="testi-quote"><img src="assets/img/icons/quote1.webp" width="62" height="44" alt="Image-HasTech"></div>
@@ -347,10 +331,10 @@
                         <img src="assets/img/testimonial/2.webp" width="90" height="90" alt="Image-HasTech">
                       </div>
                       <div class="testi-content">
-                        <p>Lorem ipsum dolor sit amel adipiscing elit, sed do eiusll tempor incididunt ut laborj et dolore magna.</p>
+                        <p>Excelente atención, me asesoraron con la talla por WhatsApp y acertaron a la primera. Los precios son justos y el empaque llegó impecable. 100% recomendados.</p>
                         <div class="testi-author">
                           <div class="testi-info">
-                            <span class="name"><a href="about-us.html">Dorian Cordova</a></span>
+                            <span class="name"><a href="about-us.html">Valentina Ospina</a></span>
                           </div>
                         </div>
                         <div class="testi-quote"><img src="assets/img/icons/quote1.webp" width="62" height="44" alt="Image-HasTech"></div>

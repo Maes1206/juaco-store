@@ -6,11 +6,11 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Shome - Shoes eCommerce Website Template"/>
-    <meta name="keywords" content="footwear, shoes, modern, shop, store, ecommerce, responsive, e-commerce"/>
-    <meta name="author" content="codecarnival"/>
+    <meta name="description" content="Juaco Store - Tienda online de sneakers"/>
+    <meta name="keywords" content="sneakers, tenis, zapatos, calzado, tienda, ecommerce"/>
+    <meta name="author" content="Juaco Store"/>
 
-    <title>Favoritos :: Juaco Store</title>
+    <title>{% block title %}Juaco Store{% endblock %}</title>
 
     <!--== Favicon ==-->
     <link rel="icon" type="image/png" href="assets/img/favicon.png" />
@@ -36,16 +36,11 @@
     <!--== Main Style CSS ==-->
     <link href="assets/css/style.css" rel="stylesheet" />
     <link href="assets/css/juaco-ux.css" rel="stylesheet" />
-
-    <!--[if lt IE 9]>
-    <script src="//oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
-    <script src="//oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-    <![endif]-->
+    {% block extra_head %}{% endblock %}
 </head>
 
 <body>
 
-<!--wrapper start-->
 <div class="wrapper">
 
   <!--== Start Header Wrapper ==-->
@@ -65,7 +60,7 @@
                   <div class="info-items">
                     <ul>
                       <li class="support"><i class="fa fa-comments"></i><a href="contact.html">Canales de atención</a></li>
-                      <li class="account"><i class="fa fa-user"></i><a href="account-login.html">Cuenta</a></li>
+                      <li class="account"><i class="fa fa-user"></i><a href="{% if request.user.is_authenticated %}account.html{% else %}account-login.html{% endif %}">{% if request.user.is_authenticated %}Mi cuenta{% else %}Cuenta{% endif %}</a></li>
                     </ul>
                   </div>
                 </div>
@@ -129,12 +124,7 @@
             <div class="header-align">
               <div class="header-navigation-area position-relative">
                 <ul class="main-menu nav">
-                  <li class="has-submenu"><a href="#/"><span>Inicio</span></a>
-                    <ul class="submenu-nav">
-                      <li><a href="index.html"><span>Home One</span></a></li>
-                      <li><a href="index.html"><span>Home Two</span></a></li>
-                    </ul>
-                  </li>
+                  <li><a href="index.html"><span>Inicio</span></a></li>
                   <li><a href="about-us.html"><span>Nosotros</span></a></li>
                   <li class="has-submenu"><a href="shop.html"><span>Tienda</span></a>
                     <ul class="submenu-nav">
@@ -144,7 +134,6 @@
                       <li><a href="shop.html"><span>Accesorios</span></a></li>
                     </ul>
                   </li>
-
                   <li><a href="blog.html"><span>Blog</span></a></li>
                   <li><a href="contact.html"><span>Contacto</span></a></li>
                 </ul>
@@ -158,83 +147,15 @@
   <!--== End Header Wrapper ==-->
 
   <main class="main-content">
-    <!--== Start Page Header Area Wrapper ==-->
-    <div class="page-header-area" data-bg-img="assets/img/shop/buysneaker.png">
-      <div class="container pt--0 pb--0">
-        <div class="row">
-          <div class="col-12">
-            <div class="page-header-content">
-              <h2 class="title" data-aos="fade-down" data-aos-duration="1000">Favoritos</h2>
-              <nav class="breadcrumb-area" data-aos="fade-down" data-aos-duration="1200">
-                <ul class="breadcrumb">
-                  <li><a href="index.html">Inicio</a></li>
-                  <li class="breadcrumb-sep">//</li>
-                  <li>Favoritos</li>
-                </ul>
-              </nav>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <!--== End Page Header Area Wrapper ==-->
-
-    <!--== Start Wishlist Area Wrapper ==-->
-    <section class="shopping-wishlist-area">
-      <div class="container">
-        <div class="row">
-          <div class="col-md-12">
-            <div class="shopping-wishlist-table table-responsive">
-              <table class="table text-center">
-                <thead>
-                  <tr>
-                    <th class="product-remove">&nbsp;</th>
-                    <th class="product-thumb">&nbsp;</th>
-                    <th class="product-name">Producto</th>
-                    <th class="product-stock-status">Disponibilidad</th>
-                    <th class="product-price">Precio</th>
-                    <th class="product-action">&nbsp;</th>
-                  </tr>
-                </thead>
-                <tbody id="django-favorite-items">
-                  {% for favorite in favorites %}
-                  <tr class="cart-wishlist-item" data-favorite-row="{{ favorite.id }}">
-                    <td class="product-remove">
-                      <a href="#" data-favorite-remove="{{ favorite.id }}" aria-label="Eliminar {{ favorite.product.name }} de favoritos"><i class="fa fa-trash-o"></i></a>
-                    </td>
-                    <td class="product-thumb">
-                      <a href="single-product.html?producto={{ favorite.product.slug }}"><img src="{{ favorite.product.image }}" width="90" height="110" alt="{{ favorite.product.name }}"></a>
-                    </td>
-                    <td class="product-name"><h4 class="title"><a href="single-product.html?producto={{ favorite.product.slug }}">{{ favorite.product.name }}</a></h4></td>
-                    <td class="product-stock-status">
-                      {% if favorite.product.stock > 0 and favorite.product.is_active %}<span class="stock">Disponible</span>{% else %}<span>Agotado</span>{% endif %}
-                    </td>
-                    <td class="product-price"><span class="price">${{ favorite.product.price|floatformat:0 }} COP</span></td>
-                    <td class="product-action">
-                      <a href="#" class="btn-cart{% if favorite.product.stock < 1 or not favorite.product.is_active %} disabled{% endif %}" data-favorite-move="{{ favorite.id }}"{% if favorite.product.stock < 1 or not favorite.product.is_active %} aria-disabled="true"{% endif %}>Agregar al carrito</a>
-                    </td>
-                  </tr>
-                  {% empty %}
-                  <tr class="favorite-empty-row"><td colspan="6">Aún no tienes favoritos. <a href="shop.html">Explorar productos</a></td></tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-    <!--== End Wishlist Area Wrapper ==-->
+    {% block content %}{% endblock %}
   </main>
 
   <!--== Start Footer Area Wrapper ==-->
   <footer class="footer-area">
-    <!--== Start Footer Main ==-->
     <div class="footer-main">
       <div class="container pt--0 pb--0">
         <div class="row">
           <div class="col-md-6 col-lg-3">
-            <!--== Start widget Item ==-->
             <div class="widget-item">
               <div class="about-widget-wrap">
                 <div class="widget-logo-area">
@@ -243,13 +164,10 @@
                   </a>
                 </div>
                 <p class="desc">Sneakers seleccionados para todos los estilos, con envíos nacionales y atención personalizada.</p>
-
               </div>
             </div>
-            <!--== End widget Item ==-->
           </div>
           <div class="col-md-6 col-lg-3">
-            <!--== Start widget Item ==-->
             <div class="widget-item widget-services-item">
               <h4 class="widget-title">Servicios</h4>
               <h4 class="widget-collapsed-title collapsed" data-bs-toggle="collapse" data-bs-target="#widgetId-1">Servicios</h4>
@@ -267,10 +185,8 @@
                 </div>
               </div>
             </div>
-            <!--== End widget Item ==-->
           </div>
           <div class="col-md-6 col-lg-3">
-            <!--== Start widget Item ==-->
             <div class="widget-item widget-account-item">
               <h4 class="widget-title">Mi cuenta</h4>
               <h4 class="widget-collapsed-title collapsed" data-bs-toggle="collapse" data-bs-target="#widgetId-2">Mi cuenta</h4>
@@ -278,7 +194,7 @@
                 <div class="collapse-body">
                   <div class="widget-menu-wrap">
                     <ul class="nav-menu">
-                      <li><a href="account-login.html">Mi cuenta</a></li>
+                      <li><a href="account.html">Mi cuenta</a></li>
                       <li><a href="contact.html">Contacto</a></li>
                       <li><a href="shop-cart.html">Carrito de compras</a></li>
                       <li><a href="shop.html">Tienda</a></li>
@@ -288,10 +204,8 @@
                 </div>
               </div>
             </div>
-            <!--== End widget Item ==-->
           </div>
           <div class="col-md-6 col-lg-3">
-            <!--== Start widget Item ==-->
             <div class="widget-item">
               <h4 class="widget-title">Información de compra</h4>
               <h4 class="widget-collapsed-title collapsed" data-bs-toggle="collapse" data-bs-target="#widgetId-3">Información de compra</h4>
@@ -308,14 +222,10 @@
                 </div>
               </div>
             </div>
-            <!--== End widget Item ==-->
           </div>
         </div>
       </div>
     </div>
-    <!--== End Footer Main ==-->
-
-    <!--== Start Footer Bottom ==-->
     <div class="footer-bottom">
       <div class="container pt--0 pb--0">
         <div class="row">
@@ -324,104 +234,32 @@
           </div>
           <div class="col-md-5 col-lg-6">
             <div class="payment">
-              <a href="account-login.html"><img src="assets/img/photos/payment-card.webp" width="192" height="21" alt="Payment Logo"></a>
+              <a class="payment-card payment-card-amex" href="account-login.html" aria-label="American Express">AMERICAN<br>EXPRESS</a>
+              <a class="payment-card payment-card-paypal" href="account-login.html" aria-label="PayPal">PayPal</a>
+              <a class="payment-card payment-card-mastercard" href="account-login.html" aria-label="Mastercard"><span></span><span></span></a>
+              <a class="payment-card payment-card-bold" href="account-login.html" aria-label="Pago con Bold"><span>Bold</span></a>
+              <a class="payment-card payment-card-visa" href="account-login.html" aria-label="Visa">VISA</a>
             </div>
           </div>
         </div>
       </div>
     </div>
-    <!--== End Footer Bottom ==-->
   </footer>
   <!--== End Footer Area Wrapper ==-->
 
-  <!--== Scroll Top Button ==-->
   <div id="scroll-to-top" class="scroll-to-top"><span class="fa fa-angle-up"></span></div>
-
-  <!--== Start Quick View Menu ==-->
-  <aside class="product-quick-view-modal">
-    <div class="product-quick-view-inner">
-      <div class="product-quick-view-content">
-        <button type="button" class="btn-close">
-          <span class="close-icon"><i class="fa fa-close"></i></span>
-        </button>
-        <div class="row align-items-center">
-          <div class="col-lg-6 col-md-6 col-12">
-            <div class="thumb">
-              <img src="assets/img/shop/product-single/1.webp" width="570" height="541" alt="Alan-Shop">
-            </div>
-          </div>
-          <div class="col-lg-6 col-md-6 col-12">
-            <div class="content">
-              <h4 class="title">Space X Bag For Office</h4>
-              <div class="prices">
-                <del class="price-old">$85.00</del>
-                <span class="price">$70.00</span>
-              </div>
-              <p>Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia,</p>
-              <div class="quick-view-select">
-                <div class="quick-view-select-item">
-                  <label for="forSize" class="form-label">Size:</label>
-                  <select class="form-select" id="forSize" required>
-                    <option selected value="">s</option>
-                    <option>m</option>
-                    <option>l</option>
-                    <option>xl</option>
-                  </select>
-                </div>
-                <div class="quick-view-select-item">
-                  <label for="forColor" class="form-label">Color:</label>
-                  <select class="form-select" id="forColor" required>
-                    <option selected value="">red</option>
-                    <option>green</option>
-                    <option>blue</option>
-                    <option>yellow</option>
-                    <option>white</option>
-                  </select>
-                </div>
-              </div>
-              <div class="action-top">
-                <div class="pro-qty">
-                  <input type="text" id="quantity20" title="Quantity" value="1" />
-                </div>
-                <button class="btn btn-black">Add to cart</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="canvas-overlay"></div>
-  </aside>
-  <!--== End Quick View Menu ==-->
 
   <!--== Start Aside Cart Menu ==-->
   <div class="aside-cart-wrapper offcanvas offcanvas-end" tabindex="-1" id="AsideOffcanvasCart" aria-labelledby="offcanvasRightLabel">
     <div class="offcanvas-header">
       <h1 id="offcanvasRightLabel"></h1>
-      <button class="btn-aside-cart-close" data-bs-dismiss="offcanvas" aria-label="Close">Shopping Cart <i class="fa fa-chevron-right"></i></button>
+      <button class="btn-aside-cart-close" data-bs-dismiss="offcanvas" aria-label="Cerrar">Carrito de compras <i class="fa fa-chevron-right"></i></button>
     </div>
     <div class="offcanvas-body">
-      <ul class="aside-cart-product-list">
-        <li class="product-list-item">
-          <a href="#/" class="remove">×</a>
-          <a href="single-product.html">
-            <img src="assets/img/shop/27734.png" width="90" height="110" alt="Image-HasTech">
-            <span class="product-title">Leather Mens Slipper</span>
-          </a>
-          <span class="product-price">1 x $240.000 COP</span>
-        </li>
-        <li class="product-list-item">
-          <a href="#/" class="remove">×</a>
-          <a href="single-product.html">
-            <img src="assets/img/shop/727340.png" width="90" height="110" alt="Image-HasTech">
-            <span class="product-title">Quickiin Mens shoes</span>
-          </a>
-          <span class="product-price">1 x $190.000 COP</span>
-        </li>
-      </ul>
-      <p class="cart-total"><span>Subtotal:</span><span class="amount">$430.000 COP</span></p>
-      <a class="btn-theme" data-margin-bottom="10" href="shop-cart.html">View cart</a>
-      <a class="btn-theme" href="shop-checkout.html">Checkout</a>
+      <ul class="aside-cart-product-list"></ul>
+      <p class="cart-total"><span>Subtotal:</span><span class="amount">$0 COP</span></p>
+      <a class="btn-theme" data-margin-bottom="10" href="shop-cart.html">Ver carrito</a>
+      <a class="btn-theme" href="shop-checkout.html">Finalizar compra</a>
       <a class="bold-checkout-btn" href="shop-checkout.html" aria-label="Pagar con Bold">Pagar con <span>Bold</span></a>
     </div>
   </div>
@@ -430,19 +268,19 @@
   <!--== Start Aside Search Menu ==-->
   <aside class="aside-search-box-wrapper offcanvas offcanvas-top" tabindex="-1" id="AsideOffcanvasSearch" aria-labelledby="offcanvasTopLabel">
     <div class="offcanvas-header">
-      <h5 class="d-none" id="offcanvasTopLabel">Aside Search</h5>
-      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"><i class="pe-7s-close"></i></button>
+      <h5 class="d-none" id="offcanvasTopLabel">Búsqueda</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"><i class="pe-7s-close"></i></button>
     </div>
     <div class="offcanvas-body">
       <div class="container pt--0 pb--0">
         <div class="search-box-form-wrap">
           <div class="search-note">
-            <p>Start typing and press Enter to search</p>
+            <p>Escribe y presiona Enter para buscar</p>
           </div>
           <form action="#" method="post">
             <div class="search-form position-relative">
-              <label for="search-input" class="visually-hidden">Search</label>
-              <input id="search-input" type="search" class="form-control" placeholder="Search entire store…">
+              <label for="search-input" class="visually-hidden">Buscar</label>
+              <input id="search-input" type="search" class="form-control" placeholder="Buscar en toda la tienda…">
               <button class="search-button"><i class="fa fa-search"></i></button>
             </div>
           </form>
@@ -456,25 +294,19 @@
   <div class="off-canvas-wrapper offcanvas offcanvas-start" tabindex="-1" id="AsideOffcanvasMenu" aria-labelledby="offcanvasExampleLabel">
     <div class="offcanvas-header">
       <h1 id="offcanvasExampleLabel"></h1>
-      <button class="btn-menu-close" data-bs-dismiss="offcanvas" aria-label="Close">menu <i class="fa fa-chevron-left"></i></button>
+      <button class="btn-menu-close" data-bs-dismiss="offcanvas" aria-label="Cerrar">menú <i class="fa fa-chevron-left"></i></button>
     </div>
     <div class="offcanvas-body">
       <div class="info-items">
         <ul>
           <li class="number"><a href="tel://0123456789"><i class="fa fa-phone"></i>+00 123 456 789</a></li>
           <li class="email"><a href="mailto://demo@example.com"><i class="fa fa-envelope"></i>demo@example.com</a></li>
-          <li class="account"><a href="account-login.html"><i class="fa fa-user"></i>Cuenta</a></li>
+          <li class="account"><a href="{% if request.user.is_authenticated %}account.html{% else %}account-login.html{% endif %}"><i class="fa fa-user"></i>{% if request.user.is_authenticated %}Mi cuenta{% else %}Cuenta{% endif %}</a></li>
         </ul>
       </div>
-      <!-- Mobile Menu Start -->
       <div class="mobile-menu-items">
         <ul class="nav-menu">
-          <li><a href="#">Inicio</a>
-            <ul class="sub-menu">
-              <li><a href="index.html">Home One</a></li>
-              <li><a href="index.html">Home Two</a></li>
-            </ul>
-          </li>
+          <li><a href="index.html">Inicio</a></li>
           <li><a href="about-us.html">Nosotros</a></li>
           <li><a href="shop.html">Tienda</a>
             <ul class="sub-menu">
@@ -484,68 +316,36 @@
               <li><a href="shop.html">Accesorios</a></li>
             </ul>
           </li>
-
-          <li><a href="#">Blog</a>
-            <ul class="sub-menu">
-              <li><a href="#">Blog Layout</a>
-                <ul class="sub-menu">
-                  <li><a href="blog.html">Blog Grid</a></li>
-                  <li><a href="blog.html">Blog Left Sidebar</a></li>
-                  <li><a href="blog.html">Blog Right Sidebar</a></li>
-                </ul>
-              </li>
-              <li><a href="#">Single Blog</a>
-                <ul class="sub-menu">
-                  <li><a href="blog-details.html">Blog Details</a></li>
-                  <li><a href="blog-details.html">Blog Details Left Sidebar</a></li>
-                  <li><a href="blog-details.html">Blog Details Right Sidebar</a></li>
-                </ul>
-              </li>
-            </ul>
-          </li>
+          <li><a href="blog.html">Blog</a></li>
           <li><a href="contact.html">Contacto</a></li>
         </ul>
       </div>
-      <!-- Mobile Menu End -->
     </div>
   </div>
   <!--== End Side Menu ==-->
 </div>
 
-<!--=======================Javascript============================-->
-
-<!--=== jQuery Modernizr Min Js ===-->
+<!--=== Javascript ===-->
 <script src="assets/js/modernizr.js"></script>
-<!--=== jQuery Min Js ===-->
 <script src="assets/js/jquery-main.js"></script>
-<!--=== jQuery Migration Min Js ===-->
 <script src="assets/js/jquery-migrate.js"></script>
-<!--=== jQuery Popper Min Js ===-->
 <script src="assets/js/popper.min.js"></script>
-<!--=== jQuery Bootstrap Min Js ===-->
 <script src="assets/js/bootstrap.min.js"></script>
-<!--=== jQuery Ui Min Js ===-->
 <script src="assets/js/jquery-ui.min.js"></script>
-<!--=== jQuery Swiper Min Js ===-->
 <script src="assets/js/swiper.min.js"></script>
-<!--=== jQuery Fancybox Min Js ===-->
 <script src="assets/js/fancybox.min.js"></script>
-<!--=== jQuery Waypoint Js ===-->
 <script src="assets/js/waypoint.js"></script>
-<!--=== jQuery Parallax Min Js ===-->
 <script src="assets/js/parallax.min.js"></script>
-<!--=== jQuery Aos Min Js ===-->
 <script src="assets/js/aos.min.js"></script>
 
-<!--=== jQuery Custom Js ===-->
 <script src="assets/js/catalog-data.js"></script>
 <script src="assets/js/custom.js"></script>
 <script src="assets/js/product-share.js"></script>
 <script src="assets/js/footer-info.js"></script>
 <script src="assets/js/header-info.js"></script>
-
 <script src="assets/js/payment-methods.js"></script>
 <script src="assets/js/cart.js"></script>
+{% block extra_scripts %}{% endblock %}
 </body>
 
 </html>

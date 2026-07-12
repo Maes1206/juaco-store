@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zxx">
+<html lang="es">
 
 <head>
     <base href="/">
@@ -10,7 +10,7 @@
     <meta name="keywords" content="footwear, shoes, modern, shop, store, ecommerce, responsive, e-commerce"/>
     <meta name="author" content="codecarnival"/>
 
-    <title>Blog :: Shome - Shoes eCommerce Website Template</title>
+    <title>Blog | Juaco Store</title>
 
     <!--== Favicon ==-->
     <link rel="icon" type="image/png" href="assets/img/favicon.png" />
@@ -35,6 +35,7 @@
 
     <!--== Main Style CSS ==-->
     <link href="assets/css/style.css" rel="stylesheet" />
+    <link href="assets/css/juaco-ux.css" rel="stylesheet" />
 
     <!--[if lt IE 9]>
     <script src="//oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
@@ -51,6 +52,30 @@
   <header class="main-header-wrapper position-relative">
     <div class="header-top">
       <div class="container pt--0 pb--0">
+        <div class="row">
+          {% comment %}{% for post in posts %}
+          <div class="col-md-6 col-lg-4">
+            <article class="post-item">
+              <div class="inner-content">
+                <div class="thumb">
+                  <a href="{% url 'blog_detail' post.slug %}"><img src="{{ post.image }}" width="370" height="260" alt="{{ post.image_alt }}"></a>
+                </div>
+                <div class="content">
+                  <div class="meta-post"><ul>
+                    <li class="post-date"><i class="fa fa-calendar"></i><a href="{% url 'blog_detail' post.slug %}">{{ post.published_at|date:"j F Y" }}</a></li>
+                    <li class="author-info"><i class="fa fa-user"></i><a href="{% url 'blog_detail' post.slug %}">{{ post.author }}</a></li>
+                  </ul></div>
+                  <h4 class="title"><a href="{% url 'blog_detail' post.slug %}">{{ post.title }}</a></h4>
+                  <p>{{ post.summary }}</p>
+                  <a class="post-btn" href="{% url 'blog_detail' post.slug %}">Leer artículo <span class="sr-only">{{ post.title }}</span></a>
+                </div>
+              </div>
+            </article>
+          </div>
+          {% empty %}
+          <div class="col-12"><p>No hay artículos disponibles en esta categoría por el momento.</p></div>
+          {% endfor %}{% endcomment %}
+        </div>
         <div class="row">
           <div class="col-12">
             <div class="header-top-align">
@@ -108,7 +133,7 @@
                   <div class="shopping-cart">
                     <button class="shopping-cart-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#AsideOffcanvasCart" aria-controls="offcanvasRightLabel">
                       <i class="pe-7s-shopbag icon"></i>
-                      <sup class="shop-count">02</sup>
+                      <sup class="shop-count" aria-label="{{ global_cart_count }} artículos en el carrito">{{ global_cart_count }}</sup>
                     </button>
                   </div>
                   <button class="btn-menu" type="button" data-bs-toggle="offcanvas" data-bs-target="#AsideOffcanvasMenu" aria-controls="AsideOffcanvasMenu">
@@ -144,24 +169,7 @@
                     </ul>
                   </li>
 
-                  <li class="has-submenu"><a href="#/"><span>Blog</span></a>
-                    <ul class="submenu-nav submenu-nav-mega">
-                      <li class="mega-menu-item"><a href="#/" class="mega-title">Blog Layout</a>
-                        <ul>
-                          <li><a href="blog.html">Blog Grid</a></li>
-                          <li><a href="blog.html">Blog Left Sidebar</a></li>
-                          <li><a href="blog.html">Blog Right Sidebar</a></li>
-                        </ul>
-                      </li>
-                      <li class="mega-menu-item"><a href="#/" class="mega-title">Single Blog</a>
-                        <ul>
-                          <li><a href="blog-details.html">Blog Details</a></li>
-                          <li><a href="blog-details.html">Blog Details Left Sidebar</a></li>
-                          <li><a href="blog-details.html">Blog Details Right Sidebar</a></li>
-                        </ul>
-                      </li>
-                    </ul>
-                  </li>
+                  <li><a href="blog.html"><span>Blog</span></a></li>
                   <li><a href="contact.html"><span>Contacto</span></a></li>
                 </ul>
               </div>
@@ -198,6 +206,26 @@
     <!--== Start Blog Area Wrapper ==-->
     <section class="blog-area blog-inner-area">
       <div class="container">
+        <div class="row">
+          {% for post in posts %}
+          <div class="col-md-6 col-lg-4">
+            <article class="post-item">
+              <div class="inner-content">
+                <div class="thumb"><a href="{% url 'blog_detail' post.slug %}"><img src="{{ post.image }}" width="370" height="260" alt="{{ post.image_alt }}"></a></div>
+                <div class="content">
+                  <div class="meta-post"><ul><li class="post-date"><i class="fa fa-calendar"></i><a href="{% url 'blog_detail' post.slug %}">{{ post.published_at|date:"j F Y" }}</a></li><li class="author-info"><i class="fa fa-user"></i><a href="{% url 'blog_detail' post.slug %}">{{ post.author }}</a></li></ul></div>
+                  <h2 class="title"><a href="{% url 'blog_detail' post.slug %}">{{ post.title }}</a></h2>
+                  <p>{{ post.summary }}</p>
+                  <a class="post-btn" href="{% url 'blog_detail' post.slug %}">Leer art&iacute;culo</a>
+                </div>
+              </div>
+            </article>
+          </div>
+          {% empty %}
+          <div class="col-12"><p>No hay art&iacute;culos disponibles en esta categor&iacute;a por el momento.</p></div>
+          {% endfor %}
+        </div>
+        {% comment %}
         <div class="row">
           <div class="col-md-6 col-lg-4">
             <!--== Start Blog Item ==-->
@@ -327,6 +355,7 @@
             <!--== End Blog Item ==-->
           </div>
         </div>
+        {% endcomment %}
       </div>
     </section>
     <!--== End Blog Area Wrapper ==-->

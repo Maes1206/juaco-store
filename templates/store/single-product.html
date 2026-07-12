@@ -10,7 +10,7 @@
     <meta name="keywords" content="sneakers, tenis, zapatos, producto, Juaco Store"/>
     <meta name="author" content="codecarnival"/>
 
-    <title>Nike SB Dunk Low x Travis Scott “Cactus Jack” :: Juaco Store</title>
+    <title>{% if product %}{{ product.name }}{% else %}Producto{% endif %} | Juaco Store</title>
 
     <!--== Favicon ==-->
     <link rel="icon" type="image/png" href="assets/img/favicon.png" />
@@ -36,6 +36,7 @@
 
     <!--== Main Style CSS ==-->
     <link href="assets/css/style.css" rel="stylesheet" />
+    <link href="assets/css/juaco-ux.css" rel="stylesheet" />
 
     <!--[if lt IE 9]>
     <script src="//oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
@@ -109,7 +110,7 @@
                   <div class="shopping-cart">
                     <button class="shopping-cart-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#AsideOffcanvasCart" aria-controls="offcanvasRightLabel">
                       <i class="pe-7s-shopbag icon"></i>
-                      <sup class="shop-count">02</sup>
+                      <sup class="shop-count" aria-label="{{ global_cart_count }} artículos en el carrito">{{ global_cart_count }}</sup>
                     </button>
                   </div>
                   <button class="btn-menu" type="button" data-bs-toggle="offcanvas" data-bs-target="#AsideOffcanvasMenu" aria-controls="AsideOffcanvasMenu">
@@ -140,24 +141,7 @@
                     </ul>
                   </li>
 
-                  <li class="has-submenu"><a href="#/"><span>Blog</span></a>
-                    <ul class="submenu-nav submenu-nav-mega">
-                      <li class="mega-menu-item"><a href="#/" class="mega-title">Diseno del blog</a>
-                        <ul>
-                          <li><a href="blog.html">Blog en cuadricula</a></li>
-                          <li><a href="blog.html">Blog barra izquierda</a></li>
-                          <li><a href="blog.html">Blog barra derecha</a></li>
-                        </ul>
-                      </li>
-                      <li class="mega-menu-item"><a href="#/" class="mega-title">Entrada individual</a>
-                        <ul>
-                          <li><a href="blog-details.html">Detalles del blog</a></li>
-                          <li><a href="blog-details.html">Detalles con barra izquierda</a></li>
-                          <li><a href="blog-details.html">Detalles con barra derecha</a></li>
-                        </ul>
-                      </li>
-                    </ul>
-                  </li>
+                  <li><a href="blog.html"><span>Blog</span></a></li>
                   <li><a href="contact.html"><span>Contacto</span></a></li>
                 </ul>
               </div>

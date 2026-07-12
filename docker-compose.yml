@@ -5,7 +5,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-juaco_store}
       POSTGRES_USER: ${POSTGRES_USER:-juaco}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-juaco_dev_password}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Configura POSTGRES_PASSWORD en .env}
     volumes:
       - juaco_postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -20,17 +20,31 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-juaco_store}
       POSTGRES_USER: ${POSTGRES_USER:-juaco}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-juaco_dev_password}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Configura POSTGRES_PASSWORD en .env}
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
-      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-dev-only-change-me}
-      DJANGO_DEBUG: ${DJANGO_DEBUG:-1}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?Configura DJANGO_SECRET_KEY en .env}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-0}
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
+      DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:-}
+      DJANGO_SECURE_SSL_REDIRECT: ${DJANGO_SECURE_SSL_REDIRECT:-1}
+      DJANGO_SESSION_COOKIE_SECURE: ${DJANGO_SESSION_COOKIE_SECURE:-1}
+      DJANGO_CSRF_COOKIE_SECURE: ${DJANGO_CSRF_COOKIE_SECURE:-1}
+      DJANGO_SECURE_HSTS_SECONDS: ${DJANGO_SECURE_HSTS_SECONDS:-31536000}
+      DJANGO_LOG_LEVEL: ${DJANGO_LOG_LEVEL:-INFO}
     ports:
       - "${WEB_PORT:-8000}:8000"
     depends_on:
       db:
         condition: service_healthy
+    init: true
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; r=urllib.request.Request('http://127.0.0.1:8000/healthz/', headers={'X-Forwarded-Proto':'https'}); urllib.request.urlopen(r, timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
 volumes:
   juaco_postgres_data:

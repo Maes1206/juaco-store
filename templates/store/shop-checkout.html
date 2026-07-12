@@ -1,917 +1,144 @@
-<!DOCTYPE html>
-<html lang="zxx">
+{% extends "store/base.html" %}
+{% load store_extras %}
 
-<head>
-    <base href="/">
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Shome - Shoes eCommerce Website Template"/>
-    <meta name="keywords" content="footwear, shoes, modern, shop, store, ecommerce, responsive, e-commerce"/>
-    <meta name="author" content="codecarnival"/>
+{% block title %}Finalizar compra - Juaco Store{% endblock %}
 
-    <title>Checkout :: Shome - Shoes eCommerce Website Template</title>
-
-    <!--== Favicon ==-->
-    <link rel="icon" type="image/png" href="assets/img/favicon.png" />
-
-    <!--== Google Fonts ==-->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,600;0,700;0,800;1,400;1,500&display=swap" rel="stylesheet">
-
-    <!--== Bootstrap CSS ==-->
-    <link href="assets/css/bootstrap.min.css" rel="stylesheet" />
-    <!--== Font Awesome Min Icon CSS ==-->
-    <link href="assets/css/font-awesome.min.css" rel="stylesheet" />
-    <!--== Pe7 Stroke Icon CSS ==-->
-    <link href="assets/css/pe-icon-7-stroke.css" rel="stylesheet" />
-    <!--== Swiper CSS ==-->
-    <link href="assets/css/swiper.min.css" rel="stylesheet" />
-    <!--== Fancybox Min CSS ==-->
-    <link href="assets/css/fancybox.min.css" rel="stylesheet" />
-    <!--== Aos Min CSS ==-->
-    <link href="assets/css/aos.min.css" rel="stylesheet" />
-
-    <!--== Main Style CSS ==-->
-    <link href="assets/css/style.css" rel="stylesheet" />
-
-    <!--[if lt IE 9]>
-    <script src="//oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
-    <script src="//oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-    <![endif]-->
-</head>
-
-<body>
-
-<!--wrapper start-->
-<div class="wrapper">
-
-  <!--== Start Header Wrapper ==-->
-  <header class="main-header-wrapper position-relative">
-    <div class="header-top">
-      <div class="container pt--0 pb--0">
-        <div class="row">
-          <div class="col-12">
-            <div class="header-top-align">
-              <div class="header-top-align-start">
-                <div class="desc">
-                  <p>Envíos nacionales gratis por compras superiores a $400.000 COP</p>
-                </div>
-              </div>
-              <div class="header-top-align-end">
-                <div class="header-info-items">
-                  <div class="info-items">
-                    <ul>
-                      <li class="support"><i class="fa fa-comments"></i><a href="contact.html">Canales de atención</a></li>
-                      <li class="account"><i class="fa fa-user"></i><a href="account-login.html">Cuenta</a></li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+{% block content %}
+<div class="page-header-area login-page-header" data-bg-img="assets/img/shop/bannerlogin.png">
+  <div class="container pt--0 pb--0">
+    <div class="row">
+      <div class="col-12">
+        <div class="page-header-content">
+          <h2 class="title">Finalizar compra</h2>
+          <nav class="breadcrumb-area">
+            <ul class="breadcrumb">
+              <li><a href="index.html">Inicio</a></li>
+              <li class="breadcrumb-sep">//</li>
+              <li><a href="shop-cart.html">Carrito</a></li>
+              <li class="breadcrumb-sep">//</li>
+              <li>Finalizar compra</li>
+            </ul>
+          </nav>
         </div>
       </div>
-    </div>
-    <div class="header-middle">
-      <div class="container pt--0 pb--0">
-        <div class="row align-items-center">
-          <div class="col-12">
-            <div class="header-middle-align">
-              <div class="header-middle-align-start">
-                <div class="header-logo-area">
-                  <a href="index.html">
-                    <img class="logo-main" src="assets/img/shop/logohorizontal.png" width="199" height="55" alt="JUACO Store" />
-                    <img class="logo-light" src="assets/img/shop/logohorizontal.png" width="199" height="55" alt="JUACO Store" />
-                  </a>
-                </div>
-              </div>
-              <div class="header-middle-align-center">
-                <div class="header-search-area">
-                  <form class="header-searchbox">
-                    <input type="search" class="form-control" placeholder="Buscar">
-                    <button class="btn-submit" type="submit"><i class="pe-7s-search"></i></button>
-                  </form>
-                </div>
-              </div>
-              <div class="header-middle-align-end">
-                <div class="header-action-area">
-                  <div class="shopping-search">
-                    <button class="shopping-search-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#AsideOffcanvasSearch" aria-controls="AsideOffcanvasSearch"><i class="pe-7s-search icon"></i></button>
-                  </div>
-                  <div class="shopping-wishlist">
-                    <a class="shopping-wishlist-btn" href="shop-wishlist.html">
-                      <i class="pe-7s-like icon"></i>
-                    </a>
-                  </div>
-                  <div class="shopping-cart">
-                    <button class="shopping-cart-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#AsideOffcanvasCart" aria-controls="offcanvasRightLabel">
-                      <i class="pe-7s-shopbag icon"></i>
-                      <sup class="shop-count">02</sup>
-                    </button>
-                  </div>
-                  <button class="btn-menu" type="button" data-bs-toggle="offcanvas" data-bs-target="#AsideOffcanvasMenu" aria-controls="AsideOffcanvasMenu">
-                    <i class="pe-7s-menu"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="header-area header-default">
-      <div class="container">
-        <div class="row no-gutter align-items-center position-relative">
-          <div class="col-12">
-            <div class="header-align">
-              <div class="header-navigation-area position-relative">
-                <ul class="main-menu nav">
-                  <li class="has-submenu"><a href="#/"><span>Inicio</span></a>
-                    <ul class="submenu-nav">
-                      <li><a href="index.html"><span>Home One</span></a></li>
-                      <li><a href="index.html"><span>Home Two</span></a></li>
-                    </ul>
-                  </li>
-                  <li><a href="about-us.html"><span>Nosotros</span></a></li>
-                  <li class="has-submenu"><a href="shop.html"><span>Tienda</span></a>
-                    <ul class="submenu-nav">
-                      <li><a href="shop.html"><span>Hombre</span></a></li>
-                      <li><a href="shop.html"><span>Mujer</span></a></li>
-                      <li><a href="shop.html"><span>Ofertas</span></a></li>
-                      <li><a href="shop.html"><span>Accesorios</span></a></li>
-                    </ul>
-                  </li>
-
-                  <li class="has-submenu"><a href="#/"><span>Blog</span></a>
-                    <ul class="submenu-nav submenu-nav-mega">
-                      <li class="mega-menu-item"><a href="#/" class="mega-title">Blog Layout</a>
-                        <ul>
-                          <li><a href="blog.html">Blog Grid</a></li>
-                          <li><a href="blog.html">Blog Left Sidebar</a></li>
-                          <li><a href="blog.html">Blog Right Sidebar</a></li>
-                        </ul>
-                      </li>
-                      <li class="mega-menu-item"><a href="#/" class="mega-title">Single Blog</a>
-                        <ul>
-                          <li><a href="blog-details.html">Blog Details</a></li>
-                          <li><a href="blog-details.html">Blog Details Left Sidebar</a></li>
-                          <li><a href="blog-details.html">Blog Details Right Sidebar</a></li>
-                        </ul>
-                      </li>
-                    </ul>
-                  </li>
-                  <li><a href="contact.html"><span>Contacto</span></a></li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </header>
-  <!--== End Header Wrapper ==-->
-
-  <main class="main-content">
-    <!--== Start Page Header Area Wrapper ==-->
-    <div class="page-header-area" data-bg-img="assets/img/photos/bg3.webp">
-      <div class="container pt--0 pb--0">
-        <div class="row">
-          <div class="col-12">
-            <div class="page-header-content">
-              <h2 class="title" data-aos="fade-down" data-aos-duration="1000">Checkout</h2>
-              <nav class="breadcrumb-area" data-aos="fade-down" data-aos-duration="1200">
-                <ul class="breadcrumb">
-                  <li><a href="index.html">Inicio</a></li>
-                  <li class="breadcrumb-sep">//</li>
-                  <li>Checkout</li>
-                </ul>
-              </nav>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <!--== End Page Header Area Wrapper ==-->
-
-    <!--== Start Shopping Checkout Area Wrapper ==-->
-    <section class="shopping-checkout-wrap">
-      <div class="container">
-        <div class="row">
-          <div class="col-12">
-            <div class="checkout-page-login-wrap">
-              <!--== Start Checkout Login Accordion ==-->
-              <div class="login-accordion" id="LoginAccordion">
-                <div class="card">
-                  <h3>
-                    <i class="fa fa-info-circle"></i>
-                    Returning customer?
-                    <a href="#/" data-bs-toggle="collapse" data-bs-target="#loginaccordion">Click here to login</a>
-                  </h3>
-                  <div id="loginaccordion" class="collapse" data-bs-parent="#LoginAccordion">
-                    <div class="card-body">
-                      <div class="login-wrap">
-                        <p>If you have shopped with us before, please enter your details below. If you are a new customer, please proceed to the Billing & Shipping section.</p>
-                        <form action="#" method="post">
-                          <div class="row">
-                            <div class="col-md-6">
-                              <div class="form-group">
-                                <label for="logEmail">Username or email <span class="required">*</span></label>
-                                <input id="logEmail" class="form-control" type="email">
-                              </div>
-                            </div>
-                            <div class="col-md-6">
-                              <div class="form-group left-m">
-                                <label for="logPass">Password <span class="required">*</span></label>
-                                <input id="logPass" class="form-control" type="password">
-                              </div>
-                            </div>
-                            <div class="col-md-6">
-                              <div class="form-group mt-30">
-                                <button class="btn-login">Login</button>
-                                <div class="rememberme-account">
-                                  <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input visually-hidden" id="remembermePass">
-                                    <label class="custom-control-label" for="remembermePass">Remember me</label>
-                                  </div>
-                                </div>
-                                <a class="lost-password" href="#">Lost your password?</a>
-                              </div>
-                            </div>
-                          </div>
-                        </form>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <!--== End Checkout Login Accordion ==-->
-            </div>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-12">
-            <div class="checkout-page-coupon-wrap">
-              <!--== Start Checkout Coupon Accordion ==-->
-              <div class="coupon-accordion" id="CouponAccordion">
-                <div class="card">
-                  <h3>
-                    <i class="fa fa-info-circle"></i>
-                    Have a Coupon?
-                    <a href="#/" data-bs-toggle="collapse" data-bs-target="#couponaccordion">Click here to enter your code</a>
-                  </h3>
-                  <div id="couponaccordion" class="collapse" data-bs-parent="#CouponAccordion">
-                    <div class="card-body">
-                      <div class="apply-coupon-wrap mb-60">
-                        <p>If you have a coupon code, please apply it below.</p>
-                        <form action="#" method="post">
-                          <div class="row">
-                            <div class="col-md-6">
-                              <div class="form-group">
-                                <input class="form-control" type="text" placeholder="Coupon code">
-                              </div>
-                            </div>
-                            <div class="col-md-6">
-                              <button class="btn-coupon">Apply coupon</button>
-                            </div>
-                          </div>
-                        </form>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <!--== End Checkout Coupon Accordion ==-->
-            </div>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-lg-6">
-            <!--== Start Billing Accordion ==-->
-            <div class="checkout-billing-details-wrap">
-              <h2 class="title">Billing details</h2>
-              <div class="billing-form-wrap">
-                <form action="#" method="post">
-                  <div class="row">
-                    <div class="col-md-6">
-                      <div class="form-group">
-                        <label for="f_name">First name <abbr class="required" title="required">*</abbr></label>
-                        <input id="f_name" type="text"  class="form-control">
-                      </div>
-                    </div>
-                    <div class="col-md-6">
-                      <div class="form-group">
-                        <label for="l_name">Last name <abbr class="required" title="required">*</abbr></label>
-                        <input id="l_name" type="text"  class="form-control">
-                      </div>
-                    </div>
-                    <div class="col-md-12">
-                      <div class="form-group">
-                        <label for="com_name">Company name (optional)</label>
-                        <input id="com_name" type="text"  class="form-control">
-                      </div>
-                    </div>
-                    <div class="col-md-12">
-                      <div class="form-group">
-                        <label for="country">Country <abbr class="required" title="required">*</abbr></label>
-                        <select id="country" class="form-control">
-                          <option>Bangladesh</option>
-                          <option>Afghanistan</option>
-                          <option>Albania</option>
-                          <option>Algeria</option>
-                          <option>Armenia</option>
-                          <option>India</option>
-                          <option>Pakistan</option>
-                          <option>England</option>
-                          <option>London</option>
-                          <option>London</option>
-                          <option>China</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div class="col-md-12">
-                      <div class="form-group">
-                        <label for="street-address">Street address <abbr class="required" title="required">*</abbr></label>
-                        <input id="street-address" type="text"  class="form-control" placeholder="House number and street name">
-                      </div>
-                      <div class="form-group">
-                        <label for="street-address2" class="visually-hidden">Street address 2 <abbr class="required" title="required">*</abbr></label>
-                        <input id="street-address2" type="text"  class="form-control" placeholder="Apartment, suite, unit etc. (optional)">
-                      </div>
-                    </div>
-                    <div class="col-md-12">
-                      <div class="form-group">
-                        <label for="town">Town / City <abbr class="required" title="required">*</abbr></label>
-                        <input id="town" type="text"  class="form-control">
-                      </div>
-                    </div>
-                    <div class="col-md-12">
-                      <div class="form-group">
-                        <label for="district">District <abbr class="required" title="required">*</abbr></label>
-                        <select id="district" class="form-control">
-                          <option>Afghanistan</option>
-                          <option>Albania</option>
-                          <option>Algeria</option>
-                          <option>Armenia</option>
-                          <option>India</option>
-                          <option>Pakistan</option>
-                          <option>England</option>
-                          <option>London</option>
-                          <option>London</option>
-                          <option>China</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div class="col-md-12">
-                      <div class="form-group">
-                        <label for="pz-code">Postcode / ZIP (optional)</label>
-                        <input id="pz-code" type="text"  class="form-control">
-                      </div>
-                    </div>
-                    <div class="col-md-12">
-                      <div class="form-group">
-                        <label for="phone">Phone (optional)</label>
-                        <input id="phone" type="text"  class="form-control">
-                      </div>
-                    </div>
-                    <div class="col-md-12">
-                      <div class="form-group" data-margin-bottom="30">
-                        <label for="email">Email address <abbr class="required" title="required">*</abbr></label>
-                        <input id="email" type="text"  class="form-control">
-                      </div>
-                    </div>
-                    <div id="CheckoutBillingAccordion" class="col-md-12">
-                      <div class="checkout-box" data-margin-bottom="25" data-bs-toggle="collapse" data-bs-target="#CheckoutOne" aria-expanded="false" role="toolbar">
-                        <div class="custom-control custom-checkbox">
-                          <input type="checkbox" class="custom-control-input visually-hidden" id="CreateAccount">
-                          <label class="custom-control-label" for="CreateAccount">Create an account?</label>
-                        </div>
-                      </div>
-                      <div id="CheckoutOne" class="collapse" data-margin-top="30" data-bs-parent="#CheckoutBillingAccordion">
-                        <div class="form-group">
-                          <label for="password">Create account password <abbr class="required" title="required">*</abbr></label>
-                          <input id="password" type="password"  class="form-control" placeholder="Password">
-                        </div>
-                      </div>
-                    </div>
-                    <div id="CheckoutBillingAccordion2" class="col-md-12">
-                      <div class="checkout-box" data-margin-bottom="25" data-bs-toggle="collapse" data-bs-target="#CheckoutTwo" aria-expanded="false" role="toolbar">
-                        <div class="custom-control custom-checkbox">
-                          <input type="checkbox" class="custom-control-input visually-hidden" id="ship-to-different-address">
-                          <label class="custom-control-label" for="ship-to-different-address">Ship to a different address?</label>
-                        </div>
-                      </div>
-                      <div id="CheckoutTwo" class="collapse" data-margin-top="30"  data-bs-parent="#CheckoutBillingAccordion2">
-                        <div class="row">
-                          <div class="col-md-6">
-                            <div class="form-group">
-                              <label for="f_name2">First name <abbr class="required" title="required">*</abbr></label>
-                              <input id="f_name2" type="text"  class="form-control">
-                            </div>
-                          </div>
-                          <div class="col-md-6">
-                            <div class="form-group">
-                              <label for="l_name2">Last name <abbr class="required" title="required">*</abbr></label>
-                              <input id="l_name2" type="text"  class="form-control">
-                            </div>
-                          </div>
-                          <div class="col-md-12">
-                            <div class="form-group">
-                              <label for="com_name2">Company name (optional)</label>
-                              <input id="com_name2" type="text"  class="form-control">
-                            </div>
-                          </div>
-                          <div class="col-md-12">
-                            <div class="form-group">
-                              <label for="country2">Country <abbr class="required" title="required">*</abbr></label>
-                              <select id="country2" class="form-control">
-                                <option>Bangladesh</option>
-                                <option>Afghanistan</option>
-                                <option>Albania</option>
-                                <option>Algeria</option>
-                                <option>Armenia</option>
-                                <option>India</option>
-                                <option>Pakistan</option>
-                                <option>England</option>
-                                <option>London</option>
-                                <option>London</option>
-                                <option>China</option>
-                              </select>
-                            </div>
-                          </div>
-                          <div class="col-md-12">
-                            <div class="form-group">
-                              <label for="street-address2-3">Street address <abbr class="required" title="required">*</abbr></label>
-                              <input id="street-address2-3" type="text"  class="form-control" placeholder="House number and street name">
-                            </div>
-                            <div class="form-group">
-                              <label for="street-address2-2" class="visually-hidden">Street address 2 <abbr class="required" title="required">*</abbr></label>
-                              <input id="street-address2-2" type="text"  class="form-control" placeholder="Apartment, suite, unit etc. (optional)">
-                            </div>
-                          </div>
-                          <div class="col-md-12">
-                            <div class="form-group">
-                              <label for="town3">Town / City <abbr class="required" title="required">*</abbr></label>
-                              <input id="town3" type="text"  class="form-control">
-                            </div>
-                          </div>
-                          <div class="col-md-12">
-                            <div class="form-group">
-                              <label for="district2">District <abbr class="required" title="required">*</abbr></label>
-                              <select id="district2" class="form-control">
-                                <option>Afghanistan</option>
-                                <option>Albania</option>
-                                <option>Algeria</option>
-                                <option>Armenia</option>
-                                <option>India</option>
-                                <option>Pakistan</option>
-                                <option>England</option>
-                                <option>London</option>
-                                <option>London</option>
-                                <option>China</option>
-                              </select>
-                            </div>
-                          </div>
-                          <div class="col-md-12">
-                            <div class="form-group">
-                              <label for="pz-code2">Postcode / ZIP (optional)</label>
-                              <input id="pz-code2" type="text"  class="form-control">
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-md-12">
-                      <div class="form-group mb--0">
-                        <label for="order-notes">Order notes (optional)</label>
-                        <textarea id="order-notes" class="form-control" placeholder="Notes about your order, e.g. special notes for delivery."></textarea>
-                      </div>
-                    </div>
-                  </div>
-                </form>
-              </div>
-            </div>
-            <!--== End Billing Accordion ==-->
-          </div>
-          <div class="col-lg-6">
-            <!--== Start Order Details Accordion ==-->
-            <div class="checkout-order-details-wrap">
-              <div class="order-details-table-wrap table-responsive">
-                <h2 class="title mb-25">Your order</h2>
-                <table class="table">
-                  <thead>
-                    <tr>
-                      <th class="product-name">Product</th>
-                      <th class="product-total">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody class="table-body">
-                    <tr class="cart-item">
-                      <td class="product-name">Satin gown <span class="product-quantity">× 1</span></td>
-                      <td class="product-total">$240.000 COP</td>
-                    </tr>
-                    <tr class="cart-item">
-                      <td class="product-name">Printed cotton t-shirt <span class="product-quantity">× 1</span></td>
-                      <td class="product-total">$190.000 COP</td>
-                    </tr>
-                  </tbody>
-                  <tfoot class="table-foot">
-                    <tr class="cart-subtotal">
-                      <th>Subtotal</th>
-                      <td>$430.000 COP</td>
-                    </tr>
-                    <tr class="shipping">
-                      <th>Shipping</th>
-                      <td>Flat rate: $0 COP</td>
-                    </tr>
-                    <tr class="order-total">
-                      <th>Total </th>
-                      <td>$430.000 COP</td>
-                    </tr>
-                  </tfoot>
-                </table>
-                <div class="shop-payment-method">
-                  <div id="PaymentMethodAccordion">
-                    <div class="card">
-                      <div class="card-header" id="check_payments">
-                        <h5 class="title" data-bs-toggle="collapse" data-bs-target="#itemOne" aria-controls="itemOne" aria-expanded="true">Direct bank transfer</h5>
-                      </div>
-                      <div id="itemOne" class="collapse show" aria-labelledby="check_payments" data-bs-parent="#PaymentMethodAccordion">
-                        <div class="card-body">
-                          <p>Make your payment directly into our bank account. Please use your Order ID as the payment reference. Your order will not be shipped until the funds have cleared in our account.</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="card">
-                      <div class="card-header" id="check_payments2">
-                        <h5 class="title" data-bs-toggle="collapse" data-bs-target="#itemTwo" aria-controls="itemTwo" aria-expanded="false">Check payments</h5>
-                      </div>
-                      <div id="itemTwo" class="collapse" aria-labelledby="check_payments2" data-bs-parent="#PaymentMethodAccordion">
-                        <div class="card-body">
-                          <p>Please send a check to Store Name, Store Street, Store Town, Store State / County, Store Postcode.</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="card">
-                      <div class="card-header" id="check_payments3">
-                        <h5 class="title" data-bs-toggle="collapse" data-bs-target="#itemThree" aria-controls="itemTwo" aria-expanded="false">Cash on delivery</h5>
-                      </div>
-                      <div id="itemThree" class="collapse" aria-labelledby="check_payments3" data-bs-parent="#PaymentMethodAccordion">
-                        <div class="card-body">
-                          <p>Pay with cash upon delivery.</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="card">
-                      <div class="card-header" id="check_payments4">
-                        <h5 class="title" data-bs-toggle="collapse" data-bs-target="#itemFour" aria-controls="itemTwo" aria-expanded="false">Pago con <span class="bold-inline-logo">Bold</span></h5>
-                      </div>
-                      <div id="itemFour" class="collapse" aria-labelledby="check_payments4" data-bs-parent="#PaymentMethodAccordion">
-                        <div class="card-body">
-                          <p>Paga de forma segura en pesos colombianos a traves de Bold.</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <p class="p-text">Your personal data will be used to process your order, support your experience throughout this website, and for other purposes described in our <a href="#/">privacy policy.</a></p>
-                  <div class="agree-policy">
-                    <div class="custom-control custom-checkbox">
-                      <input type="checkbox" id="privacy" class="custom-control-input visually-hidden">
-                      <label for="privacy" class="custom-control-label">I have read and agree to the website terms and conditions <span class="required">*</span></label>
-                    </div>
-                  </div>
-                  <a href="account-login.html" class="btn-theme">Place order</a>
-                </div>
-              </div>
-            </div>
-            <!--== End Order Details Accordion ==-->
-          </div>
-        </div>
-      </div>
-    </section>
-    <!--== End Shopping Checkout Area Wrapper ==-->
-  </main>
-
-  <!--== Start Footer Area Wrapper ==-->
-  <footer class="footer-area">
-    <!--== Start Footer Main ==-->
-    <div class="footer-main">
-      <div class="container pt--0 pb--0">
-        <div class="row">
-          <div class="col-md-6 col-lg-3">
-            <!--== Start widget Item ==-->
-            <div class="widget-item">
-              <div class="about-widget-wrap">
-                <div class="widget-logo-area">
-                  <a href="index.html">
-                    <img class="footer-logo-horizontal" src="assets/img/shop/logohorizontal-footer.png" width="240" height="66" alt="JUACO Store" />
-                  </a>
-                </div>
-                <p class="desc">Sneakers seleccionados para todos los estilos, con envíos nacionales y atención personalizada.</p>
-
-              </div>
-            </div>
-            <!--== End widget Item ==-->
-          </div>
-          <div class="col-md-6 col-lg-3">
-            <!--== Start widget Item ==-->
-            <div class="widget-item widget-services-item">
-              <h4 class="widget-title">Servicios</h4>
-              <h4 class="widget-collapsed-title collapsed" data-bs-toggle="collapse" data-bs-target="#widgetId-1">Servicios</h4>
-              <div id="widgetId-1" class="collapse widget-collapse-body">
-                <div class="collapse-body">
-                  <div class="widget-menu-wrap">
-                    <ul class="nav-menu">
-                      <li><a href="contact.html">Seguimiento de pedidos</a></li>
-                      <li><a href="contact.html">Cambios y devoluciones</a></li>
-                      <li><a href="contact.html">Asesoría personalizada</a></li>
-                      <li><a href="contact.html">Envíos nacionales</a></li>
-                      <li><a href="contact.html">Ventas al por mayor</a></li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <!--== End widget Item ==-->
-          </div>
-          <div class="col-md-6 col-lg-3">
-            <!--== Start widget Item ==-->
-            <div class="widget-item widget-account-item">
-              <h4 class="widget-title">Mi cuenta</h4>
-              <h4 class="widget-collapsed-title collapsed" data-bs-toggle="collapse" data-bs-target="#widgetId-2">Mi cuenta</h4>
-              <div id="widgetId-2" class="collapse widget-collapse-body">
-                <div class="collapse-body">
-                  <div class="widget-menu-wrap">
-                    <ul class="nav-menu">
-                      <li><a href="account-login.html">Mi cuenta</a></li>
-                      <li><a href="contact.html">Contacto</a></li>
-                      <li><a href="shop-cart.html">Carrito de compras</a></li>
-                      <li><a href="shop.html">Tienda</a></li>
-                      <li><a href="account-login.html">Iniciar sesión</a></li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <!--== End widget Item ==-->
-          </div>
-          <div class="col-md-6 col-lg-3">
-            <!--== Start widget Item ==-->
-            <div class="widget-item">
-              <h4 class="widget-title">Información de compra</h4>
-              <h4 class="widget-collapsed-title collapsed" data-bs-toggle="collapse" data-bs-target="#widgetId-3">Información de compra</h4>
-              <div id="widgetId-3" class="collapse widget-collapse-body">
-                <div class="collapse-body">
-                  <div class="widget-contact-wrap">
-                    <ul>
-                      <li><span>Cobertura:</span> Envíos a toda Colombia.</li>
-                      <li><span>Envío gratis:</span> Desde $400.000 COP.</li>
-                      <li><span>Asesoría:</span> <a href="contact.html">Contáctanos aquí</a></li>
-                      <li><a href="contact.html">Ver canales de atención</a></li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <!--== End widget Item ==-->
-          </div>
-        </div>
-      </div>
-    </div>
-    <!--== End Footer Main ==-->
-
-    <!--== Start Footer Bottom ==-->
-    <div class="footer-bottom">
-      <div class="container pt--0 pb--0">
-        <div class="row">
-          <div class="col-md-7 col-lg-6">
-            <p class="copyright">&copy; 2026. Juaco Store. Hecho con amor por <a class="digital-brain-link" href="#" aria-label="Digital Brain"><img class="digital-brain-icon" src="assets/img/logdb.png" width="20" height="20" alt=""><span class="digital-brain-text">Digital Brain.</span></a></p>
-          </div>
-          <div class="col-md-5 col-lg-6">
-            <div class="payment">
-              <a href="account-login.html"><img src="assets/img/photos/payment-card.webp" width="192" height="21" alt="Payment Logo"></a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <!--== End Footer Bottom ==-->
-  </footer>
-  <!--== End Footer Area Wrapper ==-->
-
-  <!--== Scroll Top Button ==-->
-  <div id="scroll-to-top" class="scroll-to-top"><span class="fa fa-angle-up"></span></div>
-
-  <!--== Start Quick View Menu ==-->
-  <aside class="product-quick-view-modal">
-    <div class="product-quick-view-inner">
-      <div class="product-quick-view-content">
-        <button type="button" class="btn-close">
-          <span class="close-icon"><i class="fa fa-close"></i></span>
-        </button>
-        <div class="row align-items-center">
-          <div class="col-lg-6 col-md-6 col-12">
-            <div class="thumb">
-              <img src="assets/img/shop/product-single/1.webp" width="570" height="541" alt="Alan-Shop">
-            </div>
-          </div>
-          <div class="col-lg-6 col-md-6 col-12">
-            <div class="content">
-              <h4 class="title">Space X Bag For Office</h4>
-              <div class="prices">
-                <del class="price-old">$85.00</del>
-                <span class="price">$70.00</span>
-              </div>
-              <p>Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia,</p>
-              <div class="quick-view-select">
-                <div class="quick-view-select-item">
-                  <label for="forSize" class="form-label">Size:</label>
-                  <select class="form-select" id="forSize" required>
-                    <option selected value="">s</option>
-                    <option>m</option>
-                    <option>l</option>
-                    <option>xl</option>
-                  </select>
-                </div>
-                <div class="quick-view-select-item">
-                  <label for="forColor" class="form-label">Color:</label>
-                  <select class="form-select" id="forColor" required>
-                    <option selected value="">red</option>
-                    <option>green</option>
-                    <option>blue</option>
-                    <option>yellow</option>
-                    <option>white</option>
-                  </select>
-                </div>
-              </div>
-              <div class="action-top">
-                <div class="pro-qty">
-                  <input type="text" id="quantity20" title="Quantity" value="1" />
-                </div>
-                <button class="btn btn-black">Add to cart</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="canvas-overlay"></div>
-  </aside>
-  <!--== End Quick View Menu ==-->
-
-  <!--== Start Aside Cart Menu ==-->
-  <div class="aside-cart-wrapper offcanvas offcanvas-end" tabindex="-1" id="AsideOffcanvasCart" aria-labelledby="offcanvasRightLabel">
-    <div class="offcanvas-header">
-      <h1 id="offcanvasRightLabel"></h1>
-      <button class="btn-aside-cart-close" data-bs-dismiss="offcanvas" aria-label="Close">Shopping Cart <i class="fa fa-chevron-right"></i></button>
-    </div>
-    <div class="offcanvas-body">
-      <ul class="aside-cart-product-list">
-        <li class="product-list-item">
-          <a href="#/" class="remove">×</a>
-          <a href="single-product.html">
-            <img src="assets/img/shop/27734.png" width="90" height="110" alt="Image-HasTech">
-            <span class="product-title">Leather Mens Slipper</span>
-          </a>
-          <span class="product-price">1 x $240.000 COP</span>
-        </li>
-        <li class="product-list-item">
-          <a href="#/" class="remove">×</a>
-          <a href="single-product.html">
-            <img src="assets/img/shop/727340.png" width="90" height="110" alt="Image-HasTech">
-            <span class="product-title">Quickiin Mens shoes</span>
-          </a>
-          <span class="product-price">1 x $190.000 COP</span>
-        </li>
-      </ul>
-      <p class="cart-total"><span>Subtotal:</span><span class="amount">$430.000 COP</span></p>
-      <a class="btn-theme" data-margin-bottom="10" href="shop-cart.html">View cart</a>
-      <a class="btn-theme" href="shop-checkout.html">Checkout</a>
-      <a class="bold-checkout-btn" href="shop-checkout.html" aria-label="Pagar con Bold">Pagar con <span>Bold</span></a>
     </div>
   </div>
-  <!--== End Aside Cart Menu ==-->
-
-  <!--== Start Aside Search Menu ==-->
-  <aside class="aside-search-box-wrapper offcanvas offcanvas-top" tabindex="-1" id="AsideOffcanvasSearch" aria-labelledby="offcanvasTopLabel">
-    <div class="offcanvas-header">
-      <h5 class="d-none" id="offcanvasTopLabel">Aside Search</h5>
-      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"><i class="pe-7s-close"></i></button>
-    </div>
-    <div class="offcanvas-body">
-      <div class="container pt--0 pb--0">
-        <div class="search-box-form-wrap">
-          <div class="search-note">
-            <p>Start typing and press Enter to search</p>
-          </div>
-          <form action="#" method="post">
-            <div class="search-form position-relative">
-              <label for="search-input" class="visually-hidden">Search</label>
-              <input id="search-input" type="search" class="form-control" placeholder="Search entire store…">
-              <button class="search-button"><i class="fa fa-search"></i></button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </aside>
-  <!--== End Aside Search Menu ==-->
-
-  <!--== Start Side Menu ==-->
-  <div class="off-canvas-wrapper offcanvas offcanvas-start" tabindex="-1" id="AsideOffcanvasMenu" aria-labelledby="offcanvasExampleLabel">
-    <div class="offcanvas-header">
-      <h1 id="offcanvasExampleLabel"></h1>
-      <button class="btn-menu-close" data-bs-dismiss="offcanvas" aria-label="Close">menu <i class="fa fa-chevron-left"></i></button>
-    </div>
-    <div class="offcanvas-body">
-      <div class="info-items">
-        <ul>
-          <li class="number"><a href="tel://0123456789"><i class="fa fa-phone"></i>+00 123 456 789</a></li>
-          <li class="email"><a href="mailto://demo@example.com"><i class="fa fa-envelope"></i>demo@example.com</a></li>
-          <li class="account"><a href="account-login.html"><i class="fa fa-user"></i>Cuenta</a></li>
-        </ul>
-      </div>
-      <!-- Mobile Menu Start -->
-      <div class="mobile-menu-items">
-        <ul class="nav-menu">
-          <li><a href="#">Inicio</a>
-            <ul class="sub-menu">
-              <li><a href="index.html">Home One</a></li>
-              <li><a href="index.html">Home Two</a></li>
-            </ul>
-          </li>
-          <li><a href="about-us.html">Nosotros</a></li>
-          <li><a href="shop.html">Tienda</a>
-            <ul class="sub-menu">
-              <li><a href="shop.html">Hombre</a></li>
-              <li><a href="shop.html">Mujer</a></li>
-              <li><a href="shop.html">Ofertas</a></li>
-              <li><a href="shop.html">Accesorios</a></li>
-            </ul>
-          </li>
-
-          <li><a href="#">Blog</a>
-            <ul class="sub-menu">
-              <li><a href="#">Blog Layout</a>
-                <ul class="sub-menu">
-                  <li><a href="blog.html">Blog Grid</a></li>
-                  <li><a href="blog.html">Blog Left Sidebar</a></li>
-                  <li><a href="blog.html">Blog Right Sidebar</a></li>
-                </ul>
-              </li>
-              <li><a href="#">Single Blog</a>
-                <ul class="sub-menu">
-                  <li><a href="blog-details.html">Blog Details</a></li>
-                  <li><a href="blog-details.html">Blog Details Left Sidebar</a></li>
-                  <li><a href="blog-details.html">Blog Details Right Sidebar</a></li>
-                </ul>
-              </li>
-            </ul>
-          </li>
-          <li><a href="contact.html">Contacto</a></li>
-        </ul>
-      </div>
-      <!-- Mobile Menu End -->
-    </div>
-  </div>
-  <!--== End Side Menu ==-->
 </div>
 
-<!--=======================Javascript============================-->
+<section class="checkout-area">
+  <div class="container">
+    {% for message in messages %}
+    <div class="checkout-alert">{{ message }}</div>
+    {% endfor %}
 
-<!--=== jQuery Modernizr Min Js ===-->
-<script src="assets/js/modernizr.js"></script>
-<!--=== jQuery Min Js ===-->
-<script src="assets/js/jquery-main.js"></script>
-<!--=== jQuery Migration Min Js ===-->
-<script src="assets/js/jquery-migrate.js"></script>
-<!--=== jQuery Popper Min Js ===-->
-<script src="assets/js/popper.min.js"></script>
-<!--=== jQuery Bootstrap Min Js ===-->
-<script src="assets/js/bootstrap.min.js"></script>
-<!--=== jQuery Ui Min Js ===-->
-<script src="assets/js/jquery-ui.min.js"></script>
-<!--=== jQuery Swiper Min Js ===-->
-<script src="assets/js/swiper.min.js"></script>
-<!--=== jQuery Fancybox Min Js ===-->
-<script src="assets/js/fancybox.min.js"></script>
-<!--=== jQuery Waypoint Js ===-->
-<script src="assets/js/waypoint.js"></script>
-<!--=== jQuery Parallax Min Js ===-->
-<script src="assets/js/parallax.min.js"></script>
-<!--=== jQuery Aos Min Js ===-->
-<script src="assets/js/aos.min.js"></script>
+    {% if not items %}
+    <div class="checkout-empty">
+      <h3>Tu carrito está vacío</h3>
+      <p>Agrega productos antes de finalizar la compra.</p>
+      <a class="btn-theme" href="shop.html">Ir a la tienda</a>
+    </div>
+    {% else %}
+    <form action="shop-checkout.html" method="post" class="checkout-form">
+      {% csrf_token %}
+      <div class="row">
+        <!-- Columna izquierda: envío + pago -->
+        <div class="col-lg-7">
+          <div class="checkout-block">
+            <h3 class="checkout-block-title">Dirección de envío</h3>
+            {% if addresses %}
+            <div class="checkout-address-list">
+              {% for address in addresses %}
+              <label class="checkout-address-option{% if address == default_address %} is-selected{% endif %}">
+                <input type="radio" name="address" value="{{ address.id }}" {% if address == default_address %}checked{% endif %}>
+                <span class="checkout-address-body">
+                  <span class="checkout-address-label">{{ address.label }}{% if address.is_default %} · Principal{% endif %}</span>
+                  <span class="checkout-address-text">{{ address.recipient_name }} — {{ address.address_line_1 }}{% if address.address_line_2 %}, {{ address.address_line_2 }}{% endif %}, {{ address.city }}, {{ address.department }}. Tel. {{ address.phone }}</span>
+                </span>
+              </label>
+              {% endfor %}
+            </div>
+            {% for error in form.address.errors %}<p class="checkout-field-error">{{ error }}</p>{% endfor %}
+            <a class="checkout-add-address" href="account.html?tab=addresses">+ Agregar o editar direcciones</a>
+            {% else %}
+            <div class="checkout-no-address">
+              <p>Aún no tienes direcciones guardadas. Agrega una para poder enviar tu pedido.</p>
+              <a class="btn-theme" href="account.html?tab=addresses">Agregar dirección</a>
+            </div>
+            {% endif %}
+          </div>
 
-<!--=== jQuery Custom Js ===-->
-<script src="assets/js/catalog-data.js"></script>
-<script src="assets/js/custom.js"></script>
-<script src="assets/js/product-share.js"></script>
-<script src="assets/js/footer-info.js"></script>
-<script src="assets/js/header-info.js"></script>
+          <div class="checkout-block">
+            <h3 class="checkout-block-title">Método de pago</h3>
+            <div class="checkout-payment-list">
+              {% for value, label in payment_methods %}
+              <label class="checkout-payment-option{% if forloop.first %} is-selected{% endif %}">
+                <input type="radio" name="payment_method" value="{{ value }}" {% if forloop.first %}checked{% endif %}>
+                <span class="checkout-payment-label">{{ label }}</span>
+              </label>
+              {% endfor %}
+            </div>
+            {% for error in form.payment_method.errors %}<p class="checkout-field-error">{{ error }}</p>{% endfor %}
+          </div>
 
-<script src="assets/js/payment-methods.js"></script>
-<script src="assets/js/cart.js"></script>
-</body>
+          <div class="checkout-block">
+            <h3 class="checkout-block-title">Notas del pedido <span class="optional">(opcional)</span></h3>
+            <textarea name="notes" class="form-control" rows="3" placeholder="Indicaciones para la entrega, punto de referencia, etc.">{{ form.notes.value|default:'' }}</textarea>
+          </div>
+        </div>
 
-</html>
+        <!-- Columna derecha: resumen -->
+        <div class="col-lg-5">
+          <div class="checkout-summary">
+            <h3 class="checkout-block-title">Tu pedido</h3>
+            <ul class="checkout-summary-items">
+              {% for item in items %}
+              <li>
+                <span class="checkout-summary-item-name">{{ item.product.name }} <span class="qty">× {{ item.quantity }}</span>{% if item.size %}<span class="size">Talla {{ item.size }}</span>{% endif %}</span>
+                <span class="checkout-summary-item-price">{{ item.subtotal|cop }}</span>
+              </li>
+              {% endfor %}
+            </ul>
+            <div class="checkout-summary-totals">
+              <div class="row-line"><span>Subtotal</span><span>{{ subtotal|cop }}</span></div>
+              <div class="row-line"><span>Envío</span><span>{% if shipping_cost > 0 %}{{ shipping_cost|cop }}{% else %}Gratis{% endif %}</span></div>
+              <div class="row-line row-total"><span>Total</span><span>{{ total|cop }}</span></div>
+            </div>
+            {% if shipping_cost > 0 %}
+            <p class="checkout-shipping-hint">Envío gratis en compras superiores a {{ free_shipping_threshold|cop }}.</p>
+            {% endif %}
+            <label class="checkout-terms">
+              <input type="checkbox" name="accept_terms"> He leído y acepto los términos y condiciones.
+            </label>
+            {% for error in form.accept_terms.errors %}<p class="checkout-field-error">{{ error }}</p>{% endfor %}
+            {% if addresses %}
+            <button type="submit" class="btn-theme checkout-place-order">Realizar pedido</button>
+            {% else %}
+            <button type="button" class="btn-theme checkout-place-order" disabled>Agrega una dirección primero</button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </form>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+  function wireGroup(selector, selectedClass) {
+    document.querySelectorAll(selector).forEach(function (option) {
+      var input = option.querySelector('input[type="radio"]');
+      if (!input) return;
+      input.addEventListener('change', function () {
+        document.querySelectorAll(selector).forEach(function (o) { o.classList.remove(selectedClass); });
+        if (input.checked) option.classList.add(selectedClass);
+      });
+    });
+  }
+  wireGroup('.checkout-address-option', 'is-selected');
+  wireGroup('.checkout-payment-option', 'is-selected');
+})();
+</script>
+{% endblock %}

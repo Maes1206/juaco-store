@@ -1,0 +1,65 @@
+{% extends "store/base.html" %}
+{% load store_extras %}
+
+{% block title %}Pedido confirmado - Juaco Store{% endblock %}
+
+{% block content %}
+<div class="page-header-area login-page-header" data-bg-img="assets/img/shop/bannerlogin.png">
+  <div class="container pt--0 pb--0">
+    <div class="row">
+      <div class="col-12">
+        <div class="page-header-content">
+          <h2 class="title">Pedido confirmado</h2>
+          <nav class="breadcrumb-area">
+            <ul class="breadcrumb">
+              <li><a href="index.html">Inicio</a></li>
+              <li class="breadcrumb-sep">//</li>
+              <li>Confirmación</li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="order-confirmation-area">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-10">
+        <div class="order-confirmation-head">
+          <div class="order-confirmation-icon"><i class="fa fa-check"></i></div>
+          <h3 class="order-confirmation-title">¡Gracias por tu compra, {{ order.recipient_name|default:request.user.username }}!</h3>
+          <p class="order-confirmation-desc">Tu pedido fue recibido correctamente. Te enviaremos las novedades a <strong>{{ request.user.email }}</strong>.</p>
+          <div class="order-confirmation-meta">
+            <div class="order-meta-item">
+              <span class="label">Número de pedido</span>
+              <span class="value">{{ order.number }}</span>
+            </div>
+            <div class="order-meta-item">
+              <span class="label">Fecha</span>
+              <span class="value">{{ order.created_at|date:"d M Y, H:i" }}</span>
+            </div>
+            <div class="order-meta-item">
+              <span class="label">Estado</span>
+              <span class="value"><span class="order-status order-status--{{ order.status }}">{{ order.get_status_display }}</span></span>
+            </div>
+            <div class="order-meta-item">
+              <span class="label">Total</span>
+              <span class="value">{{ order.total|cop }}</span>
+            </div>
+          </div>
+        </div>
+
+        {% include "store/_order_summary.html" %}
+
+        <div class="order-confirmation-actions">
+          <a class="btn-theme" href="orders/{{ order.number }}/">Ver detalle del pedido</a>
+          <a class="btn-theme btn-theme-border" href="shop.html">Seguir comprando</a>
+          <a class="order-link" href="account.html?tab=orders">Ir a mis pedidos</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

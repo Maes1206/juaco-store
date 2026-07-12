@@ -30,3 +30,14 @@ Docker inicia PostgreSQL, ejecuta las migraciones, recopila los recursos estáti
 - Carrito persistente para invitados y usuarios.
 - Fusión automática del carrito invitado al iniciar sesión.
 - Catálogo inicial administrable desde Django Admin.
+- Favoritos persistentes por usuario, con movimiento al carrito.
+
+## Producción
+
+1. Copia `.env.example` a `.env` y reemplaza todas las claves marcadas con `CAMBIA`.
+2. Configura `DJANGO_ALLOWED_HOSTS` y `DJANGO_CSRF_TRUSTED_ORIGINS` con el dominio HTTPS real.
+3. Publica el contenedor detrás de un proxy TLS que envíe `X-Forwarded-Proto: https`.
+4. Ejecuta `docker compose up -d --build`; el arranque aplica migraciones y recopila estáticos.
+5. Comprueba el estado con `docker compose ps` y los logs con `docker compose logs -f web`.
+
+La ruta `/healthz/` está disponible para health checks. La base PostgreSQL usa un volumen persistente; configura además copias de seguridad externas del volumen.

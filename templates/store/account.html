@@ -1,5 +1,5 @@
-<!DOCTYPE html>
-<html lang="zxx">
+{% load store_extras %}<!DOCTYPE html>
+<html lang="es">
 
 <head>
     <base href="/">
@@ -10,7 +10,7 @@
     <meta name="keywords" content="footwear, shoes, modern, shop, store, ecommerce, responsive, e-commerce"/>
     <meta name="author" content="codecarnival"/>
 
-    <title>Account :: Shome - Shoes eCommerce Website Template</title>
+    <title>Mi cuenta | Juaco Store</title>
 
     <!--== Favicon ==-->
     <link rel="icon" type="image/png" href="assets/img/favicon.png" />
@@ -35,6 +35,7 @@
 
     <!--== Main Style CSS ==-->
     <link href="assets/css/style.css" rel="stylesheet" />
+    <link href="assets/css/juaco-ux.css" rel="stylesheet" />
 
     <!--[if lt IE 9]>
     <script src="//oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
@@ -108,7 +109,7 @@
                   <div class="shopping-cart">
                     <button class="shopping-cart-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#AsideOffcanvasCart" aria-controls="offcanvasRightLabel">
                       <i class="pe-7s-shopbag icon"></i>
-                      <sup class="shop-count">02</sup>
+                      <sup class="shop-count" aria-label="{{ global_cart_count }} artículos en el carrito">{{ global_cart_count }}</sup>
                     </button>
                   </div>
                   <button class="btn-menu" type="button" data-bs-toggle="offcanvas" data-bs-target="#AsideOffcanvasMenu" aria-controls="AsideOffcanvasMenu">
@@ -144,24 +145,7 @@
                     </ul>
                   </li>
 
-                  <li class="has-submenu"><a href="#/"><span>Blog</span></a>
-                    <ul class="submenu-nav submenu-nav-mega">
-                      <li class="mega-menu-item"><a href="#/" class="mega-title">Blog Layout</a>
-                        <ul>
-                          <li><a href="blog.html">Blog Grid</a></li>
-                          <li><a href="blog.html">Blog Left Sidebar</a></li>
-                          <li><a href="blog.html">Blog Right Sidebar</a></li>
-                        </ul>
-                      </li>
-                      <li class="mega-menu-item"><a href="#/" class="mega-title">Single Blog</a>
-                        <ul>
-                          <li><a href="blog-details.html">Blog Details</a></li>
-                          <li><a href="blog-details.html">Blog Details Left Sidebar</a></li>
-                          <li><a href="blog-details.html">Blog Details Right Sidebar</a></li>
-                        </ul>
-                      </li>
-                    </ul>
-                  </li>
+                  <li><a href="blog.html"><span>Blog</span></a></li>
                   <li><a href="contact.html"><span>Contacto</span></a></li>
                 </ul>
               </div>
@@ -175,17 +159,17 @@
 
   <main class="main-content">
     <!--== Start Page Header Area Wrapper ==-->
-    <div class="page-header-area" data-bg-img="assets/img/photos/bg3.webp">
+    <div class="page-header-area login-page-header" data-bg-img="assets/img/shop/bannerlogin.png">
       <div class="container pt--0 pb--0">
         <div class="row">
           <div class="col-12">
             <div class="page-header-content">
-              <h2 class="title" data-aos="fade-down" data-aos-duration="1000">Cuenta</h2>
+              <h2 class="title" data-aos="fade-down" data-aos-duration="1000">Bienvenido, {{ request.user.first_name|default:request.user.username }}</h2>
               <nav class="breadcrumb-area" data-aos="fade-down" data-aos-duration="1200">
                 <ul class="breadcrumb">
                   <li><a href="index.html">Inicio</a></li>
                   <li class="breadcrumb-sep">//</li>
-                  <li>Cuenta</li>
+                  <li>Mi cuenta</li>
                 </ul>
               </nav>
             </div>
@@ -205,25 +189,91 @@
               <div class="col-lg-3 col-md-4">
                 <nav>
                   <div class="myaccount-tab-menu nav nav-tabs" id="nav-tab" role="tablist">
-                    <button class="nav-link active" id="dashboad-tab" data-bs-toggle="tab" data-bs-target="#dashboad" type="button" role="tab" aria-controls="dashboad" aria-selected="true">Resumen</button>
-                    <button class="nav-link" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders" type="button" role="tab" aria-controls="orders" aria-selected="false">Mi carrito</button>
-                    <button class="nav-link" id="account-info-tab" data-bs-toggle="tab" data-bs-target="#account-info" type="button" role="tab" aria-controls="account-info" aria-selected="false">Datos de la cuenta</button>
+                    <button class="nav-link{% if active_tab == 'dashboard' %} active{% endif %}" id="dashboad-tab" data-bs-toggle="tab" data-bs-target="#dashboad" type="button" role="tab" aria-controls="dashboad" aria-selected="true">Resumen</button>
+                    <button class="nav-link{% if active_tab == 'orders' %} active{% endif %}" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders" type="button" role="tab" aria-controls="orders" aria-selected="false">Mis pedidos</button>
+                    <button class="nav-link{% if active_tab == 'cart' %} active{% endif %}" id="cart-tab" data-bs-toggle="tab" data-bs-target="#cart" type="button" role="tab" aria-controls="cart" aria-selected="false">Mi carrito</button>
+                    <button class="nav-link{% if active_tab == 'addresses' %} active{% endif %}" id="addresses-tab" data-bs-toggle="tab" data-bs-target="#addresses" type="button" role="tab" aria-controls="addresses" aria-selected="false">Direcciones</button>
+                    <button class="nav-link{% if active_tab == 'account-info' %} active{% endif %}" id="account-info-tab" data-bs-toggle="tab" data-bs-target="#account-info" type="button" role="tab" aria-controls="account-info" aria-selected="false">Datos de la cuenta</button>
                     <form action="account-logout/" method="post">{% csrf_token %}<button class="nav-link" type="submit">Cerrar sesión</button></form>
                   </div>
                 </nav>
               </div>
               <div class="col-lg-9 col-md-8">
                 <div class="tab-content" id="nav-tabContent">
-                  <div class="tab-pane fade show active" id="dashboad" role="tabpanel" aria-labelledby="dashboad-tab">
+                  <div class="tab-pane fade{% if active_tab == 'dashboard' %} show active{% endif %}" id="dashboad" role="tabpanel" aria-labelledby="dashboad-tab">
                     <div class="myaccount-content">
-                      <h3>Mi cuenta</h3>
+                      <h3>Resumen</h3>
                       <div class="welcome">
                         <p>Hola, <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>.</p>
                       </div>
-                      <p>Desde aquí puedes revisar tu carrito persistente y administrar los datos básicos de tu cuenta.</p>
+                      <p>Desde aquí puedes revisar tus pedidos, tu carrito y administrar los datos de tu cuenta.</p>
+                      <div class="account-stats">
+                        <div class="account-stat">
+                          <span class="account-stat-value">{{ orders|length }}</span>
+                          <span class="account-stat-label">Pedidos realizados</span>
+                        </div>
+                        <div class="account-stat">
+                          <span class="account-stat-value">{{ cart.item_count }}</span>
+                          <span class="account-stat-label">Artículos en el carrito</span>
+                        </div>
+                        <div class="account-stat">
+                          <span class="account-stat-value">{{ addresses|length }}</span>
+                          <span class="account-stat-label">Direcciones guardadas</span>
+                        </div>
+                      </div>
+                      {% with last_order=orders.first %}
+                      {% if last_order %}
+                      <div class="account-recent-order">
+                        <h4>Tu pedido más reciente</h4>
+                        <div class="account-recent-order-card">
+                          <div class="account-recent-order-info">
+                            <span class="num">{{ last_order.number }}</span>
+                            <span class="date">{{ last_order.created_at|date:"d M Y" }}</span>
+                            <span class="order-status order-status--{{ last_order.status }}">{{ last_order.get_status_display }}</span>
+                          </div>
+                          <div class="account-recent-order-total">{{ last_order.total|cop }}</div>
+                          <a class="check-btn sqr-btn" href="orders/{{ last_order.number }}/">Ver detalle</a>
+                        </div>
+                      </div>
+                      {% endif %}
+                      {% endwith %}
                     </div>
                   </div>
-                  <div class="tab-pane fade" id="orders" role="tabpanel" aria-labelledby="orders-tab">
+                  <div class="tab-pane fade{% if active_tab == 'orders' %} show active{% endif %}" id="orders" role="tabpanel" aria-labelledby="orders-tab">
+                    <div class="myaccount-content">
+                      <h3>Mis pedidos</h3>
+                      {% if orders %}
+                      <div class="myaccount-table table-responsive">
+                        <table class="table orders-table">
+                          <thead class="thead-light">
+                            <tr>
+                              <th>Pedido</th>
+                              <th>Fecha</th>
+                              <th>Estado</th>
+                              <th>Total</th>
+                              <th></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {% for order in orders %}
+                            <tr>
+                              <td data-label="Pedido">{{ order.number }}</td>
+                              <td data-label="Fecha">{{ order.created_at|date:"d M Y" }}</td>
+                              <td data-label="Estado"><span class="order-status order-status--{{ order.status }}">{{ order.get_status_display }}</span></td>
+                              <td data-label="Total">{{ order.total|cop }}</td>
+                              <td class="text-end"><a href="orders/{{ order.number }}/" class="check-btn sqr-btn">Ver detalle</a></td>
+                            </tr>
+                            {% endfor %}
+                          </tbody>
+                        </table>
+                      </div>
+                      {% else %}
+                      <p class="saved-message">Aún no has realizado ningún pedido.</p>
+                      <a class="btn-theme" href="shop.html">Explorar la tienda</a>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="tab-pane fade{% if active_tab == 'cart' %} show active{% endif %}" id="cart" role="tabpanel" aria-labelledby="cart-tab">
                     <div class="myaccount-content">
                       <h3>Mi carrito</h3>
                       <div class="myaccount-table table-responsive text-center">
@@ -243,7 +293,7 @@
                               <td>{{ item.product.name }}</td>
                               <td>{{ item.size|default:"—" }}</td>
                               <td>{{ item.quantity }}</td>
-                              <td>${{ item.subtotal|floatformat:0 }} COP</td>
+                              <td>{{ item.subtotal|cop }}</td>
                               <td><a href="shop-cart.html" class="check-btn sqr-btn">Ver</a></td>
                             </tr>
                             {% empty %}
@@ -252,107 +302,80 @@
                           </tbody>
                         </table>
                       </div>
+                      {% if cart.items.all %}
+                      <a class="btn-theme" href="shop-checkout.html">Finalizar compra</a>
+                      {% endif %}
                     </div>
                   </div>
-                  <div class="tab-pane fade" id="download" role="tabpanel" aria-labelledby="download-tab">
+                  {% include "store/_address_tab.html" %}
+                  <div class="tab-pane fade{% if active_tab == 'account-info' %} show active{% endif %}" id="account-info" role="tabpanel" aria-labelledby="account-info-tab">
                     <div class="myaccount-content">
-                      <h3>Downloads</h3>
-                      <div class="myaccount-table table-responsive text-center">
-                        <table class="table table-bordered">
-                          <thead class="thead-light">
-                            <tr>
-                              <th>Product</th>
-                              <th>Date</th>
-                              <th>Expire</th>
-                              <th>Download</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr>
-                              <td>Haven - Free Real Estate PSD Template</td>
-                              <td>Aug 22, 2022</td>
-                              <td>Yes</td>
-                              <td><a href="#/" class="check-btn sqr-btn"><i class="fa fa-cloud-download"></i> Download File</a></td>
-                            </tr>
-                            <tr>
-                              <td>HasTech - Profolio Business Template</td>
-                              <td>Sep 12, 2022</td>
-                              <td>Never</td>
-                              <td><a href="#/" class="check-btn sqr-btn"><i class="fa fa-cloud-download"></i> Download File</a></td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="tab-pane fade" id="payment-method" role="tabpanel" aria-labelledby="payment-method-tab">
-                    <div class="myaccount-content">
-                      <h3>Payment Method</h3>
-                      <p class="saved-message">You Can't Saved Your Payment Method yet.</p>
-                    </div>
-                  </div>
-                  <div class="tab-pane fade" id="address-edit" role="tabpanel" aria-labelledby="address-edit-tab">
-                    <div class="myaccount-content">
-                      <h3>Billing Address</h3>
-                      <address>
-                        <p><strong>Alex Tuntuni</strong></p>
-                        <p>1355 Market St, Suite 900 <br>
-                          San Francisco, CA 94103</p>
-                        <p>Mobile: (123) 456-7890</p>
-                      </address>
-                      <a href="#/" class="check-btn sqr-btn"><i class="fa fa-edit"></i> Edit Address</a>
-                    </div>
-                  </div>
-                  <div class="tab-pane fade" id="account-info" role="tabpanel" aria-labelledby="account-info-tab">
-                    <div class="myaccount-content">
-                      <h3>Account Details</h3>
+                      <h3>Datos de la Cuenta</h3>
+                      {% for message in messages %}<p class="saved-message">{{ message }}</p>{% endfor %}
                       <div class="account-details-form">
-                        <form action="#">
+                        <form action="account-details/" method="post">
+                          {% csrf_token %}
                           <div class="row">
                             <div class="col-lg-6">
                               <div class="single-input-item">
-                                <label for="first-name" class="required">First Name</label>
-                                <input type="text" id="first-name" />
+                                <label for="{{ account_form.first_name.id_for_label }}" class="required">{{ account_form.first_name.label }}</label>
+                                {{ account_form.first_name }}
+                                {% for error in account_form.first_name.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
                               </div>
                             </div>
                             <div class="col-lg-6">
                               <div class="single-input-item">
-                                <label for="last-name" class="required">Last Name</label>
-                                <input type="text" id="last-name" />
+                                <label for="{{ account_form.last_name.id_for_label }}" class="required">{{ account_form.last_name.label }}</label>
+                                {{ account_form.last_name }}
+                                {% for error in account_form.last_name.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
                               </div>
                             </div>
                           </div>
                           <div class="single-input-item">
-                            <label for="display-name" class="required">Display Name</label>
-                            <input type="text" id="display-name" />
+                            <label for="{{ account_form.username.id_for_label }}" class="required">{{ account_form.username.label }}</label>
+                            {{ account_form.username }}
+                            {% for error in account_form.username.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
                           </div>
                           <div class="single-input-item">
-                            <label for="email" class="required">Email Addres</label>
-                            <input type="email" id="email" />
+                            <label for="{{ account_form.email.id_for_label }}" class="required">{{ account_form.email.label }}</label>
+                            {{ account_form.email }}
+                            {% for error in account_form.email.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
                           </div>
+                          <div class="single-input-item">
+                            <button class="check-btn sqr-btn" type="submit">Guardar Cambios</button>
+                          </div>
+                        </form>
+                      </div>
+                      <div class="account-details-form">
+                        <form action="account-password/" method="post">
+                          {% csrf_token %}
                           <fieldset>
-                            <legend>Password change</legend>
+                            <legend>Cambio de Contraseña</legend>
                             <div class="single-input-item">
-                              <label for="current-pwd" class="required">Current Password</label>
-                              <input type="password" id="current-pwd" />
+                              <label for="{{ password_form.old_password.id_for_label }}" class="required">Contraseña Actual</label>
+                              {{ password_form.old_password }}
+                              {% for error in password_form.old_password.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
                             </div>
                             <div class="row">
                               <div class="col-lg-6">
                                 <div class="single-input-item">
-                                  <label for="new-pwd" class="required">New Password</label>
-                                  <input type="password" id="new-pwd" />
+                                  <label for="{{ password_form.new_password1.id_for_label }}" class="required">Nueva Contraseña</label>
+                                  {{ password_form.new_password1 }}
+                                  {% for error in password_form.new_password1.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
                                 </div>
                               </div>
                               <div class="col-lg-6">
                                 <div class="single-input-item">
-                                  <label for="confirm-pwd" class="required">Confirm Password</label>
-                                  <input type="password" id="confirm-pwd" />
+                                  <label for="{{ password_form.new_password2.id_for_label }}" class="required">Confirmar Contraseña</label>
+                                  {{ password_form.new_password2 }}
+                                  {% for error in password_form.new_password2.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
                                 </div>
                               </div>
                             </div>
                           </fieldset>
+                          {% for error in password_form.non_field_errors %}<small class="text-danger d-block mb-3">{{ error }}</small>{% endfor %}
                           <div class="single-input-item">
-                            <button class="check-btn sqr-btn">Save Changes</button>
+                            <button class="check-btn sqr-btn" type="submit">Guardar Cambios</button>
                           </div>
                         </form>
                       </div>

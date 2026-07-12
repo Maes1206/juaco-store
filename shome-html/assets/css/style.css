@@ -9859,12 +9859,19 @@ table p {
   border-bottom: 1px solid #e5e5e5;
 }
 .myaccount-tab-menu.nav-tabs .nav-link.active {
-  background-color: #eb3e32;
+  background-color: #fff;
+  border-color: #e5e5e5;
+  color: #eb3e32;
 }
-.myaccount-tab-menu.nav-tabs .nav-link:hover, .myaccount-tab-menu.nav-tabs .nav-link.active {
+.myaccount-tab-menu.nav-tabs .nav-link:hover {
   background-color: #eb3e32;
   border-color: #eb3e32;
   color: #fff;
+}
+.myaccount-tab-menu form,
+.myaccount-tab-menu form .nav-link {
+  margin: 0;
+  width: 100%;
 }
 
 .myaccount-content {
@@ -10614,3 +10621,266 @@ table p {
     width: min(205px, 70%);
   }
 }
+
+/* FAQ Accordion */
+.faq-area .accordion-item {
+  border: none;
+  border-radius: 10px;
+  overflow: hidden;
+  background-color: #fff;
+  -webkit-box-shadow: -4px 0px 20px 0px rgba(0, 0, 0, 0.06);
+          box-shadow: -4px 0px 20px 0px rgba(0, 0, 0, 0.06);
+  margin-bottom: 20px;
+  -webkit-transition: box-shadow .3s ease;
+  transition: box-shadow .3s ease;
+}
+.faq-area .accordion-item:last-child {
+  margin-bottom: 0;
+}
+.faq-area .accordion-item:has(.accordion-button:not(.collapsed)) {
+  -webkit-box-shadow: -4px 0px 20px 0px rgba(0, 0, 0, 0.12);
+          box-shadow: -4px 0px 20px 0px rgba(0, 0, 0, 0.12);
+}
+.faq-area .accordion-button {
+  font-family: "Poppins", sans-serif;
+  font-weight: 500;
+  font-size: 18px;
+  color: #2e2e2e;
+  padding: 24px 30px;
+  background-color: #fff;
+  box-shadow: none;
+}
+@media only screen and (max-width: 767px) {
+  .faq-area .accordion-button {
+    font-size: 16px;
+    padding: 18px 20px;
+  }
+}
+.faq-area .accordion-button:not(.collapsed) {
+  color: #eb3e32;
+}
+.faq-area .accordion-button:focus {
+  box-shadow: none;
+  border-color: transparent;
+}
+.faq-area .accordion-button::after {
+  background-size: 14px;
+  -webkit-filter: brightness(0) saturate(100%) invert(46%) sepia(0%) saturate(0%) hue-rotate(180deg);
+          filter: brightness(0) saturate(100%) invert(46%) sepia(0%) saturate(0%) hue-rotate(180deg);
+}
+.faq-area .accordion-button:not(.collapsed)::after {
+  -webkit-filter: brightness(0) saturate(100%) invert(35%) sepia(93%) saturate(2758%) hue-rotate(345deg) brightness(97%) contrast(93%);
+          filter: brightness(0) saturate(100%) invert(35%) sepia(93%) saturate(2758%) hue-rotate(345deg) brightness(97%) contrast(93%);
+}
+.faq-area .accordion-body {
+  font-family: "Poppins", sans-serif;
+  color: #595959;
+  line-height: 1.8;
+  padding: 0 30px 26px;
+}
+@media only screen and (max-width: 767px) {
+  .faq-area .accordion-body {
+    padding: 0 20px 20px;
+  }
+}
+
+/* Team thumb - force perfect circle regardless of source image aspect ratio */
+.team-item .thumb img {
+  aspect-ratio: 1 / 1;
+  height: auto;
+  object-fit: cover;
+}
+
+/* Register form - help text, field errors, password strength meter */
+.register-form-content .form-group .form-text {
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.register-form-content .form-group .form-text ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+.register-form-content .form-group .form-text ul li {
+  margin-bottom: 2px;
+}
+.register-form-content .form-group .text-danger {
+  font-size: 13px;
+}
+.password-strength-meter {
+  height: 5px;
+  border-radius: 3px;
+  background-color: #e8e8e8;
+  margin-top: 10px;
+  overflow: hidden;
+}
+.password-strength-meter-bar {
+  height: 100%;
+  width: 0%;
+  border-radius: 3px;
+  background-color: #dc3545;
+  transition: width .25s ease, background-color .25s ease;
+}
+.password-strength-label {
+  display: block;
+  font-size: 12.5px;
+  margin-top: 6px;
+  color: #595959;
+}
+
+/* ==========================================================================
+   Pedidos: estados, checkout, confirmación, historial
+   ========================================================================== */
+
+/* Badges de estado */
+.order-status {
+  display: inline-block;
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 6px 12px;
+  border-radius: 30px;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  white-space: nowrap;
+}
+.order-status--pending { background-color: #fff3cd; color: #8a6d00; }
+.order-status--paid { background-color: #d1e7dd; color: #0f5132; }
+.order-status--shipped { background-color: #cfe2ff; color: #084298; }
+.order-status--delivered { background-color: #d1e7dd; color: #0f5132; }
+.order-status--cancelled { background-color: #f8d7da; color: #842029; }
+
+/* ===== Checkout ===== */
+.checkout-area { padding: 80px 0 100px; }
+@media only screen and (max-width: 767px) { .checkout-area { padding: 50px 0 70px; } }
+.checkout-alert {
+  background-color: #f8d7da;
+  color: #842029;
+  border-radius: 8px;
+  padding: 14px 20px;
+  margin-bottom: 24px;
+  font-family: "Poppins", sans-serif;
+  font-size: 14px;
+}
+.checkout-empty { text-align: center; padding: 60px 20px; }
+.checkout-empty h3 { font-size: 24px; margin-bottom: 10px; }
+.checkout-empty p { color: #595959; margin-bottom: 24px; }
+.checkout-block {
+  background-color: #fff;
+  border: 1px solid #ececec;
+  border-radius: 10px;
+  padding: 26px 28px;
+  margin-bottom: 24px;
+}
+.checkout-block-title {
+  font-family: "Poppins", sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2226;
+  margin-bottom: 20px;
+}
+.checkout-block-title .optional { font-weight: 400; font-size: 14px; color: #8a8a8a; }
+.checkout-address-option,
+.checkout-payment-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  border: 1px solid #e4e4e4;
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.checkout-address-option:hover,
+.checkout-payment-option:hover { border-color: #eb3e32; }
+.checkout-address-option.is-selected,
+.checkout-payment-option.is-selected {
+  border-color: #eb3e32;
+  box-shadow: 0 0 0 2px rgba(235, 62, 50, .12);
+}
+.checkout-address-option input,
+.checkout-payment-option input { margin-top: 3px; width: 18px; height: 18px; accent-color: #eb3e32; flex-shrink: 0; }
+.checkout-address-body { display: flex; flex-direction: column; }
+.checkout-address-label { font-weight: 600; color: #1f2226; margin-bottom: 4px; font-family: "Poppins", sans-serif; font-size: 14px; }
+.checkout-address-text { color: #595959; font-size: 13.5px; line-height: 1.6; }
+.checkout-payment-label { font-family: "Poppins", sans-serif; font-size: 14px; color: #1f2226; font-weight: 500; }
+.checkout-field-error { color: #eb3e32; font-size: 13px; margin: 4px 0 0; }
+.checkout-add-address { display: inline-block; margin-top: 6px; color: #eb3e32; font-size: 14px; font-weight: 500; }
+.checkout-no-address p { color: #595959; margin-bottom: 16px; }
+.checkout-summary {
+  background-color: #f8f8f8;
+  border-radius: 10px;
+  padding: 26px 28px;
+  position: sticky;
+  top: 20px;
+}
+.checkout-summary-items { list-style: none; margin: 0 0 18px; padding: 0 0 18px; border-bottom: 1px solid #e2e2e2; }
+.checkout-summary-items li { display: flex; justify-content: space-between; gap: 14px; margin-bottom: 14px; font-family: "Poppins", sans-serif; }
+.checkout-summary-item-name { font-size: 13.5px; color: #1f2226; line-height: 1.5; }
+.checkout-summary-item-name .qty { color: #8a8a8a; }
+.checkout-summary-item-name .size { display: block; font-size: 12px; color: #8a8a8a; }
+.checkout-summary-item-price { font-size: 13.5px; font-weight: 600; color: #1f2226; white-space: nowrap; }
+.checkout-summary-totals .row-line { display: flex; justify-content: space-between; padding: 8px 0; font-family: "Poppins", sans-serif; font-size: 14px; color: #444; }
+.checkout-summary-totals .row-total { border-top: 1px solid #e2e2e2; margin-top: 6px; padding-top: 14px; font-size: 18px; font-weight: 700; color: #1f2226; }
+.checkout-shipping-hint { font-size: 12.5px; color: #8a8a8a; margin: 10px 0 0; }
+.checkout-terms { display: flex; align-items: flex-start; gap: 10px; margin: 20px 0 16px; font-size: 13.5px; color: #444; font-family: "Poppins", sans-serif; cursor: pointer; }
+.checkout-terms input { margin-top: 2px; width: 18px; height: 18px; accent-color: #eb3e32; flex-shrink: 0; }
+.checkout-place-order { width: 100%; text-align: center; }
+.checkout-place-order[disabled] { opacity: .5; cursor: not-allowed; }
+
+/* ===== Confirmación / detalle de pedido ===== */
+.order-confirmation-area { padding: 70px 0 100px; }
+@media only screen and (max-width: 767px) { .order-confirmation-area { padding: 45px 0 70px; } }
+.order-confirmation-head { text-align: center; margin-bottom: 40px; }
+.order-confirmation-icon {
+  width: 78px; height: 78px; line-height: 78px;
+  border-radius: 50%;
+  background-color: #d1e7dd; color: #0f5132;
+  font-size: 34px; margin: 0 auto 22px;
+}
+.order-confirmation-title { font-size: 30px; margin-bottom: 12px; }
+@media only screen and (max-width: 767px) { .order-confirmation-title { font-size: 23px; } }
+.order-confirmation-desc { color: #595959; font-size: 16px; margin-bottom: 28px; }
+.order-confirmation-meta {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 18px 40px;
+  background-color: #f8f8f8; border-radius: 10px; padding: 22px 26px; max-width: 720px; margin: 0 auto;
+}
+.order-meta-item { display: flex; flex-direction: column; text-align: center; }
+.order-meta-item .label { font-size: 12px; text-transform: uppercase; letter-spacing: .4px; color: #8a8a8a; margin-bottom: 6px; }
+.order-meta-item .value { font-family: "Poppins", sans-serif; font-weight: 600; color: #1f2226; font-size: 15px; }
+.order-detail-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 30px; }
+.order-detail-number { font-size: 24px; margin-bottom: 4px; }
+.order-detail-date { color: #8a8a8a; font-size: 14px; margin: 0; }
+.order-summary-card { background-color: #fff; border: 1px solid #ececec; border-radius: 10px; padding: 30px; margin-bottom: 30px; }
+.order-summary-block { margin-bottom: 26px; }
+.order-summary-title { font-family: "Poppins", sans-serif; font-size: 16px; font-weight: 600; color: #1f2226; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+.order-items-table table { width: 100%; }
+.order-items-table th { font-family: "Poppins", sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: .3px; color: #8a8a8a; padding: 8px 10px; border-bottom: 1px solid #eee; }
+.order-items-table td { padding: 12px 10px; border-bottom: 1px solid #f2f2f2; font-size: 14px; color: #333; vertical-align: middle; }
+.order-item-name { display: flex; align-items: center; gap: 12px; }
+.order-item-name img { border-radius: 6px; object-fit: cover; background: #f4f4f4; }
+.order-items-table tfoot th { text-transform: none; font-size: 14px; color: #444; text-align: left; border-bottom: none; padding-top: 12px; }
+.order-items-table tfoot td { border-bottom: none; font-weight: 600; padding-top: 12px; }
+.order-items-table .order-total-row th, .order-items-table .order-total-row td { font-size: 18px; color: #1f2226; font-weight: 700; border-top: 1px solid #eee; }
+.text-end { text-align: right; }
+.order-address, .order-payment, .order-notes { color: #444; line-height: 1.8; font-size: 14px; }
+.order-payment-note { background-color: #f8f8f8; border-radius: 8px; padding: 14px 16px; margin-top: 12px; }
+.order-payment-note p { margin: 0; font-size: 13.5px; color: #595959; line-height: 1.6; }
+.order-confirmation-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+.order-confirmation-actions .order-link { color: #eb3e32; font-weight: 500; margin-left: 4px; }
+
+/* ===== Cuenta: dashboard + historial ===== */
+.account-stats { display: flex; flex-wrap: wrap; gap: 16px; margin: 28px 0; }
+.account-stat { flex: 1; min-width: 130px; background-color: #f8f8f8; border-radius: 10px; padding: 22px 20px; text-align: center; }
+.account-stat-value { display: block; font-family: "Poppins", sans-serif; font-size: 28px; font-weight: 700; color: #eb3e32; line-height: 1; margin-bottom: 8px; }
+.account-stat-label { font-size: 13px; color: #595959; }
+.account-recent-order { margin-top: 30px; }
+.account-recent-order h4 { font-size: 17px; margin-bottom: 14px; }
+.account-recent-order-card { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; background-color: #fff; border: 1px solid #ececec; border-radius: 10px; padding: 18px 22px; }
+.account-recent-order-info { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.account-recent-order-info .num { font-family: "Poppins", sans-serif; font-weight: 600; color: #1f2226; }
+.account-recent-order-info .date { color: #8a8a8a; font-size: 13.5px; }
+.account-recent-order-total { margin-left: auto; font-weight: 700; color: #1f2226; }
+.orders-table th { font-family: "Poppins", sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: .3px; color: #8a8a8a; }
+.orders-table td { vertical-align: middle; font-size: 14px; }
