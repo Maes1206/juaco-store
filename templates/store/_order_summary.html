@@ -21,7 +21,7 @@
                   {% if item.product_image %}<img src="assets/img/shop/{{ item.product_image }}" width="54" height="54" alt="{{ item.product_name }}" onerror="this.style.display='none'">{% endif %}
                   <span>{{ item.product_name }}</span>
                 </td>
-                <td>{{ item.size|default:"—" }}</td>
+                <td>{% if item.size %}{{ item.size }}{% endif %}{% if item.color %}<small class="admin-table-note">Color: {{ item.color }}</small>{% endif %}{% if not item.size and not item.color %}—{% endif %}</td>
                 <td>{{ item.quantity }}</td>
                 <td class="text-end">{{ item.subtotal|cop }}</td>
               </tr>
@@ -32,6 +32,7 @@
                 <th colspan="3">Subtotal</th>
                 <td class="text-end">{{ order.subtotal|cop }}</td>
               </tr>
+              {% if order.discount_amount > 0 %}<tr class="order-discount-row"><th colspan="3">Cupon {{ order.coupon_code }}</th><td class="text-end">-{{ order.discount_amount|cop }}</td></tr>{% endif %}
               <tr>
                 <th colspan="3">Envío</th>
                 <td class="text-end">{% if order.shipping_cost > 0 %}{{ order.shipping_cost|cop }}{% else %}Gratis{% endif %}</td>

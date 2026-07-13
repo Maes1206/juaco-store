@@ -128,13 +128,7 @@
           <div class="col-12">
             <div class="header-align">
               <div class="header-navigation-area position-relative">
-                <ul class="main-menu nav">
-                  <li class="has-submenu"><a href="#/"><span>Inicio</span></a>
-                    <ul class="submenu-nav">
-                      <li><a href="index.html"><span>Home One</span></a></li>
-                      <li><a href="index.html"><span>Home Two</span></a></li>
-                    </ul>
-                  </li>
+                <ul class="main-menu nav">                  <li><a href="index.html"><span>Inicio</span></a></li>
                   <li><a href="about-us.html"><span>Nosotros</span></a></li>
                   <li class="has-submenu"><a href="shop.html"><span>Tienda</span></a>
                     <ul class="submenu-nav">
@@ -285,98 +279,40 @@
                 </div>
               </div>
 
-              <!--== Start Comment View Item ==-->
-              <div class="comment-view-area">
-                <h4 class="title-main">Comments</h4>
+              <div class="comment-view-area" id="comentarios">
+                <h4 class="title-main">Comentarios ({{ comment_count }})</h4>
                 <div class="comment-view-content">
+                  {% for comment in comments %}
                   <div class="single-comment">
-                    <div class="author-pic">
-                      <a href="blog.html"><img src="assets/img/blog/author1.webp" width="101" height="118" alt="Image-HasTech"></a>
-                    </div>
+                    <div class="author-pic"><img src="assets/img/blog/author1.webp" width="101" height="118" alt="{{ comment.name }}"></div>
                     <div class="author-info">
-                      <h4 class="title">
-                        <a href="blog.html">Marie Jensen</a>
-                        <span> - </span>
-                        <a class="comment-date" href="blog.html">22 August, 2022</a>
-                      </h4>
-                      <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod temp labore et dol magna aliqua. Ut enim ad minim veniam.</p>
-                      <div class="author-info-footer">
-                        <a class="comment-reply" href="#/">Reply</a>
-                      </div>
+                      <h4 class="title">{{ comment.name }} <span> - </span> <span class="comment-date">{{ comment.created_at|date:"d M Y" }}</span></h4>
+                      <p>{{ comment.body }}</p>
+                      {% if comment.admin_response %}<div class="juaco-official-response"><strong><i class="fa fa-reply"></i> Respuesta de Juaco Store</strong><p>{{ comment.admin_response }}</p>{% if comment.responded_at %}<small>{{ comment.responded_at|date:"d M Y" }}</small>{% endif %}</div>{% endif %}
+                      <details class="blog-reply-box"><summary>Responder</summary><form action="{% url 'blog_detail' post.slug %}#comentarios" method="post">{% csrf_token %}<input type="hidden" name="parent_id" value="{{ comment.id }}"><div class="row"><div class="col-md-6"><input class="form-control" required name="name" placeholder="Nombre *" value="{% if user.is_authenticated %}{{ user.get_full_name|default:user.username }}{% endif %}"></div><div class="col-md-6"><input class="form-control" required type="email" name="email" placeholder="Correo *" value="{% if user.is_authenticated %}{{ user.email }}{% endif %}"></div><div class="col-12"><textarea class="form-control" required name="body" rows="3" placeholder="Escribe tu respuesta"></textarea></div><div class="col-12"><button class="btn-theme" type="submit">Enviar respuesta</button></div></div></form></details>
                     </div>
                   </div>
-                  <div class="single-comment reply-comment">
-                    <div class="author-pic">
-                      <a href="blog.html"><img src="assets/img/blog/author2.webp" width="101" height="118" alt="Image-HasTech"></a>
-                    </div>
-                    <div class="author-info">
-                      <h4 class="title">
-                        <a href="blog.html">Rachel Leonard</a>
-                        <span> - </span>
-                        <a class="comment-date" href="blog.html">22 August, 2022</a>
-                      </h4>
-                      <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sedd labore et dol magna aliqua. Ut enim ad.</p>
-                      <div class="author-info-footer">
-                        <a class="comment-reply" href="#/">Reply</a>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="single-comment">
-                    <div class="author-pic">
-                      <a href="blog.html"><img src="assets/img/blog/author3.webp" width="101" height="118" alt="Image-HasTech"></a>
-                    </div>
-                    <div class="author-info">
-                      <h4 class="title">
-                        <a href="blog.html">Amilia Luna</a>
-                        <span> - </span>
-                        <a class="comment-date" href="blog.html">22 August, 2022</a>
-                      </h4>
-                      <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod temp labore et dol magna aliqua. Ut enim ad minim veniam.</p>
-                      <div class="author-info-footer">
-                        <a class="comment-reply" href="#/">Reply</a>
-                      </div>
-                    </div>
-                  </div>
+                  {% for reply in comment.approved_replies %}
+                  <div class="single-comment reply-comment"><div class="author-pic"><img src="assets/img/blog/author2.webp" width="101" height="118" alt="{{ reply.name }}"></div><div class="author-info"><h4 class="title">{{ reply.name }} <span> - </span> <span class="comment-date">{{ reply.created_at|date:"d M Y" }}</span></h4><p>{{ reply.body }}</p>{% if reply.admin_response %}<div class="juaco-official-response"><strong><i class="fa fa-reply"></i> Respuesta de Juaco Store</strong><p>{{ reply.admin_response }}</p></div>{% endif %}</div></div>
+                  {% endfor %}
+                  {% empty %}<p>Aun no hay comentarios aprobados. Se el primero en participar.</p>{% endfor %}
                 </div>
               </div>
-              <!--== End Comment View Item ==-->
-
-              <!--== Start Comment Item ==-->
               <div class="comment-form-area">
-                <h4 class="title-main">Leave a Comments</h4>
+                <h4 class="title-main">Dejar un comentario</h4>
+                {% if messages %}{% for message in messages %}<div class="marketing-form-success">{{ message }}</div>{% endfor %}{% endif %}
                 <div class="comment-form-content">
-                  <form action="#">
-                    <div class="row ">
-                      <div class="col-md-6">
-                        <div class="form-group">
-                          <input class="form-control" type="text" placeholder="Name *">
-                        </div>
-                      </div>
-                      <div class="col-md-6">
-                        <div class="form-group">
-                          <input class="form-control" type="email" placeholder="Email *">
-                        </div>
-                      </div>
-                      <div class="col-md-12">
-                        <div class="form-group">
-                          <input class="form-control" type="text" placeholder="Subject (Optinal)">
-                        </div>
-                      </div>
-                      <div class="col-md-12">
-                        <div class="form-group mb--0">
-                          <textarea class="form-control" placeholder="Message"></textarea>
-                        </div>
-                      </div>
-                      <div class="col-md-12">
-                        <div class="form-group mb--0">
-                          <button type="submit" class="btn-theme">Send a Comment</button>
-                        </div>
-                      </div>
+                  <form action="{% url 'blog_detail' post.slug %}#comentarios" method="post">
+                    {% csrf_token %}
+                    <div class="row">
+                      <div class="col-md-6"><div class="form-group">{{ comment_form.name }}{{ comment_form.name.errors }}</div></div>
+                      <div class="col-md-6"><div class="form-group">{{ comment_form.email }}{{ comment_form.email.errors }}</div></div>
+                      <div class="col-md-12"><div class="form-group mb--0">{{ comment_form.body }}{{ comment_form.body.errors }}</div></div>
+                      <div class="col-md-12"><div class="form-group mb--0"><button type="submit" class="btn-theme">Enviar comentario</button></div></div>
                     </div>
                   </form>
                 </div>
               </div>
-              <!--== End Comment Item ==-->
             </div>
           </div>
           <div class="col-xl-4" data-aos="fade-left">
@@ -724,13 +660,7 @@
       </div>
       <!-- Mobile Menu Start -->
       <div class="mobile-menu-items">
-        <ul class="nav-menu">
-          <li><a href="#">Inicio</a>
-            <ul class="sub-menu">
-              <li><a href="index.html">Home One</a></li>
-              <li><a href="index.html">Home Two</a></li>
-            </ul>
-          </li>
+        <ul class="nav-menu">          <li><a href="index.html">Inicio</a></li>
           <li><a href="about-us.html">Nosotros</a></li>
           <li><a href="shop.html">Tienda</a>
             <ul class="sub-menu">

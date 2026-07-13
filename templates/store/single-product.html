@@ -1,3 +1,4 @@
+{% load store_extras %}
 <!DOCTYPE html>
 <html lang="es">
 
@@ -180,111 +181,81 @@
       <div class="container">
         <div class="row">
           <div class="col-12">
-            <div class="product-single-item">
+            <div class="product-single-item" data-product-id="{{ product.slug }}" data-product-brand="{{ product.brand|lower }}">
               <div class="row">
                 <div class="col-xl-6">
                   <!--== Start Product Thumbnail Area ==-->
                   <div class="product-single-thumb">
                     <div class="swiper-container single-product-thumb single-product-thumb-slider">
                       <div class="swiper-wrapper">
-                        <div class="swiper-slide">
-                          <a class="lightbox-image" data-fancybox="gallery" href="assets/img/shop/541x540/8743.png">
-                            <img src="assets/img/shop/541x540/8743.png" width="541" height="540" alt="Nike SB Dunk Low x Travis Scott Cactus Jack">
-                          </a>
-                        </div>
-                        <div class="swiper-slide">
-                          <a class="lightbox-image" data-fancybox="gallery" href="assets/img/shop/541x540/8276.png">
-                            <img src="assets/img/shop/541x540/8276.png" width="541" height="540" alt="Vista frontal Nike SB Dunk Low x Travis Scott Cactus Jack">
-                          </a>
-                        </div>
-                        <div class="swiper-slide">
-                          <a class="lightbox-image" data-fancybox="gallery" href="assets/img/shop/541x540/7173.png">
-                            <img src="assets/img/shop/541x540/7173.png" width="541" height="540" alt="Vista posterior Nike SB Dunk Low x Travis Scott Cactus Jack">
-                          </a>
-                        </div>
-                        <div class="swiper-slide">
-                          <a class="lightbox-image" data-fancybox="gallery" href="assets/img/shop/541x540/823763.png">
-                            <img src="assets/img/shop/541x540/823763.png" width="541" height="540" alt="Suela Nike SB Dunk Low x Travis Scott Cactus Jack">
-                          </a>
-                        </div>
+                        {% for image in product.product_images %}
+                        <div class="swiper-slide"><a class="lightbox-image" data-fancybox="gallery" href="{{ image.url }}"><img src="{{ image.url }}" width="541" height="540" alt="{{ image.alt }}"></a></div>
+                        {% endfor %}
                       </div>
                     </div>
                     <div class="swiper-container single-product-nav single-product-nav-slider">
                       <div class="swiper-wrapper">
-                        <div class="swiper-slide">
-                          <img src="assets/img/shop/541x540/8743.png" width="127" height="127" alt="Nike SB Dunk Low x Travis Scott Cactus Jack">
-                        </div>
-                        <div class="swiper-slide">
-                          <img src="assets/img/shop/541x540/8276.png" width="127" height="127" alt="Vista frontal Nike SB Dunk Low x Travis Scott Cactus Jack">
-                        </div>
-                        <div class="swiper-slide">
-                          <img src="assets/img/shop/541x540/7173.png" width="127" height="127" alt="Vista posterior Nike SB Dunk Low x Travis Scott Cactus Jack">
-                        </div>
-                        <div class="swiper-slide">
-                          <img src="assets/img/shop/541x540/823763.png" width="127" height="127" alt="Suela Nike SB Dunk Low x Travis Scott Cactus Jack">
-                        </div>
+                        {% for image in product.product_images %}
+                        <div class="swiper-slide"><img src="{{ image.url }}" width="127" height="127" alt="{{ image.alt }}"></div>
+                        {% endfor %}
                       </div>
                     </div>
-                  </div>
-                  <!--== End Product Thumbnail Area ==-->
+                  </div>                  <!--== End Product Thumbnail Area ==-->
                 </div>
                 <div class="col-xl-6">
                   <!--== Start Product Info Area ==-->
                   <div class="product-single-info">
-                    <h3 class="main-title">Nike SB Dunk Low x Travis Scott &ldquo;Cactus Jack&rdquo;</h3>
+                    <h3 class="main-title">{{ product.name }}</h3>
                     <div class="prices">
-                      <span class="price">$260.000 COP</span>
+                      {% if product.has_discount %}<span class="price-old">{{ product.compare_at_price|cop }}</span><span class="sep">-</span>{% endif %}
+                      <span class="price">{{ product.price|cop }}</span>
+                      {% if product.has_discount %}<span class="product-detail-discount">-{{ product.discount_percent }}%</span>{% endif %}
                     </div>
                     <div class="rating-box-wrap">
-                      <div class="rating-box">
-                        <i class="fa fa-star"></i>
-                        <i class="fa fa-star"></i>
-                        <i class="fa fa-star"></i>
-                        <i class="fa fa-star"></i>
-                        <i class="fa fa-star"></i>
-                      </div>
-                      <div class="review-status">
-                        <a href="javascript:void(0)">(5 reseñas de clientes)</a>
-                      </div>
+                      <div class="rating-box">{% for index in "12345" %}<i class="fa {% if review_average >= forloop.counter %}fa-star{% else %}fa-star-o{% endif %}"></i>{% endfor %}</div>
+                      <div class="review-status"><a href="#reviews">({{ review_count }} resenas · {{ recommendation_percent }}% recomienda)</a></div>
                     </div>
-                    <p>Un sneaker urbano de edición especial que combina materiales premium, diseño icónico y comodidad para destacar en cualquier outfit.</p>
+                    <p>{{ product.description|linebreaksbr }}</p>
+                    {% if product.colors %}
                     <div class="product-color">
                       <h6 class="title">Color</h6>
-                      <ul class="color-list">
-                        <li  data-bg-color="#586882"></li>
-                        <li class="active" data-bg-color="#505050"></li>
-                        <li data-bg-color="#73707a"></li>
-                        <li data-bg-color="#c7bb9b"></li>
+                      <ul class="color-list" aria-label="Seleccionar color">
+                        {% for color in product.colors %}<li{% if forloop.first %} class="active"{% endif %} data-bg-color="{{ color.hex }}" data-color="{{ color.name }}" role="button" tabindex="0" aria-label="{{ color.name }}" aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}"></li>{% endfor %}
                       </ul>
                     </div>
+                    {% endif %}
+                    {% if product.sizes %}
                     <div class="product-size">
                       <h6 class="title">Talla</h6>
-                      <ul class="size-list">
-                        <li>38</li>
-                        <li class="active">40</li>
-                        <li>42</li>
-                        <li>44</li>
+                      <ul class="size-list" aria-label="Seleccionar talla">
+                        {% for size in product.sizes %}<li{% if forloop.first %} class="active"{% endif %} data-size="{{ size }}" role="button" tabindex="0" aria-label="Talla {{ size }}" aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}">{{ size }}</li>{% endfor %}
                       </ul>
+                    </div>
+                    {% endif %}
+                    <div class="product-stock-status{% if product.stock == 0 %} is-out{% endif %}">
+                      {% if product.stock > 0 %}<i class="fa fa-check-circle"></i> Disponible · {{ product.stock }} unidades{% else %}<i class="fa fa-times-circle"></i> Producto agotado{% endif %}
                     </div>
                     <div class="product-quick-action">
                       <div class="qty-wrap">
-                        <div class="pro-qty">
-                          <input type="text" title="Cantidad" value="1">
-                        </div>
+                        <div class="pro-qty"><input type="text" title="Cantidad" value="1"></div>
                       </div>
-                      <a class="btn-theme" href="shop-cart.html">Agregar al carrito</a>
+                      {% if product.stock > 0 %}
+                      <a class="btn-theme" href="shop-cart.html" data-add-to-cart data-product-id="{{ product.slug }}">Agregar al carrito</a>
+                      {% else %}
+                      <button class="btn-theme" type="button" disabled>Agotado</button>
+                      {% endif %}
                     </div>
                     <div class="product-wishlist-compare">
                       <a href="shop-wishlist.html"><i class="pe-7s-like"></i>Agregar a favoritos</a>
                       <a href="#" data-product-share><i class="fa fa-share-alt"></i>Compartir producto</a>
                     </div>
                     <div class="product-info-footer">
-                      <h6 class="code"><span>Referencia:</span> JS-NK-001</h6>
-                      <div class="social-icons">
+                      <h6 class="code"><span>Referencia:</span> {{ product.reference }}</h6>
+                      <div class="social-icons product-social-share">
                         <span>Compartir</span>
-                        <a href="#/"><i class="fa fa-facebook"></i></a>
-                        <a href="#/"><i class="fa fa-dribbble"></i></a>
-                        <a href="#/"><i class="fa fa-pinterest-p"></i></a>
+                        <a href="#" data-product-share-network="facebook" aria-label="Compartir en Facebook" title="Compartir en Facebook"><i class="fa fa-facebook"></i></a>
+                        <a href="#" data-product-share-network="instagram" aria-label="Compartir en Instagram" title="Compartir en Instagram"><i class="fa fa-instagram"></i></a>
+                        <a href="#" data-product-share-network="whatsapp" aria-label="Compartir por WhatsApp" title="Compartir por WhatsApp"><i class="fa fa-whatsapp"></i></a>
                       </div>
                     </div>
                   </div>
@@ -306,179 +277,47 @@
                   <a id="description-tab" data-bs-toggle="pill" href="#description" role="tab" aria-controls="description" aria-selected="false">Descripcion</a>
                 </li>
                 <li role="presentation">
-                  <a id="reviews-tab" data-bs-toggle="pill" href="#reviews" role="tab" aria-controls="reviews" aria-selected="false">Reseñas <span>(05)</span></a>
+                  <a id="reviews-tab" data-bs-toggle="pill" href="#reviews" role="tab" aria-controls="reviews" aria-selected="false">Reseñas <span>({{ reviews|length }})</span></a>
                 </li>
               </ul>
               <div class="tab-content product-tab-content" id="ReviewTabContent">
                 <div class="tab-pane fade show active" id="information" role="tabpanel" aria-labelledby="information-tab">
                   <div class="product-information">
-                    <p>Este modelo está pensado para quienes buscan estilo urbano, comodidad y una silueta que no pasa desapercibida. Su construcción combina materiales resistentes, una suela de gran tracción y detalles inspirados en el streetwear.</p>
+                    <p>{{ product.additional_information|default:product.description|linebreaksbr }}</p>
                   </div>
                 </div>
                 <div class="tab-pane fade" id="description" role="tabpanel" aria-labelledby="description-tab">
                   <div class="product-description">
-                    <p>Disponible en tallas seleccionadas. Te recomendamos elegir tu talla habitual y consultar con nuestro equipo si necesitas asesoría antes de comprar.</p>
+                    <p>{{ product.detailed_description|default:product.description|linebreaksbr }}</p>
+                    {% if product.sizes %}<p><strong>Tallas disponibles:</strong> {{ product.sizes|join:", " }}.</p>{% endif %}
+                    {% if product.weight_kg %}<p><strong>Peso aproximado:</strong> {{ product.weight_kg|floatformat:2 }} kg.</p>{% endif %}
                   </div>
                 </div>
                 <div class="tab-pane fade" id="reviews" role="tabpanel" aria-labelledby="reviews-tab">
                   <div class="product-review-content">
                     <div class="review-content-header">
-                      <h3>Reseñas de clientes</h3>
-                      <div class="review-info">
-                        <ul class="review-rating">
-                          <li class="fa fa-star"></li>
-                          <li class="fa fa-star"></li>
-                          <li class="fa fa-star"></li>
-                          <li class="fa fa-star"></li>
-                          <li class="fa fa-star-o"></li>
-                        </ul>
-                        <span class="review-caption">Basado en 5 reseñas</span>
-                        <span class="review-write-btn">Escribir una reseña</span>
-                      </div>
+                      <h3>Resenas de clientes</h3>
+                      <div class="review-info"><span class="review-caption">Puntuacion {{ review_average|floatformat:1 }}/5 · {{ recommendation_percent }}% recomienda</span>{% if user.is_authenticated %}<span class="review-write-btn">Escribir una resena</span>{% endif %}</div>
                     </div>
-
-                    <!--== Start Reviews Form Item ==-->
                     <div class="reviews-form-area">
-                      <h4 class="title">Escribir una reseña</h4>
-                      <div class="reviews-form-content">
-                        <form action="#">
-                          <div class="row">
-                            <div class="col-md-12">
-                              <div class="form-group">
-                                <label for="for_name">Nombre</label>
-                                <input id="for_name" class="form-control" type="text" placeholder="Ingresa tu nombre">
-                              </div>
-                            </div>
-                            <div class="col-md-12">
-                              <div class="form-group">
-                                <label for="for_email">Correo electrónico</label>
-                                <input id="for_email" class="form-control" type="email" placeholder="john.smith@example.com">
-                              </div>
-                            </div>
-                            <div class="col-md-12">
-                              <div class="form-group">
-                                <span class="title">Calificación</span>
-                                <ul class="review-rating">
-                                  <li class="fa fa-star-o"></li>
-                                  <li class="fa fa-star-o"></li>
-                                  <li class="fa fa-star-o"></li>
-                                  <li class="fa fa-star-o"></li>
-                                  <li class="fa fa-star-o"></li>
-                                </ul>
-                              </div>
-                            </div>
-                            <div class="col-md-12">
-                              <div class="form-group">
-                                <label for="for_review-title">Título de la reseña</label>
-                                <input id="for_review-title" class="form-control" type="text" placeholder="Escribe un título para tu reseña">
-                              </div>
-                            </div>
-                            <div class="col-md-12">
-                              <div class="form-group">
-                                <label for="for_comment">Comentario (1500)</label>
-                                <textarea id="for_comment" class="form-control" placeholder="Escribe tu comentario aquí"></textarea>
-                              </div>
-                            </div>
-                            <div class="col-md-12">
-                              <div class="form-submit-btn">
-                                <button type="submit" class="btn-submit">Publicar reseña</button>
-                              </div>
-                            </div>
-                          </div>
-                        </form>
+                      {% if messages %}{% for message in messages %}<div class="marketing-form-success">{{ message }}</div>{% endfor %}{% endif %}
+                      {% if user.is_authenticated %}
+                      <h4 class="title">Puntuar y recomendar</h4>
+                      <p>Publicaras como <strong>{{ user.get_full_name|default:user.username }}</strong>.</p>
+                      <div class="reviews-form-content"><form action="single-product.html?producto={{ product.slug }}#reviews" method="post">{% csrf_token %}<input type="hidden" name="name" value="{{ user.get_full_name|default:user.username }}"><input type="hidden" name="email" value="{{ user.email }}"><div class="row"><div class="col-md-12"><div class="form-group"><label>Calificacion de 1 a 5</label>{{ review_form.rating }}{{ review_form.rating.errors }}</div></div><div class="col-md-12"><div class="form-group product-recommend-check">{{ review_form.recommends }} <label for="{{ review_form.recommends.id_for_label }}">{{ review_form.recommends.label }}</label></div></div><div class="col-md-12"><div class="form-group"><label>Titulo</label>{{ review_form.title }}{{ review_form.title.errors }}</div></div><div class="col-md-12"><div class="form-group"><label>Comentario</label>{{ review_form.body }}{{ review_form.body.errors }}</div></div><div class="col-md-12"><div class="form-submit-btn"><button type="submit" class="btn-submit">Publicar resena</button></div></div></div></form></div>
+                      {% else %}
+                      <div class="review-login-prompt"><i class="fa fa-user"></i><div><strong>Inicia sesion para puntuar y recomendar</strong><p>Las resenas pertenecen a usuarios registrados.</p><a href="account-login.html?next=/single-product.html%3Fproducto%3D{{ product.slug }}%23reviews">Iniciar sesion</a></div></div>
+                      {% endif %}
+                    </div>                    <div class="reviews-content-body">
+                      {% for review in reviews %}
+                      <div class="review-item">
+                        <ul class="review-rating">{% for index in "12345" %}<li class="fa {% if review.rating >= forloop.counter %}fa-star{% else %}fa-star-o{% endif %}"></li>{% endfor %}</ul>
+                        <h3 class="title">{{ review.title }}</h3>
+                        <h5 class="sub-title"><span>{{ review.name }}</span> el <span>{{ review.created_at|date:"d M Y" }}</span></h5><span class="product-recommendation{% if not review.recommends %} is-negative{% endif %}"><i class="fa {% if review.recommends %}fa-thumbs-up{% else %}fa-thumbs-down{% endif %}"></i> {% if review.recommends %}Recomienda este producto{% else %}No recomienda este producto{% endif %}</span>
+                        <p>{{ review.body }}</p>{% if review.admin_response %}<div class="juaco-official-response"><strong><i class="fa fa-reply"></i> Respuesta de Juaco Store</strong><p>{{ review.admin_response }}</p>{% if review.responded_at %}<small>{{ review.responded_at|date:"d M Y" }}</small>{% endif %}</div>{% endif %}
                       </div>
+                      {% empty %}<p>Aun no hay resenas aprobadas para este producto.</p>{% endfor %}
                     </div>
-                    <!--== End Reviews Form Item ==-->
-
-                    <div class="reviews-content-body">
-                      <!--== Start Reviews Content Item ==-->
-                      <div class="review-item">
-                        <ul class="review-rating">
-                          <li class="fa fa-star"></li>
-                          <li class="fa fa-star"></li>
-                          <li class="fa fa-star"></li>
-                          <li class="fa fa-star"></li>
-                          <li class="fa fa-star"></li>
-                        </ul>
-                        <h3 class="title">Excelente servicio de envío</h3>
-                        <h5 class="sub-title"><span>Nantu Nayal</span> el <span>30 de septiembre de 2022</span></h5>
-                        <p>El envío fue rápido y el producto llegó muy bien protegido. La presentación, el empaque y la atención durante todo el proceso fueron excelentes.</p>
-                        <a href="#/">Reportar reseña</a>
-                      </div>
-                      <!--== End Reviews Content Item ==-->
-
-                      <!--== Start Reviews Content Item ==-->
-                      <div class="review-item">
-                        <ul class="review-rating">
-                          <li class="fa fa-star"></li>
-                          <li class="fa fa-star-o"></li>
-                          <li class="fa fa-star-o"></li>
-                          <li class="fa fa-star-o"></li>
-                          <li class="fa fa-star-o"></li>
-                        </ul>
-                        <h3 class="title">Calidad baja</h3>
-                        <h5 class="sub-title"><span>Olivia H.</span> el <span>30 de septiembre de 2022</span></h5>
-                        <p>El producto no cumplió por completo mis expectativas. La talla fue un poco diferente a la esperada y el acabado podría mejorar.</p>
-                        <a href="#/">Reportar reseña</a>
-                      </div>
-                      <!--== End Reviews Content Item ==-->
-
-                      <!--== Start Reviews Content Item ==-->
-                      <div class="review-item">
-                        <ul class="review-rating">
-                          <li class="fa fa-star"></li>
-                          <li class="fa fa-star"></li>
-                          <li class="fa fa-star"></li>
-                          <li class="fa fa-star"></li>
-                          <li class="fa fa-star"></li>
-                        </ul>
-                        <h3 class="title">Excelente atención</h3>
-                        <h5 class="sub-title"><span>Halk Marron</span> el <span>30 de septiembre de 2022</span></h5>
-                        <p>Muy buena atención y entrega puntual. El equipo resolvió mis dudas antes de la compra.</p>
-                        <a href="#/">Reportar reseña</a>
-                      </div>
-                      <!--== End Reviews Content Item ==-->
-
-                      <!--== Start Reviews Content Item ==-->
-                      <div class="review-item">
-                        <ul class="review-rating">
-                          <li class="fa fa-star"></li>
-                          <li class="fa fa-star"></li>
-                          <li class="fa fa-star"></li>
-                          <li class="fa fa-star-o"></li>
-                          <li class="fa fa-star-o"></li>
-                        </ul>
-                        <h3 class="title">El precio es muy alto</h3>
-                        <h5 class="sub-title"><span>Musa</span> el <span>30 de septiembre de 2022</span></h5>
-                        <p>El producto es de buena calidad, aunque considero que el precio podría ser más competitivo.</p>
-                        <a href="#/">Reportar reseña</a>
-                      </div>
-                      <!--== End Reviews Content Item ==-->
-
-                      <!--== Start Reviews Content Item ==-->
-                      <div class="review-item">
-                        <ul class="review-rating">
-                          <li class="fa fa-star"></li>
-                          <li class="fa fa-star"></li>
-                          <li class="fa fa-star"></li>
-                          <li class="fa fa-star"></li>
-                          <li class="fa fa-star-o"></li>
-                        </ul>
-                        <h3 class="title">Normal</h3>
-                        <h5 class="sub-title"><span>Muhammad</span> el <span>30 de septiembre de 2022</span></h5>
-                        <p>Buen producto para el uso diario. Es cómodo, se ve bien y corresponde a las fotos mostradas.</p>
-                        <a href="#/">Reportar reseña</a>
-                      </div>
-                      <!--== End Reviews Content Item ==-->
-                    </div>
-
-                    <!--== Start Reviews Pagination Item ==-->
-                    <div class="review-pagination">
-                      <span class="pagination-pag">1</span>
-                      <span class="pagination-pag">2</span>
-                      <span class="pagination-next">Siguiente »</span>
-                    </div>
-                    <!--== End Reviews Pagination Item ==-->
                   </div>
                 </div>
               </div>
@@ -496,9 +335,7 @@
           <div class="col-12">
             <div class="section-title text-center">
               <h3 class="title">Productos relacionados</h3>
-              <div class="desc">
-                <p>Otros modelos seleccionados que te pueden interesar</p>
-              </div>
+              <div class="desc"><p>Otros modelos seleccionados que te pueden interesar</p></div>
             </div>
           </div>
         </div>
@@ -507,231 +344,41 @@
             <div class="product-slider-wrap">
               <div class="swiper-container product-slider-col4-container">
                 <div class="swiper-wrapper">
+                  {% for related in related_products %}
                   <div class="swiper-slide">
-                    <!--== Start Product Item ==-->
                     <div class="product-item">
                       <div class="inner-content">
                         <div class="product-thumb">
-                          <a href="single-product.html">
-                            <img src="assets/img/shop/jordan423.png" width="270" height="274" alt="Air Jordan 4 Retro SE Paris Olympics">
+                          <a href="single-product.html?producto={{ related.slug }}">
+                            <img src="{{ related.image }}" width="270" height="274" alt="{{ related.main_image_alt }}">
                           </a>
-                          <div class="product-flag">
-                            <ul>
-                              <li class="discount">-10%</li>
-                            </ul>
-                          </div>
+                          {% if related.has_discount %}<div class="product-flag"><ul><li class="discount">-{{ related.discount_percent }}%</li></ul></div>{% endif %}
                           <div class="product-action">
-                    <a class="btn-product-wishlist" href="shop-wishlist.html"><i class="fa fa-heart"></i></a>
-                    <a class="btn-product-cart" href="shop-cart.html"><i class="fa fa-shopping-cart"></i></a>
-                    <button class="btn-product-share" type="button" data-product-share aria-label="Compartir producto" title="Compartir producto"><i class="fa fa-share-alt"></i></button>
-                  </div>
-                          <a class="banner-link-overlay" href="shop.html"></a>
+                            <a class="btn-product-wishlist" href="shop-wishlist.html" data-product-id="{{ related.slug }}"><i class="fa fa-heart"></i></a>
+                            <a class="btn-product-cart" href="shop-cart.html" data-product-id="{{ related.slug }}"><i class="fa fa-shopping-cart"></i></a>
+                            <button class="btn-product-share" type="button" data-product-share data-product-id="{{ related.slug }}" aria-label="Compartir producto"><i class="fa fa-share-alt"></i></button>
+                          </div>
+                          <a class="banner-link-overlay" href="single-product.html?producto={{ related.slug }}"></a>
                         </div>
                         <div class="product-info">
-                          <div class="category">
-                    <ul>
-                      <li><a href="shop.html">Hombre</a></li>
-                              <li class="sep">/</li>
-                              <li><a href="shop.html">Mujer</a></li>
-                            </ul>
-                          </div>
-                          <h4 class="title"><a href="single-product.html">Air Jordan 4 Retro SE Paris Olympics</a></h4>
+                          <div class="category"><ul><li><a href="shop.html?marca={{ related.brand|urlencode }}">{{ related.brand }}</a></li></ul></div>
+                          <h4 class="title"><a href="single-product.html?producto={{ related.slug }}">{{ related.name }}</a></h4>
                           <div class="prices">
-                            <span class="price-old">$267.778</span>
-                            <span class="sep">-</span>
-                            <span class="price">$241.000</span>
+                            {% if related.has_discount %}<span class="price-old">{{ related.compare_at_price|cop }}</span><span class="sep">-</span>{% endif %}
+                            <span class="price">{{ related.price|cop }}</span>
                           </div>
                         </div>
                       </div>
                     </div>
-                    <!--== End prPduct Item ==-->
                   </div>
-                  <div class="swiper-slide">
-                    <!--== Start Product Item ==-->
-                    <div class="product-item">
-                      <div class="inner-content">
-                        <div class="product-thumb">
-                          <a href="single-product.html">
-                            <img src="assets/img/shop/727340.png" width="270" height="274" alt="Adidas Forum Low verde y blanco">
-                          </a>
-                          <div class="product-action">
-                    <a class="btn-product-wishlist" href="shop-wishlist.html"><i class="fa fa-heart"></i></a>
-                    <a class="btn-product-cart" href="shop-cart.html"><i class="fa fa-shopping-cart"></i></a>
-                    <button class="btn-product-share" type="button" data-product-share aria-label="Compartir producto" title="Compartir producto"><i class="fa fa-share-alt"></i></button>
-                  </div>
-                          <a class="banner-link-overlay" href="shop.html"></a>
-                        </div>
-                        <div class="product-info">
-                          <div class="category">
-                    <ul>
-                      <li><a href="shop.html">Hombre</a></li>
-                              <li class="sep">/</li>
-                              <li><a href="shop.html">Mujer</a></li>
-                            </ul>
-                          </div>
-                          <h4 class="title"><a href="single-product.html">Adidas Forum Low Verde/Blanco</a></h4>
-                          <div class="prices">
-                            <span class="price">$190.000</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <!--== End prPduct Item ==-->
-                  </div>
-                  <div class="swiper-slide">
-                    <!--== Start Product Item ==-->
-                    <div class="product-item">
-                      <div class="inner-content">
-                        <div class="product-thumb">
-                          <a href="single-product.html">
-                            <img src="assets/img/shop/jordan623.png" width="270" height="274" alt="Air Jordan 3 Retro White Cobalt Bliss">
-                          </a>
-                          <div class="product-flag">
-                            <ul>
-                              <li class="discount">-10%</li>
-                            </ul>
-                          </div>
-                          <div class="product-action">
-                    <a class="btn-product-wishlist" href="shop-wishlist.html"><i class="fa fa-heart"></i></a>
-                    <a class="btn-product-cart" href="shop-cart.html"><i class="fa fa-shopping-cart"></i></a>
-                    <button class="btn-product-share" type="button" data-product-share aria-label="Compartir producto" title="Compartir producto"><i class="fa fa-share-alt"></i></button>
-                  </div>
-                          <a class="banner-link-overlay" href="shop.html"></a>
-                        </div>
-                        <div class="product-info">
-                          <div class="category">
-                    <ul>
-                      <li><a href="shop.html">Hombre</a></li>
-                              <li class="sep">/</li>
-                              <li><a href="shop.html">Mujer</a></li>
-                            </ul>
-                          </div>
-                          <h4 class="title"><a href="single-product.html">Air Jordan 3 Retro White Cobalt Bliss</a></h4>
-                          <div class="prices">
-                            <span class="price-old">$255.556</span>
-                            <span class="sep">-</span>
-                            <span class="price">$230.000</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <!--== End prPduct Item ==-->
-                  </div>
-                  <div class="swiper-slide">
-                    <!--== Start Product Item ==-->
-                    <div class="product-item">
-                      <div class="inner-content">
-                        <div class="product-thumb">
-                          <a href="single-product.html">
-                            <img src="assets/img/shop/2634.png" width="270" height="274" alt="Jordan 4 J Balvin">
-                          </a>
-                          <div class="product-action">
-                    <a class="btn-product-wishlist" href="shop-wishlist.html"><i class="fa fa-heart"></i></a>
-                    <a class="btn-product-cart" href="shop-cart.html"><i class="fa fa-shopping-cart"></i></a>
-                    <button class="btn-product-share" type="button" data-product-share aria-label="Compartir producto" title="Compartir producto"><i class="fa fa-share-alt"></i></button>
-                  </div>
-                          <a class="banner-link-overlay" href="shop.html"></a>
-                        </div>
-                        <div class="product-info">
-                          <div class="category">
-                    <ul>
-                      <li><a href="shop.html">Hombre</a></li>
-                              <li class="sep">/</li>
-                              <li><a href="shop.html">Mujer</a></li>
-                            </ul>
-                          </div>
-                          <h4 class="title"><a href="single-product.html">Jordan 4 J Balvin</a></h4>
-                          <div class="prices">
-                            <span class="price">$450.000</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <!--== End prPduct Item ==-->
-                  </div>
-                  <div class="swiper-slide">
-                    <!--== Start Product Item ==-->
-                    <div class="product-item">
-                      <div class="inner-content">
-                        <div class="product-thumb">
-                          <a href="single-product.html">
-                            <img src="assets/img/shop/jordanobsidian-card.png" width="270" height="274" alt="Jordan 1 Obsidian">
-                          </a>
-                          <div class="product-action">
-                    <a class="btn-product-wishlist" href="shop-wishlist.html"><i class="fa fa-heart"></i></a>
-                    <a class="btn-product-cart" href="shop-cart.html"><i class="fa fa-shopping-cart"></i></a>
-                    <button class="btn-product-share" type="button" data-product-share aria-label="Compartir producto" title="Compartir producto"><i class="fa fa-share-alt"></i></button>
-                  </div>
-                          <a class="banner-link-overlay" href="shop.html"></a>
-                        </div>
-                        <div class="product-info">
-                          <div class="category">
-                    <ul>
-                      <li><a href="shop.html">Hombre</a></li>
-                              <li class="sep">/</li>
-                              <li><a href="shop.html">Mujer</a></li>
-                            </ul>
-                          </div>
-                          <h4 class="title"><a href="single-product.html">Jordan 1 Obsidian</a></h4>
-                          <div class="prices">
-                            <span class="price-old">$270.000</span>
-                            <span class="sep">-</span>
-                            <span class="price">$240.000</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <!--== End prPduct Item ==-->
-                  </div>
-                  <div class="swiper-slide">
-                    <!--== Start Product Item ==-->
-                    <div class="product-item">
-                      <div class="inner-content">
-                        <div class="product-thumb">
-                          <a href="single-product.html">
-                            <img src="assets/img/shop/Sin título (270 x 274 px) (3).png" width="270" height="274" alt="Nike Air Force 1 Triple White">
-                          </a>
-                          <div class="product-flag">
-                            <ul>
-                              <li class="discount">-10%</li>
-                            </ul>
-                          </div>
-                          <div class="product-action">
-                    <a class="btn-product-wishlist" href="shop-wishlist.html"><i class="fa fa-heart"></i></a>
-                    <a class="btn-product-cart" href="shop-cart.html"><i class="fa fa-shopping-cart"></i></a>
-                    <button class="btn-product-share" type="button" data-product-share aria-label="Compartir producto" title="Compartir producto"><i class="fa fa-share-alt"></i></button>
-                  </div>
-                          <a class="banner-link-overlay" href="shop.html"></a>
-                        </div>
-                        <div class="product-info">
-                          <div class="category">
-                    <ul>
-                      <li><a href="shop.html">Hombre</a></li>
-                              <li class="sep">/</li>
-                              <li><a href="shop.html">Mujer</a></li>
-                            </ul>
-                          </div>
-                          <h4 class="title"><a href="single-product.html">Nike Air Force 1 Triple White</a></h4>
-                          <div class="prices">
-                            <span class="price-old">$400.000</span>
-                            <span class="sep">-</span>
-                            <span class="price">$230.000</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <!--== End prPduct Item ==-->
-                  </div>
+                  {% empty %}
+                  <div class="swiper-slide"><p>No hay productos relacionados disponibles.</p></div>
+                  {% endfor %}
                 </div>
               </div>
-              <!--== Add Swiper Arrows ==-->
               <div class="product-swiper-btn-wrap">
-                <div class="product-swiper-btn-prev">
-                  <i class="fa fa-arrow-left"></i>
-                </div>
-                <div class="product-swiper-btn-next">
-                  <i class="fa fa-arrow-right"></i>
-                </div>
+                <div class="product-swiper-btn-prev"><i class="fa fa-arrow-left"></i></div>
+                <div class="product-swiper-btn-next"><i class="fa fa-arrow-right"></i></div>
               </div>
             </div>
           </div>
@@ -991,13 +638,7 @@
       </div>
       <!-- Mobile Menu Start -->
       <div class="mobile-menu-items">
-        <ul class="nav-menu">
-          <li><a href="#">Inicio</a>
-            <ul class="sub-menu">
-              <li><a href="index.html">Home One</a></li>
-              <li><a href="index.html">Home Two</a></li>
-            </ul>
-          </li>
+        <ul class="nav-menu">          <li><a href="index.html">Inicio</a></li>
           <li><a href="about-us.html">Nosotros</a></li>
           <li><a href="shop.html">Tienda</a>
             <ul class="sub-menu">

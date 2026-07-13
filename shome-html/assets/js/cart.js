@@ -45,6 +45,12 @@
     return active ? active.textContent.trim() : '';
   }
 
+  function selectedColor(trigger) {
+    var detail = trigger.closest('.product-single-item');
+    var active = detail && detail.querySelector('.product-color .color-list li.active');
+    return active ? (active.dataset.color || active.getAttribute('aria-label') || '').trim() : '';
+  }
+
   function updateBadges(cart) {
     document.querySelectorAll('.shop-count').forEach(function (badge) {
       badge.textContent = String(cart.count);
@@ -67,6 +73,7 @@
         '<span class="product-title">' + escapeHtml(item.name) + '</span>' +
       '</a>' +
       (item.size ? '<span class="product-size">Talla: ' + escapeHtml(item.size) + '</span>' : '') +
+      (item.color ? '<span class="product-size">Color: ' + escapeHtml(item.color) + '</span>' : '') +
       '<span class="product-price">' + item.quantity + ' × ' + money(item.price) + '</span>' +
     '</li>';
   }
@@ -75,7 +82,7 @@
     return '<tr class="cart-product-item" data-cart-row="' + item.id + '">' +
       '<td class="product-remove"><a href="#" data-cart-remove="' + item.id + '" aria-label="Eliminar producto"><i class="fa fa-trash-o"></i></a></td>' +
       '<td class="product-thumb"><a href="single-product.html?producto=' + encodeURIComponent(item.product_id) + '"><img src="' + item.image + '" width="90" height="110" alt="' + item.name + '"></a></td>' +
-      '<td class="product-name"><h4 class="title"><a href="single-product.html?producto=' + encodeURIComponent(item.product_id) + '">' + item.name + '</a></h4>' + (item.size ? '<small>Talla: ' + item.size + '</small>' : '') + '</td>' +
+      '<td class="product-name"><h4 class="title"><a href="single-product.html?producto=' + encodeURIComponent(item.product_id) + '">' + item.name + '</a></h4>' + (item.size ? '<small>Talla: ' + item.size + '</small>' : '') + (item.color ? '<small>Color: ' + item.color + '</small>' : '') + '</td>' +
       '<td class="product-price"><span class="price">' + money(item.price) + '</span></td>' +
       '<td class="product-quantity"><div class="pro-qty"><input type="number" min="1" class="quantity" data-cart-quantity="' + item.id + '" value="' + item.quantity + '"></div></td>' +
       '<td class="product-subtotal"><span class="price">' + money(item.subtotal) + '</span></td></tr>';
@@ -94,8 +101,23 @@
         '<tr class="actions"><td class="border-0" colspan="6"><button type="button" class="clear-cart">Vaciar carrito</button><a href="shop.html" class="btn-theme btn-flat">Seguir comprando</a></td></tr>' :
         '<tr class="cart-empty-row"><td colspan="6">Tu carrito está vacío. <a href="shop.html">Explorar productos</a></td></tr>';
     }
-    document.querySelectorAll('.cart-subtotal .price, .order-total .price, [data-cart-subtotal]').forEach(function (node) {
+    document.querySelectorAll('.cart-subtotal .price, [data-cart-subtotal]').forEach(function (node) {
       node.textContent = money(cart.subtotal);
+    });
+    document.querySelectorAll('[data-cart-shipping]').forEach(function (node) {
+      node.textContent = money(cart.shipping);
+    });
+    document.querySelectorAll('.order-total .price').forEach(function (node) {
+      node.textContent = money(cart.total);
+    });
+    document.querySelectorAll('.cart-discount').forEach(function (row) {
+      row.hidden = !cart.discount;
+    });
+    document.querySelectorAll('[data-cart-discount]').forEach(function (node) {
+      node.textContent = '-' + money(cart.discount);
+    });
+    document.querySelectorAll('[data-coupon-code]').forEach(function (node) {
+      node.textContent = cart.coupon_code ? '(' + cart.coupon_code + ')' : '';
     });
     document.querySelectorAll('.aside-cart-wrapper .cart-total .amount').forEach(function (node) {
       node.textContent = money(cart.subtotal);
@@ -163,7 +185,7 @@
       event.stopImmediatePropagation();
       request('/api/cart/items/', {
         method: 'POST',
-        body: JSON.stringify({ product_id: productId, quantity: 1, size: selectedSize(add) })
+        body: JSON.stringify({ product_id: productId, quantity: 1, size: selectedSize(add), color: selectedColor(add) })
       }).then(function (cart) {
         renderCart(cart);
         notify('Producto agregado al carrito.');

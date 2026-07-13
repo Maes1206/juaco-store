@@ -2,20 +2,23 @@ from datetime import datetime, timezone
 from decimal import Decimal
 
 from django.db import transaction
+from django.db.models import F
+from django.utils import timezone as django_timezone
 
-from .models import Cart, CartItem, Order, OrderItem
+from .models import Cart, CartItem, Coupon, CouponRedemption, Order, OrderItem
 
 
 FREE_SHIPPING_THRESHOLD = Decimal("400000")
 FLAT_SHIPPING_RATE = Decimal("15000")
 
 
-def shipping_cost_for(subtotal):
-    """Envío gratis desde $400.000 COP; de lo contrario tarifa fija."""
-    if subtotal >= FREE_SHIPPING_THRESHOLD:
+def shipping_cost_for(subtotal, quoted_cost=None):
+    """Aplica envío gratis o la cotización guardada; conserva una tarifa de respaldo."""
+    subtotal = Decimal(subtotal)
+    if subtotal >= FREE_SHIPPING_THRESHOLD or subtotal <= 0:
         return Decimal("0")
-    if subtotal <= 0:
-        return Decimal("0")
+    if quoted_cost is not None:
+        return max(Decimal("0"), Decimal(str(quoted_cost)))
     return FLAT_SHIPPING_RATE
 
 
@@ -27,12 +30,44 @@ def _generate_order_number():
     return f"{prefix}{sequence:04d}"
 
 
+class CouponError(Exception):
+    """Se lanza cuando un cupon no se puede aplicar o canjear."""
+
+
+def validate_coupon(code, subtotal, user=None, for_update=False):
+    normalized_code = (code or "").strip().upper()
+    if not normalized_code:
+        raise CouponError("Ingresa un codigo de cupon.")
+    queryset = Coupon.objects.select_for_update() if for_update else Coupon.objects.all()
+    coupon = queryset.filter(code__iexact=normalized_code, is_active=True).first()
+    if coupon is None:
+        raise CouponError("El cupon no existe o esta inactivo.")
+    now = django_timezone.now()
+    if now < coupon.starts_at:
+        raise CouponError("El cupon aun no esta vigente.")
+    if now >= coupon.expires_at:
+        raise CouponError("El cupon ya expiro.")
+    if Decimal(subtotal) < coupon.minimum_purchase:
+        raise CouponError(f"Este cupon requiere una compra minima de ${coupon.minimum_purchase:,.0f} COP.")
+    if coupon.usage_limit is not None and coupon.times_used >= coupon.usage_limit:
+        raise CouponError("El cupon alcanzo su limite de usos.")
+    if user and user.is_authenticated and coupon.once_per_user and coupon.redemptions.filter(user=user).exists():
+        raise CouponError("Ya utilizaste este cupon anteriormente.")
+    return coupon
+
+
+def coupon_totals(code, subtotal, user=None):
+    if not code:
+        return None, Decimal("0")
+    coupon = validate_coupon(code, subtotal, user=user)
+    return coupon, coupon.discount_for(subtotal)
+
 class CheckoutError(Exception):
     """Se lanza cuando el carrito no puede convertirse en pedido."""
 
 
 @transaction.atomic
-def create_order_from_cart(user, cart, address, payment_method, notes=""):
+def create_order_from_cart(user, cart, address, payment_method, notes="", coupon_code="", shipping_cost=None):
     items = list(cart.items.select_related("product"))
     if not items:
         raise CheckoutError("Tu carrito está vacío.")
@@ -44,7 +79,15 @@ def create_order_from_cart(user, cart, address, payment_method, notes=""):
             raise CheckoutError(f"No hay stock suficiente de «{item.product.name}» (disponibles: {item.product.stock}).")
 
     subtotal = sum((item.subtotal for item in items), Decimal("0"))
-    shipping = shipping_cost_for(subtotal)
+    shipping = shipping_cost_for(subtotal, quoted_cost=shipping_cost)
+    coupon = None
+    discount = Decimal("0")
+    if coupon_code:
+        try:
+            coupon = validate_coupon(coupon_code, subtotal, user=user, for_update=True)
+        except CouponError as exc:
+            raise CheckoutError(str(exc)) from exc
+        discount = coupon.discount_for(subtotal)
 
     order = Order.objects.create(
         user=user,
@@ -59,7 +102,10 @@ def create_order_from_cart(user, cart, address, payment_method, notes=""):
         postal_code=address.postal_code,
         subtotal=subtotal,
         shipping_cost=shipping,
-        total=subtotal + shipping,
+        coupon=coupon,
+        coupon_code=coupon.code if coupon else "",
+        discount_amount=discount,
+        total=max(Decimal("0"), subtotal - discount) + shipping,
         notes=notes,
     )
 
@@ -72,9 +118,14 @@ def create_order_from_cart(user, cart, address, payment_method, notes=""):
             unit_price=item.product.price,
             quantity=item.quantity,
             size=item.size,
+            color=item.color,
         )
         item.product.stock = max(0, item.product.stock - item.quantity)
         item.product.save(update_fields=["stock"])
+
+    if coupon:
+        CouponRedemption.objects.create(coupon=coupon, user=user, order=order, discount_amount=discount)
+        Coupon.objects.filter(pk=coupon.pk).update(times_used=F("times_used") + 1)
 
     cart.items.all().delete()
     cart.status = Cart.Status.CONVERTED
@@ -101,6 +152,7 @@ def get_cart(request):
                     cart=cart,
                     product=item.product,
                     size=item.size,
+                    color=item.color,
                     defaults={"quantity": item.quantity},
                 )
                 if not created:

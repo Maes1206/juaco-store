@@ -1,13 +1,26 @@
 from django.contrib import admin
+from django.utils import timezone
 
-from .models import Address, BlogCategory, BlogPost, Cart, CartItem, Favorite, Order, OrderItem, Product
+from .forms import ProductAdminForm
+from .models import Address, BlogCategory, BlogComment, BlogPost, Cart, CartItem, ContactRequest, Coupon, CouponRedemption, CustomerProfile, Favorite, HomeBanner, MarketingPopup, Order, OrderItem, Product, ProductReview
 
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ("name", "brand", "price", "stock", "is_active")
-    list_filter = ("brand", "is_active")
-    search_fields = ("name", "brand", "slug", "description", "tags")
+    form = ProductAdminForm
+    prepopulated_fields = {"slug": ("name",)}
+    list_display = ("name", "sku", "brand", "audience", "product_type", "price", "stock", "is_active")
+    list_filter = ("audience", "product_type", "brand", "is_active")
+    search_fields = ("name", "brand", "sku", "slug", "description", "tags")
+    readonly_fields = ("created_at",)
+    fieldsets = (
+        ("Identidad y publicacion", {"fields": ("name", "slug", "sku", "brand", "audience", "product_type", "is_active")}),
+        ("Contenido de la ficha", {"fields": ("description", "additional_information", "detailed_description")}),
+        ("Precio e inventario", {"fields": ("price", "compare_at_price", "stock", "weight_kg")}),
+        ("Imagenes", {"fields": ("image", "image_alt", "gallery")}),
+        ("Variaciones y clasificacion", {"fields": ("sizes", "colors", "tags")}),
+        ("Auditoria", {"fields": ("created_at",), "classes": ("collapse",)}),
+    )
 
 
 class CartItemInline(admin.TabularInline):
@@ -37,6 +50,11 @@ class BlogPostAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("title",)}
     date_hierarchy = "published_at"
 
+@admin.register(CustomerProfile)
+class CustomerProfileAdmin(admin.ModelAdmin):
+    list_display = ("user", "document_number", "phone", "updated_at")
+    search_fields = ("user__username", "user__first_name", "user__last_name", "user__email", "document_number", "phone")
+    autocomplete_fields = ("user",)
 @admin.register(Favorite)
 class FavoriteAdmin(admin.ModelAdmin):
     list_display = ("user", "product", "created_at")
@@ -59,14 +77,116 @@ class OrderItemInline(admin.TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ("number", "user", "recipient_name", "city", "total", "status", "payment_method", "created_at")
+    list_display = ("number", "user", "recipient_name", "purchase_value", "sale_value", "discount_amount", "gross_profit_display", "status", "payment_method", "created_at")
     list_filter = ("status", "payment_method", "created_at")
-    list_editable = ("status",)
+    list_editable = ("purchase_value", "sale_value", "status")
     search_fields = ("number", "recipient_name", "user__username", "user__email", "city")
     date_hierarchy = "created_at"
     inlines = [OrderItemInline]
     readonly_fields = (
         "number", "user", "recipient_name", "phone", "address_line_1", "address_line_2",
-        "department", "city", "postal_code", "subtotal", "shipping_cost", "total", "notes",
+        "department", "city", "postal_code", "subtotal", "shipping_cost", "coupon", "coupon_code", "discount_amount", "total", "notes",
         "created_at", "updated_at",
     )
+
+    @admin.display(description="utilidad bruta")
+    def gross_profit_display(self, obj):
+        return obj.gross_profit
+
+@admin.register(Coupon)
+class CouponAdmin(admin.ModelAdmin):
+    list_display = ("code", "discount_type", "value", "minimum_purchase", "starts_at", "expires_at", "times_used", "usage_limit", "is_active")
+    list_filter = ("discount_type", "is_active", "once_per_user", "starts_at", "expires_at")
+    list_editable = ("is_active",)
+    search_fields = ("code",)
+    readonly_fields = ("times_used", "created_at", "updated_at")
+    date_hierarchy = "expires_at"
+
+
+@admin.register(CouponRedemption)
+class CouponRedemptionAdmin(admin.ModelAdmin):
+    list_display = ("coupon", "user", "order", "discount_amount", "redeemed_at")
+    list_filter = ("coupon", "redeemed_at")
+    search_fields = ("coupon__code", "user__username", "user__email", "order__number")
+    readonly_fields = ("coupon", "user", "order", "discount_amount", "redeemed_at")
+    date_hierarchy = "redeemed_at"
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+@admin.register(HomeBanner)
+class HomeBannerAdmin(admin.ModelAdmin):
+    list_display = ("name", "media_type", "layout", "position", "is_active", "updated_at")
+    list_filter = ("media_type", "layout", "is_active")
+    list_editable = ("position", "is_active")
+    search_fields = ("name", "title", "subtitle", "button_label", "button_url")
+    ordering = ("position", "id")
+
+
+@admin.register(MarketingPopup)
+class MarketingPopupAdmin(admin.ModelAdmin):
+    list_display = ("name", "title", "image_position", "button_label", "position", "is_active", "updated_at")
+    list_filter = ("image_position", "is_active")
+    list_editable = ("position", "is_active")
+    search_fields = ("name", "title", "message", "button_label", "button_url")
+    ordering = ("position", "-updated_at")
+
+@admin.register(ContactRequest)
+class ContactRequestAdmin(admin.ModelAdmin):
+    list_display = ("name", "email", "subject", "channel", "status", "created_at")
+    list_filter = ("status", "channel", "created_at")
+    list_editable = ("status",)
+    search_fields = ("name", "email", "phone", "subject", "message")
+    readonly_fields = ("name", "email", "phone", "subject", "message", "channel", "created_at", "updated_at")
+    date_hierarchy = "created_at"
+
+
+@admin.register(BlogComment)
+class BlogCommentAdmin(admin.ModelAdmin):
+    list_display = ("name", "post", "parent", "has_response", "is_approved", "created_at")
+    list_filter = ("is_approved", "created_at", "post")
+    list_editable = ("is_approved",)
+    search_fields = ("name", "email", "body", "admin_response", "post__title")
+    date_hierarchy = "created_at"
+    readonly_fields = ("responded_at", "created_at")
+
+    @admin.display(boolean=True, description="respondido")
+    def has_response(self, obj):
+        return bool(obj.admin_response)
+
+    def save_model(self, request, obj, form, change):
+        if obj.admin_response.strip():
+            obj.responded_at = timezone.now()
+            obj.is_approved = True
+        else:
+            obj.responded_at = None
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(ProductReview)
+class ProductReviewAdmin(admin.ModelAdmin):
+    list_display = ("product", "name", "rating", "recommends", "title", "has_response", "is_approved", "created_at")
+    list_filter = ("is_approved", "recommends", "rating", "created_at", "product")
+    list_editable = ("is_approved",)
+    search_fields = ("product__name", "name", "email", "title", "body", "admin_response")
+    date_hierarchy = "created_at"
+    readonly_fields = ("responded_at", "created_at")
+
+    @admin.display(boolean=True, description="respondida")
+    def has_response(self, obj):
+        return bool(obj.admin_response)
+
+    def save_model(self, request, obj, form, change):
+        if obj.admin_response.strip():
+            obj.responded_at = timezone.now()
+            obj.is_approved = True
+        else:
+            obj.responded_at = None
+        super().save_model(request, obj, form, change)
+
+admin.site.site_header = "Juaco Store - Administracion"
+admin.site.site_title = "Juaco Store Admin"
+admin.site.index_title = "Ediciones y operaciones"

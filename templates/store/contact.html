@@ -183,33 +183,17 @@
               </div>
               <!--== Start Contact Form ==-->
               <div class="contact-form">
-                <form id="contact-form" action="https://whizthemes.com/mail-php/raju/arden/mail.php" method="POST">
+                {% if messages %}{% for message in messages %}<div class="marketing-form-success">{{ message }}</div>{% endfor %}{% endif %}
+                <form id="juaco-contact-form" action="contact.html" method="post">
+                  {% csrf_token %}
+                  {% if contact_form.non_field_errors %}<div class="marketing-form-errors">{{ contact_form.non_field_errors }}</div>{% endif %}
                   <div class="row row-gutter-20">
-                    <div class="col-md-6">
-                      <div class="form-group">
-                        <input class="form-control" type="text" name="con_name" placeholder="Nombre *">
-                      </div>
-                    </div>
-                    <div class="col-md-6">
-                      <div class="form-group">
-                        <input class="form-control" type="email" name="con_email" placeholder="Correo electrónico *">
-                      </div>
-                    </div>
-                    <div class="col-12">
-                      <div class="form-group">
-                        <input class="form-control" type="text" placeholder="Asunto (opcional)">
-                      </div>
-                    </div>
-                    <div class="col-12">
-                      <div class="form-group mb--0">
-                        <textarea class="form-control" name="con_message" placeholder="Mensaje"></textarea>
-                      </div>
-                    </div>
-                    <div class="col-12">
-                      <div class="form-group mb--0">
-                        <button class="btn-theme" type="submit">Enviar mensaje</button>
-                      </div>
-                    </div>
+                    <div class="col-md-6"><div class="form-group">{{ contact_form.name }}{{ contact_form.name.errors }}</div></div>
+                    <div class="col-md-6"><div class="form-group">{{ contact_form.email }}{{ contact_form.email.errors }}</div></div>
+                    <div class="col-md-6"><div class="form-group">{{ contact_form.phone }}{{ contact_form.phone.errors }}</div></div>
+                    <div class="col-md-6"><div class="form-group">{{ contact_form.subject }}{{ contact_form.subject.errors }}</div></div>
+                    <div class="col-12"><div class="form-group mb--0">{{ contact_form.message }}{{ contact_form.message.errors }}</div></div>
+                    <div class="col-12"><div class="form-group mb--0"><button class="btn-theme" type="submit">Enviar mensaje</button></div></div>
                   </div>
                 </form>
               </div>
@@ -611,13 +595,7 @@
       </div>
       <!-- Mobile Menu Start -->
       <div class="mobile-menu-items">
-        <ul class="nav-menu">
-          <li><a href="#">Inicio</a>
-            <ul class="sub-menu">
-              <li><a href="index.html">Home One</a></li>
-              <li><a href="index.html">Home Two</a></li>
-            </ul>
-          </li>
+        <ul class="nav-menu">          <li><a href="index.html">Inicio</a></li>
           <li><a href="about-us.html">Nosotros</a></li>
           <li><a href="shop.html">Tienda</a>
             <ul class="sub-menu">

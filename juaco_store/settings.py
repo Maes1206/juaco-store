@@ -89,6 +89,8 @@ USE_TZ = True
 STATIC_URL = "/assets/"
 STATICFILES_DIRS = [BASE_DIR / "shome-html" / "assets"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 STORAGES = {"staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"}}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

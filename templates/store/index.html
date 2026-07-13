@@ -152,80 +152,7 @@
     <section class="home-slider-area">
       <div class="swiper-container home-slider-container default-slider-container">
         <div class="swiper-wrapper home-slider-wrapper slider-default">
-          <div class="swiper-slide">
-            <div class="slider-content-area" data-bg-img="assets/img/shape/1.webp">
-              <div class="container">
-                <div class="slider-container">
-                  <div class="row justify-content-between align-items-center">
-                    <div class="col-sm-6 col-md-5">
-                      <div class="slider-content">
-                        <div class="content">
-                          <div class="title-box">
-                            <h2 class="title">Sneakers urbanos <span class="text-nowrap">exclusivos</span></h2>
-                          </div>
-                          <div class="desc-box">
-                            <p class="desc">Estilo, comodidad y actitud en cada paso</p>
-                          </div>
-                          <div class="btn-box">
-                            <a class="btn-slider" href="shop.html">Comprar ahora</a>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-sm-6 col-md-6">
-                      <div class="slider-thumb">
-                        <div class="thumb scene">
-                          <span class="scene-layer" data-depth=".3"><img src="assets/img/shop/JUACO%20STORE2.png" width="548" height="649" alt="JUACO STORE 2"></span>
-                        </div>
-                        <div class="shape-group mousemove">
-                          <div class="shape-group-one mousemove-layer" data-speed=".8" data-bg-img="assets/img/shape/2.webp"></div>
-                          <div class="shape-group-two scene"><span class="scene-layer" data-depth=".6"><img src="assets/img/shape/3.webp" width="471" height="462" alt="Image-HasTech"></span></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <h2 class="slider-text-shape">NUEVO 2026</h2>
-            </div>
-          </div>
-          <div class="swiper-slide">
-            <div class="slider-content-area" data-bg-img="assets/img/shape/1.webp">
-              <div class="container">
-                <div class="slider-container">
-                  <div class="row justify-content-between align-items-center">
-                    <div class="col-sm-6 col-md-5">
-                      <div class="slider-content">
-                        <div class="content">
-                          <div class="title-box">
-                            <h2 class="title">Eleva tu flow <span class="text-nowrap">urbano</span></h2>
-                          </div>
-                          <div class="desc-box">
-                            <p class="desc">Sneakers que destacan en cada paso</p>
-                          </div>
-                          <div class="btn-box">
-                            <a class="btn-slider" href="shop.html">Comprar ahora</a>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-sm-6 col-md-6">
-                      <div class="slider-thumb">
-                        <div class="thumb scene">
-                          <span class="scene-layer" data-depth=".3"><img src="assets/img/shop/JUACO%20STORE.png" width="548" height="649" alt="JUACO STORE"></span>
-                        </div>
-                        <div class="shape-group mousemove">
-                          <div class="shape-group-one mousemove-layer" data-speed=".8" data-bg-img="assets/img/shape/2.webp"></div>
-                          <div class="shape-group-two scene"><span class="scene-layer" data-depth=".6"><img src="assets/img/shape/3.webp" width="471" height="462" alt="Image-HasTech"></span></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <h2 class="slider-text-shape">Lo nuevo del 2026</h2>
-            </div>
-          </div>
+          {% include "store/_home_banners.html" %}
         </div>
 
         <!--== Add Swiper Arrows ==-->
@@ -1341,6 +1268,8 @@
 <script src="assets/js/payment-methods.js"></script>
 <script src="assets/js/blog-posts.js"></script>
 <script src="assets/js/home-blog.js"></script>
+
+{% include "store/_marketing_popup.html" %}
 
 <script src="assets/js/cart.js"></script>
 </body>

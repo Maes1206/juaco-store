@@ -128,13 +128,7 @@
           <div class="col-12">
             <div class="header-align">
               <div class="header-navigation-area position-relative">
-                <ul class="main-menu nav">
-                  <li class="has-submenu"><a href="#/"><span>Inicio</span></a>
-                    <ul class="submenu-nav">
-                      <li><a href="index.html"><span>Home One</span></a></li>
-                      <li><a href="index.html"><span>Home Two</span></a></li>
-                    </ul>
-                  </li>
+                <ul class="main-menu nav">                  <li><a href="index.html"><span>Inicio</span></a></li>
                   <li><a href="about-us.html"><span>Nosotros</span></a></li>
                   <li class="has-submenu"><a href="shop.html"><span>Tienda</span></a>
                     <ul class="submenu-nav">
@@ -208,23 +202,39 @@
                       </div>
                       <p>Desde aquí puedes revisar tus pedidos, tu carrito y administrar los datos de tu cuenta.</p>
                       <div class="account-stats">
-                        <div class="account-stat">
+                        <a class="account-stat account-stat--link" href="?tab=orders" aria-label="Ver mis pedidos">
                           <span class="account-stat-icon" aria-hidden="true"><i class="fa fa-shopping-bag"></i></span>
                           <span class="account-stat-value">{{ orders|length }}</span>
                           <span class="account-stat-label">Pedidos realizados</span>
-                        </div>
-                        <div class="account-stat">
+                        </a>
+                        <a class="account-stat account-stat--link" href="?tab=cart" aria-label="Ver mi carrito">
                           <span class="account-stat-icon" aria-hidden="true"><i class="fa fa-shopping-cart"></i></span>
                           <span class="account-stat-value">{{ cart.item_count }}</span>
-                          <span class="account-stat-label">Artículos en el carrito</span>
-                        </div>
-                        <div class="account-stat">
+                          <span class="account-stat-label">Art&iacute;culos en el carrito</span>
+                        </a>
+                        <a class="account-stat account-stat--link" href="?tab=addresses" aria-label="Ver mis direcciones">
                           <span class="account-stat-icon" aria-hidden="true"><i class="fa fa-map-marker"></i></span>
                           <span class="account-stat-value">{{ addresses|length }}</span>
                           <span class="account-stat-label">Direcciones guardadas</span>
-                        </div>
+                        </a>
                       </div>
-                      {% with last_order=orders.first %}
+                      {% if show_account_checklist %}
+                      <section class="account-checklist" aria-labelledby="account-checklist-title">
+                        <div class="account-checklist__heading">
+                          <h4 id="account-checklist-title">Completa tu cuenta</h4>
+                          <p>Estos pasos te ayudan a comprar m&aacute;s r&aacute;pido.</p>
+                        </div>
+                        <ul class="account-checklist__items">
+                          {% for step in account_checklist %}
+                          <li class="account-checklist__item{% if step.completed %} is-complete{% endif %}">
+                            <span class="account-checklist__status" aria-hidden="true"><i class="fa {% if step.completed %}fa-check{% else %}fa-circle-o{% endif %}"></i></span>
+                            <span class="account-checklist__body"><strong>{{ step.label }}</strong><small>{{ step.description }}</small></span>
+                            <a href="{{ step.href }}">{% if step.completed %}Ver{% else %}Empezar{% endif %}</a>
+                          </li>
+                          {% endfor %}
+                        </ul>
+                      </section>
+                      {% endif %}                      {% with last_order=orders.first %}
                       {% if last_order %}
                       <div class="account-recent-order">
                         <h4>Tu pedido más reciente</h4>
@@ -240,6 +250,25 @@
                       </div>
                       {% endif %}
                       {% endwith %}
+                      {% if recommended_products %}
+                      <section class="account-recommendations" aria-labelledby="account-recommendations-title">
+                        <div class="account-recommendations__heading">
+                          <div>
+                            <h4 id="account-recommendations-title">Productos recomendados</h4>
+                            <p>Una selecci&oacute;n para tu pr&oacute;ximo par.</p>
+                          </div>
+                          <a href="shop.html">Ver tienda <i class="fa fa-arrow-right" aria-hidden="true"></i></a>
+                        </div>
+                        <div class="account-recommendations__grid">
+                          {% for product in recommended_products %}
+                          <a class="account-recommendation" href="single-product.html?producto={{ product.slug }}">
+                            <span class="account-recommendation__image"><img src="{{ product.image }}" alt="{{ product.name }}"></span>
+                            <span class="account-recommendation__body"><small>{{ product.brand }}</small><strong>{{ product.name }}</strong><b>{{ product.price|cop }}</b></span>
+                          </a>
+                          {% endfor %}
+                        </div>
+                      </section>
+                      {% endif %}
                     </div>
                   </div>
                   <div class="tab-pane fade{% if active_tab == 'orders' %} show active{% endif %}" id="orders" role="tabpanel" aria-labelledby="orders-tab">
@@ -357,6 +386,22 @@
                             <label for="{{ account_form.email.id_for_label }}" class="required">{{ account_form.email.label }}</label>
                             {{ account_form.email }}
                             {% for error in account_form.email.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
+                          </div>
+                          <div class="row">
+                            <div class="col-lg-6">
+                              <div class="single-input-item">
+                                <label for="{{ account_form.document_number.id_for_label }}">{{ account_form.document_number.label }}</label>
+                                {{ account_form.document_number }}
+                                {% for error in account_form.document_number.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
+                              </div>
+                            </div>
+                            <div class="col-lg-6">
+                              <div class="single-input-item">
+                                <label for="{{ account_form.phone.id_for_label }}">{{ account_form.phone.label }}</label>
+                                {{ account_form.phone }}
+                                {% for error in account_form.phone.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
+                              </div>
+                            </div>
                           </div>
                           <div class="single-input-item">
                             <button class="check-btn sqr-btn" type="submit">Guardar Cambios</button>
@@ -650,13 +695,7 @@
       </div>
       <!-- Mobile Menu Start -->
       <div class="mobile-menu-items">
-        <ul class="nav-menu">
-          <li><a href="#">Inicio</a>
-            <ul class="sub-menu">
-              <li><a href="index.html">Home One</a></li>
-              <li><a href="index.html">Home Two</a></li>
-            </ul>
-          </li>
+        <ul class="nav-menu">          <li><a href="index.html">Inicio</a></li>
           <li><a href="about-us.html">Nosotros</a></li>
           <li><a href="shop.html">Tienda</a>
             <ul class="sub-menu">

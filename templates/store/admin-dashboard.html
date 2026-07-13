@@ -1,0 +1,248 @@
+{% extends "store/base.html" %}
+{% load store_extras %}
+
+{% block title %}Panel administrativo | Juaco Store{% endblock %}
+
+{% block content %}
+<div class="page-header-area login-page-header" data-bg-img="assets/img/shop/bannerlogin.png">
+  <div class="container pt--0 pb--0">
+    <div class="row"><div class="col-12"><div class="page-header-content">
+      <h2 class="title">Panel administrativo</h2>
+      <nav class="breadcrumb-area"><ul class="breadcrumb"><li><a href="index.html">Inicio</a></li><li class="breadcrumb-sep">//</li><li>Administracion</li></ul></nav>
+    </div></div></div>
+  </div>
+</div>
+
+<section class="my-account-area admin-panel-area">
+  <div class="container pt--0 pb--0">
+    <div class="admin-panel-intro">
+      <div><span class="admin-panel-eyebrow">JUACO STORE</span><h2>Hola, {{ request.user.get_full_name|default:request.user.username }}</h2><p>Gestiona ventas, clientes, contenido y catalogo desde un solo lugar.</p></div>
+      <a class="admin-panel-store-link" href="index.html"><i class="fa fa-external-link"></i> Ver tienda</a>
+    </div>
+    <div class="row">
+      <div class="col-lg-3 col-md-4">
+        <nav class="admin-panel-menu myaccount-tab-menu nav nav-tabs" aria-label="Secciones administrativas">
+          <a class="nav-link{% if section == 'overview' %} active{% endif %}" href="panel-admin/?section=overview#admin-panel-content"><i class="fa fa-dashboard"></i> Resumen</a>
+          <a class="nav-link{% if section == 'sales' %} active{% endif %}" href="panel-admin/?section=sales#admin-panel-content"><i class="fa fa-shopping-bag"></i> Ventas exitosas</a>
+          <a class="nav-link{% if section == 'clients' %} active{% endif %}" href="panel-admin/?section=clients#admin-panel-content"><i class="fa fa-users"></i> Clientes</a>
+          <a class="nav-link{% if section == 'reports' %} active{% endif %}" href="panel-admin/?section=reports#admin-panel-content"><i class="fa fa-line-chart"></i> Reportes financieros</a>
+          <a class="nav-link{% if section == 'marketing' %} active{% endif %}" href="panel-admin/?section=marketing#admin-panel-content"><i class="fa fa-bullhorn"></i> Marketing{% if marketing_notification_count %}<span class="admin-menu-badge" aria-label="{{ marketing_notification_count }} notificaciones pendientes">{{ marketing_notification_count }}</span>{% endif %}</a>
+          <a class="nav-link{% if section == 'products' %} active{% endif %}" href="panel-admin/?section=products#admin-panel-content"><i class="fa fa-tags"></i> Edicion de productos</a>
+          <a class="nav-link{% if section == 'blog' %} active{% endif %}" href="panel-admin/?section=blog#admin-panel-content"><i class="fa fa-pencil"></i> Blog</a>
+          <form action="account-logout/" method="post">{% csrf_token %}<button class="nav-link" type="submit"><i class="fa fa-sign-out"></i> Cerrar sesion</button></form>
+        </nav>
+      </div>
+      <div class="col-lg-9 col-md-8">
+        <div class="myaccount-content admin-panel-content" id="admin-panel-content" aria-live="polite">
+          {% if section == 'overview' %}
+          <div class="admin-section-heading"><div><h3>Resumen operativo</h3><p>Estado actual del negocio.</p></div></div>
+          <div class="admin-metrics">
+            <a href="panel-admin/?section=sales#admin-panel-content" class="admin-metric"><span class="admin-metric-icon"><i class="fa fa-check"></i></span><strong>{{ successful_order_count }}</strong><small>Ventas exitosas</small></a>
+            <a href="panel-admin/?section=reports#admin-panel-content" class="admin-metric"><span class="admin-metric-icon"><i class="fa fa-money"></i></span><strong>{{ total_revenue|cop }}</strong><small>Ingresos confirmados</small></a>
+            <a href="panel-admin/?section=clients#admin-panel-content" class="admin-metric"><span class="admin-metric-icon"><i class="fa fa-users"></i></span><strong>{{ client_count }}</strong><small>Clientes registrados</small></a>
+            <a href="panel-admin/?section=products#admin-panel-content" class="admin-metric"><span class="admin-metric-icon"><i class="fa fa-cubes"></i></span><strong>{{ product_count }}</strong><small>Productos</small></a>
+          </div>
+          <div class="admin-alert-grid">
+            <a href="{% url 'admin:store_order_changelist' %}?status__exact=pending"><i class="fa fa-clock-o"></i><span><strong>{{ pending_order_count }} pedidos pendientes</strong><small>{{ pending_revenue|cop }} por confirmar</small></span></a>
+            <a href="panel-admin/?section=products#admin-panel-content"><i class="fa fa-exclamation-triangle"></i><span><strong>{{ low_stock_count }} productos con stock bajo</strong><small>Revisa las existencias del catalogo</small></span></a>
+            <a href="panel-admin/?section=marketing#admin-panel-content"><i class="fa fa-heart"></i><span><strong>{{ favorite_count }} favoritos guardados</strong><small>Senales de interes de clientes</small></span></a>
+          </div>
+          <div class="admin-quick-actions">
+            <h4>Acciones rapidas</h4>
+            <div><a href="{% url 'admin:store_product_add' %}"><i class="fa fa-plus"></i> Crear producto</a><a href="{% url 'admin:store_blogpost_add' %}"><i class="fa fa-plus"></i> Crear articulo</a><a href="{% url 'admin:store_order_changelist' %}"><i class="fa fa-list"></i> Gestionar pedidos</a></div>
+          </div>
+
+          {% elif section == 'sales' %}
+          <div class="admin-section-heading"><div><h3>Ventas exitosas</h3><p>Pedidos pagados, enviados o entregados y productos vendidos.</p></div><a href="{% url 'admin:store_order_changelist' %}">Administrar pedidos</a></div>
+          <h4 class="admin-subtitle">Productos vendidos</h4>
+          <div class="myaccount-table table-responsive"><table class="table"><thead><tr><th>Producto</th><th>Unidades</th><th>Ingresos</th></tr></thead><tbody>{% for item in sold_products %}<tr><td><div class="admin-product-cell">{% if item.product_image %}<img src="{{ item.product_image }}" alt="">{% endif %}<strong>{{ item.product_name }}</strong></div></td><td>{{ item.units_sold }}</td><td>{{ item.revenue|cop }}</td></tr>{% empty %}<tr><td colspan="3">Aun no hay ventas confirmadas.</td></tr>{% endfor %}</tbody></table></div>
+          <h4 class="admin-subtitle">Pedidos exitosos</h4>
+                    <div class="myaccount-table table-responsive">
+            <table class="table">
+              <thead><tr><th>Producto</th><th>Pedido</th><th>Cliente</th><th>Estado</th><th>Total</th><th>Fecha</th><th></th></tr></thead>
+              <tbody>
+                {% for order in successful_orders %}
+                <tr>
+                  <td>
+                    {% with sold_item=order.items.all.0 %}
+                    {% if sold_item %}
+                    <div class="admin-product-cell">
+                      {% if sold_item.product_image %}<img src="{{ sold_item.product_image }}" alt="{{ sold_item.product_name }}">{% endif %}
+                      <span><strong>{{ sold_item.product_name }}</strong><small class="admin-table-note">{{ order.item_count }} unidad{{ order.item_count|pluralize:"es" }}</small></span>
+                    </div>
+                    {% else %}<span>Sin detalle de producto</span>{% endif %}
+                    {% endwith %}
+                  </td>
+                  <td>{{ order.number }}</td>
+                  <td>{{ order.recipient_name }}</td>
+                  <td><span class="order-status order-status--{{ order.status }}">{{ order.get_status_display }}</span></td>
+                  <td>{{ order.total|cop }}</td>
+                  <td>{{ order.created_at|date:"d M Y" }}</td>
+                  <td><a href="{% url 'admin:store_order_change' order.id %}">Ver</a></td>
+                </tr>
+                {% empty %}<tr><td colspan="7">No hay pedidos exitosos.</td></tr>{% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          {% elif section == 'clients' %}
+          <div class="admin-section-heading admin-clients-heading">
+            <div><h3>Clientes</h3><p>Usuarios registrados, contacto y actividad comercial.</p></div>
+            <div class="admin-client-search-wrap">
+              <form class="admin-client-search" action="{% url 'admin_dashboard' %}" method="get" role="search" data-client-search>
+                <input type="hidden" name="section" value="clients">
+                <label class="sr-only" for="admin-client-search-input">Buscar clientes</label>
+                <input id="admin-client-search-input" type="search" name="q" value="{{ client_search }}" placeholder="Nombre, apellido o cedula" autocomplete="off">
+                <button type="submit" aria-label="Buscar cliente"><i class="fa fa-search"></i></button>
+              </form>
+              {% if client_search %}<a class="admin-client-search-clear" href="{% url 'admin_dashboard' %}?section=clients#admin-panel-content">Limpiar</a>{% endif %}
+              <span>{{ client_count }} registros</span>
+            </div>
+          </div>
+          <div class="myaccount-table table-responsive">
+            <table class="table admin-clients-table">
+              <thead><tr><th>Cliente</th><th>Correo</th><th>Registro</th><th>Pedidos</th><th>Compras</th><th>Acciones</th></tr></thead>
+              <tbody>
+                {% for client in clients %}
+                <tr>
+                  <td><strong>{{ client.get_full_name|default:client.username }}</strong><small class="admin-table-note">@{{ client.username }}</small></td>
+                  <td>{{ client.email|default:"Sin correo" }}</td><td>{{ client.date_joined|date:"d M Y" }}</td><td>{{ client.successful_order_count }}</td><td>{{ client.total_spent|default_if_none:0|cop }}</td>
+                  <td><div class="admin-row-actions"><button type="button" data-client-toggle="client-info-{{ client.id }}" aria-expanded="false">Ver info</button><a href="{% url 'admin:auth_user_change' client.id %}">Editar</a></div></td>
+                </tr>
+                <tr class="admin-client-detail-row" id="client-info-{{ client.id }}" hidden><td colspan="6">
+                  <div class="admin-client-detail">
+                    <div class="admin-client-detail__identity"><span class="admin-client-avatar"><i class="fa fa-user"></i></span><div><strong>{{ client.get_full_name|default:client.username }}</strong><small>@{{ client.username }}</small></div></div>
+                    <dl class="admin-client-data">
+                      <div><dt>Numero de cedula</dt><dd>{{ client.customer_profile.document_number|default:"No registrada" }}</dd></div>
+                      <div><dt>Telefono de contacto</dt><dd>{{ client.customer_profile.phone|default:"No registrado" }}</dd></div>
+                      <div><dt>Correo</dt><dd>{{ client.email|default:"No registrado" }}</dd></div>
+                      <div><dt>Fecha de registro</dt><dd>{{ client.date_joined|date:"d M Y, H:i" }}</dd></div>
+                    </dl>
+                    <div class="admin-client-addresses"><h5>Direcciones guardadas</h5><div class="admin-client-address-grid">
+                      {% for address in client.addresses.all %}<article><div><strong>{{ address.label }}</strong>{% if address.is_default %}<span>Principal</span>{% endif %}</div><p>{{ address.recipient_name }}<br>{{ address.address_line_1 }}{% if address.address_line_2 %}, {{ address.address_line_2 }}{% endif %}<br>{{ address.city }}, {{ address.department }}{% if address.postal_code %} - {{ address.postal_code }}{% endif %}<br>Tel. {{ address.phone }}</p></article>{% empty %}<p class="admin-empty-assistance">El cliente no tiene direcciones guardadas.</p>{% endfor %}
+                    </div></div>
+                  </div>
+                </td></tr>
+                {% empty %}<tr><td colspan="6">{% if client_search %}No se encontraron clientes para "{{ client_search }}".{% else %}No hay clientes registrados.{% endif %}</td></tr>{% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          {% elif section == 'reports' %}
+          <div class="admin-section-heading"><div><h3>Reportes financieros</h3><p>Indicadores calculados sobre ventas confirmadas.</p></div><a href="{% url 'admin:store_order_changelist' %}">Registrar compra y venta</a></div>
+          <div class="admin-metrics admin-metrics--three"><div class="admin-metric"><span class="admin-metric-icon"><i class="fa fa-money"></i></span><strong>{{ total_revenue|cop }}</strong><small>Ingresos confirmados</small></div><div class="admin-metric"><span class="admin-metric-icon"><i class="fa fa-ticket"></i></span><strong>{{ average_ticket|cop }}</strong><small>Ticket promedio</small></div><div class="admin-metric"><span class="admin-metric-icon"><i class="fa fa-line-chart"></i></span><strong>{{ gross_profit_total|cop }}</strong><small>Utilidad bruta</small></div></div>
+          <h4 class="admin-subtitle">Resumen mensual</h4>
+          <div class="myaccount-table table-responsive"><table class="table"><thead><tr><th>Mes</th><th>Pedidos exitosos</th><th>Ingresos</th><th>Valor de compra</th><th>Valor de venta</th><th>Utilidad bruta</th></tr></thead><tbody>{% for row in monthly_report %}<tr><td>{{ row.month|date:"F Y" }}</td><td>{{ row.order_count }}</td><td>{{ row.revenue|cop }}</td><td>{{ row.purchase_total|default_if_none:0|cop }}</td><td>{{ row.sale_total|default_if_none:0|cop }}</td><td>{{ row.gross_profit|default_if_none:0|cop }}</td></tr>{% empty %}<tr><td colspan="6">No hay datos financieros disponibles.</td></tr>{% endfor %}</tbody></table></div>
+
+          {% elif section == 'marketing' %}
+          <div class="admin-section-heading"><div><h3>Marketing y contenidos</h3><p>Gestiona la experiencia publica, el catalogo y las conversaciones con clientes.</p></div><a class="admin-primary-action" href="{% url 'admin:store_homebanner_add' %}"><i class="fa fa-plus"></i> Nuevo banner</a></div>
+          <div class="admin-metrics admin-metrics--marketing">
+            <a class="admin-metric" href="{% url 'admin:store_homebanner_changelist' %}"><span class="admin-metric-icon"><i class="fa fa-picture-o"></i></span><strong>{{ active_banner_count }}</strong><small>Banners activos</small></a>
+            <a class="admin-metric" href="{% url 'admin:store_marketingpopup_changelist' %}"><span class="admin-metric-icon"><i class="fa fa-window-restore"></i></span><strong>{{ active_popup_count }}</strong><small>Popups activos</small></a>
+            <a class="admin-metric" href="{% url 'admin:store_contactrequest_changelist' %}?status__exact=new"><span class="admin-metric-icon"><i class="fa fa-inbox"></i></span><strong>{{ pending_contact_count }}</strong><small>Peticiones nuevas</small></a>
+            <a class="admin-metric" href="{% url 'admin:store_blogcomment_changelist' %}?is_approved__exact=0"><span class="admin-metric-icon"><i class="fa fa-comments"></i></span><strong>{{ pending_blog_comment_count }}</strong><small>Comentarios por aprobar</small></a>
+            <a class="admin-metric" href="{% url 'admin:store_productreview_changelist' %}?is_approved__exact=0"><span class="admin-metric-icon"><i class="fa fa-star"></i></span><strong>{{ pending_review_count }}</strong><small>Resenas por aprobar</small></a>
+          </div>
+          {% if marketing_notification_count %}
+          <div class="admin-feedback-notice"><i class="fa fa-bell"></i><div><strong>{{ marketing_notification_count }} notificaciones pendientes</strong><span>Hay nuevos comentarios o resenas esperando revision y respuesta.</span></div></div>
+          <div class="admin-feedback-inbox">
+            <article><h4><i class="fa fa-comments"></i> Comentarios del blog</h4>{% for comment in pending_blog_comments %}<a href="{% url 'admin:store_blogcomment_change' comment.id %}"><span><strong>{{ comment.name }}</strong><small>{{ comment.post.title }} · {{ comment.created_at|date:"d M, H:i" }}</small></span><em>Responder</em></a>{% empty %}<p>No hay comentarios pendientes.</p>{% endfor %}</article>
+            <article><h4><i class="fa fa-star"></i> Resenas de productos</h4>{% for review in pending_reviews %}<a href="{% url 'admin:store_productreview_change' review.id %}"><span><strong>{{ review.name }}</strong><small>{{ review.product.name }} · {{ review.created_at|date:"d M, H:i" }}</small></span><em>Responder</em></a>{% empty %}<p>No hay resenas pendientes.</p>{% endfor %}</article>
+          </div>
+          {% endif %}
+          <div class="admin-marketing-hub">
+            <article><i class="fa fa-picture-o"></i><div><h4>Banner del home</h4><p>Imagenes, videos en loop, texto y botones accionables.</p><nav><a href="{% url 'admin:store_homebanner_changelist' %}">Administrar</a><a href="{% url 'admin:store_homebanner_add' %}">Agregar</a></nav></div></article>
+            <article><i class="fa fa-window-restore"></i><div><h4>Popups promocionales</h4><p>Titulo, mensaje, imagen lateral y boton de llamado a la accion.</p><nav><a href="{% url 'admin:store_marketingpopup_changelist' %}">Administrar</a><a href="{% url 'admin:store_marketingpopup_add' %}">Agregar popup</a></nav></div></article>
+            <article><i class="fa fa-headphones"></i><div><h4>Contacto y atencion</h4><p>Solicitudes recibidas desde los canales de atencion.</p><nav><a href="{% url 'admin:store_contactrequest_changelist' %}">Ver bandeja</a><a href="contact.html">Ver pagina</a></nav></div></article>
+            <article><i class="fa fa-newspaper-o"></i><div><h4>Blog y comunidad</h4><p>Articulos, categorias y moderacion de comentarios.</p><nav><a href="{% url 'admin:store_blogpost_changelist' %}">Articulos</a><a href="{% url 'admin:store_blogcomment_changelist' %}">Comentarios</a></nav></div></article>
+            <article><i class="fa fa-ticket"></i><div><h4>Cupones de descuento</h4><p>{{ active_coupon_count }} activos. Crea codigos, vigencia, expiracion y limites de canje.</p><nav><a href="{% url 'admin:store_coupon_changelist' %}">Administrar</a><a href="{% url 'admin:store_coupon_add' %}">Crear cupon</a><a href="{% url 'admin:store_couponredemption_changelist' %}">Ver canjes</a></nav></div></article>
+            <article><i class="fa fa-star-o"></i><div><h4>Resenas de productos</h4><p>Consulta, aprueba o rechaza opiniones de compradores.</p><nav><a href="{% url 'admin:store_productreview_changelist' %}">Moderar resenas</a><a href="{% url 'admin:store_product_add' %}">Crear producto</a></nav></div></article>
+          </div>
+          <h4 class="admin-subtitle">Solicitudes recientes</h4>
+          <div class="myaccount-table table-responsive"><table class="table"><thead><tr><th>Cliente</th><th>Asunto</th><th>Estado</th><th>Fecha</th><th></th></tr></thead><tbody>{% for contact in recent_contact_requests %}<tr><td><strong>{{ contact.name }}</strong><small class="admin-table-note">{{ contact.email }}</small></td><td>{{ contact.subject|default:"Consulta general" }}</td><td><span class="admin-state{% if contact.status == 'resolved' %} is-active{% endif %}">{{ contact.get_status_display }}</span></td><td>{{ contact.created_at|date:"d M Y, H:i" }}</td><td><a href="{% url 'admin:store_contactrequest_change' contact.id %}">Atender</a></td></tr>{% empty %}<tr><td colspan="5">Aun no hay solicitudes recibidas.</td></tr>{% endfor %}</tbody></table></div>
+          {% elif section == 'products' %}
+          <div class="admin-section-heading"><div><h3>Edicion de productos</h3><p>CRUD del catalogo: crear, consultar, editar y eliminar.</p></div><a class="admin-primary-action" href="{% url 'admin:store_product_add' %}"><i class="fa fa-plus"></i> Nuevo producto</a></div>
+          <div class="admin-product-sections"><strong>Tienda y productos</strong><span>Gestionar por seccion:</span><a href="{% url 'admin:store_product_changelist' %}?audience__exact=men">Hombre</a><a href="{% url 'admin:store_product_changelist' %}?audience__exact=women">Mujer</a><a href="{% url 'admin:store_product_changelist' %}">Marcas</a><a href="{% url 'admin:store_product_changelist' %}?product_type__exact=accessory">Accesorios</a></div>
+          <div class="myaccount-table table-responsive"><table class="table"><thead><tr><th>Producto</th><th>Marca</th><th>Precio</th><th>Stock</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{% for product in products %}<tr><td><div class="admin-product-cell"><img src="{{ product.image }}" alt=""><strong>{{ product.name }}</strong></div></td><td>{{ product.brand }}</td><td>{{ product.price|cop }}</td><td>{{ product.stock }}</td><td>{% if product.is_active %}<span class="admin-state is-active">Activo</span>{% else %}<span class="admin-state">Inactivo</span>{% endif %}</td><td><div class="admin-row-actions"><a href="{% url 'admin:store_product_change' product.id %}">Editar</a><a class="is-danger" href="{% url 'admin:store_product_delete' product.id %}">Eliminar</a></div></td></tr>{% empty %}<tr><td colspan="6">No hay productos.</td></tr>{% endfor %}</tbody></table></div>
+
+          {% elif section == 'blog' %}
+          <div class="admin-section-heading"><div><h3>Blog</h3><p>CRUD de articulos y categorias editoriales.</p></div><div class="admin-heading-actions"><a href="{% url 'admin:store_blogcategory_changelist' %}">Categorias</a><a class="admin-primary-action" href="{% url 'admin:store_blogpost_add' %}"><i class="fa fa-plus"></i> Nuevo articulo</a></div></div>
+          <div class="myaccount-table table-responsive"><table class="table"><thead><tr><th>Articulo</th><th>Categoria</th><th>Autor</th><th>Publicacion</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{% for post in blog_posts %}<tr><td><strong>{{ post.title }}</strong></td><td>{{ post.category.name }}</td><td>{{ post.author }}</td><td>{{ post.published_at|date:"d M Y" }}</td><td>{% if post.is_published %}<span class="admin-state is-active">Publicado</span>{% else %}<span class="admin-state">Borrador</span>{% endif %}</td><td><div class="admin-row-actions"><a href="{% url 'admin:store_blogpost_change' post.id %}">Editar</a><a class="is-danger" href="{% url 'admin:store_blogpost_delete' post.id %}">Eliminar</a></div></td></tr>{% empty %}<tr><td colspan="6">No hay articulos.</td></tr>{% endfor %}</tbody></table></div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+{% block extra_scripts %}
+<script data-admin-panel-navigation>
+(function () {
+  var panel = document.getElementById('admin-panel-content');
+  var menu = document.querySelector('.admin-panel-menu');
+  if (!panel || !menu || !window.fetch || !window.DOMParser) return;
+
+  function isPanelSectionLink(link) {
+    return link && link.matches('a[href*="panel-admin/?section="]');
+  }
+
+  function updateSection(url, addHistory) {
+    panel.classList.add('is-loading');
+    panel.setAttribute('aria-busy', 'true');
+    fetch(url, {
+      credentials: 'same-origin',
+      headers: {'X-Requested-With': 'XMLHttpRequest'}
+    })
+      .then(function (response) {
+        if (!response.ok) throw new Error('No fue posible cargar la seccion.');
+        return response.text();
+      })
+      .then(function (html) {
+        var nextDocument = new DOMParser().parseFromString(html, 'text/html');
+        var nextPanel = nextDocument.getElementById('admin-panel-content');
+        var nextMenu = nextDocument.querySelector('.admin-panel-menu');
+        if (!nextPanel || !nextMenu) throw new Error('Respuesta administrativa incompleta.');
+        panel.innerHTML = nextPanel.innerHTML;
+        menu.innerHTML = nextMenu.innerHTML;
+        panel.classList.remove('is-loading');
+        panel.removeAttribute('aria-busy');
+        if (addHistory) window.history.pushState({adminSection: true}, '', url);
+      })
+      .catch(function () {
+        window.location.assign(url);
+      });
+  }
+
+  document.addEventListener('click', function (event) {
+    var detailButton = event.target.closest('[data-client-toggle]');
+    if (detailButton) {
+      var detailRow = document.getElementById(detailButton.getAttribute('data-client-toggle'));
+      if (detailRow) {
+        var willOpen = detailRow.hidden;
+        detailRow.hidden = !willOpen;
+        detailButton.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        detailButton.textContent = willOpen ? 'Ocultar info' : 'Ver info';
+      }
+      return;
+    }
+    var link = event.target.closest('a');
+    if (!isPanelSectionLink(link)) return;
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    updateSection(link.href, true);
+  });
+
+  document.addEventListener('submit', function (event) {
+    var searchForm = event.target.closest('[data-client-search]');
+    if (!searchForm) return;
+    event.preventDefault();
+    var query = new URLSearchParams(new FormData(searchForm)).toString();
+    updateSection(searchForm.action + '?' + query + '#admin-panel-content', true);
+  });
+
+  window.addEventListener('popstate', function () {
+    if (window.location.pathname.indexOf('/panel-admin/') !== -1) updateSection(window.location.href, false);
+  });
+}());
+</script>
+{% endblock %}

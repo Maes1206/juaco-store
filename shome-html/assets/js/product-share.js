@@ -78,7 +78,68 @@
     return Promise.resolve();
   }
 
+  function openShareWindow(url, name) {
+    var width = 680;
+    var height = 560;
+    var left = Math.max(0, (window.screen.width - width) / 2);
+    var top = Math.max(0, (window.screen.height - height) / 2);
+    window.open(
+      url,
+      name,
+      'noopener,noreferrer,width=' + width + ',height=' + height + ',left=' + left + ',top=' + top
+    );
+  }
+
+  function shareToNetwork(network, details) {
+    var text = 'Mira este producto: ' + details.title;
+
+    if (network === 'facebook') {
+      openShareWindow(
+        'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(details.url),
+        'facebook-share'
+      );
+      return;
+    }
+
+    if (network === 'whatsapp') {
+      window.open(
+        'https://wa.me/?text=' + encodeURIComponent(text + ' ' + details.url),
+        '_blank',
+        'noopener,noreferrer'
+      );
+      return;
+    }
+
+    if (network === 'instagram') {
+      var payload = { title: details.title, text: text, url: details.url };
+      if (navigator.share) {
+        navigator.share(payload).catch(function (error) {
+          if (error && error.name !== 'AbortError') {
+            feedback('No fue posible abrir las opciones para compartir en Instagram.');
+          }
+        });
+        return;
+      }
+
+      copyLink(details.url).then(function () {
+        feedback('Enlace copiado. Pégalo en Instagram.');
+        window.open('https://www.instagram.com/', '_blank', 'noopener,noreferrer');
+      }).catch(function () {
+        feedback('No fue posible copiar el enlace para Instagram.');
+      });
+    }
+  }
+
   document.addEventListener('click', function (event) {
+    var networkTrigger = event.target.closest('[data-product-share-network]');
+    if (networkTrigger) {
+      event.preventDefault();
+      var networkDetails = shareDetails(networkTrigger);
+      if (!networkDetails) return;
+      shareToNetwork(networkTrigger.getAttribute('data-product-share-network'), networkDetails);
+      return;
+    }
+
     var trigger = event.target.closest('[data-product-share]');
     if (!trigger) return;
     event.preventDefault();

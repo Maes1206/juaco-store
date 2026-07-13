@@ -5,6 +5,7 @@ from . import views
 
 urlpatterns = [
     path("healthz/", views.health, name="health"),
+    path("panel-admin/", views.admin_dashboard, name="admin_dashboard"),
     path("", views.page, {"name": "home"}, name="home"),
     path("index.html", views.page, {"name": "home"}),
     path("about-us.html", views.page, {"name": "about"}, name="about"),
@@ -30,6 +31,9 @@ urlpatterns = [
     path("account-addresses/<int:address_id>/", views.address_update, name="address_update"),
     path("account-addresses/<int:address_id>/delete/", views.address_delete, name="address_delete"),
     path("shop-cart.html", views.cart_view, name="cart"),
+    path("cart-coupon/apply/", views.coupon_apply, name="coupon_apply"),
+    path("cart-coupon/remove/", views.coupon_remove, name="coupon_remove"),
+    path("shipping-quote/", views.shipping_quote, name="shipping_quote"),
     path("api/favorites/", views.favorites_api, name="favorites_api"),
     path("api/favorites/<int:favorite_id>/", views.favorite_item_api, name="favorite_item_api"),
     path("api/favorites/<int:favorite_id>/move-to-cart/", views.favorite_move_to_cart_api, name="favorite_move_to_cart_api"),

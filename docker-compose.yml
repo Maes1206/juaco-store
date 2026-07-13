@@ -34,6 +34,8 @@ services:
       DJANGO_LOG_LEVEL: ${DJANGO_LOG_LEVEL:-INFO}
     ports:
       - "${WEB_PORT:-8000}:8000"
+    volumes:
+      - juaco_media_data:/app/media
     depends_on:
       db:
         condition: service_healthy
@@ -48,3 +50,4 @@ services:
 
 volumes:
   juaco_postgres_data:
+  juaco_media_data:

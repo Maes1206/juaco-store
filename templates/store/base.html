@@ -60,7 +60,7 @@
                   <div class="info-items">
                     <ul>
                       <li class="support"><i class="fa fa-comments"></i><a href="contact.html">Canales de atención</a></li>
-                      <li class="account"><i class="fa fa-user"></i><a href="{% if request.user.is_authenticated %}account.html{% else %}account-login.html{% endif %}">{% if request.user.is_authenticated %}Mi cuenta{% else %}Cuenta{% endif %}</a></li>
+                      <li class="account"><i class="fa fa-user"></i><a href="{% if request.user.is_staff %}panel-admin/{% elif request.user.is_authenticated %}account.html{% else %}account-login.html{% endif %}">{% if request.user.is_staff %}Panel admin{% elif request.user.is_authenticated %}Mi cuenta{% else %}Cuenta{% endif %}</a></li>
                     </ul>
                   </div>
                 </div>
@@ -301,7 +301,7 @@
         <ul>
           <li class="number"><a href="tel://0123456789"><i class="fa fa-phone"></i>+00 123 456 789</a></li>
           <li class="email"><a href="mailto://demo@example.com"><i class="fa fa-envelope"></i>demo@example.com</a></li>
-          <li class="account"><a href="{% if request.user.is_authenticated %}account.html{% else %}account-login.html{% endif %}"><i class="fa fa-user"></i>{% if request.user.is_authenticated %}Mi cuenta{% else %}Cuenta{% endif %}</a></li>
+          <li class="account"><a href="{% if request.user.is_staff %}panel-admin/{% elif request.user.is_authenticated %}account.html{% else %}account-login.html{% endif %}"><i class="fa fa-user"></i>{% if request.user.is_staff %}Panel admin{% elif request.user.is_authenticated %}Mi cuenta{% else %}Cuenta{% endif %}</a></li>
         </ul>
       </div>
       <div class="mobile-menu-items">

@@ -21,7 +21,12 @@ window.JuacoCatalog = {
     { id: 'puma-suede-classic', brand: 'puma', name: 'Puma Suede Classic', price: '$140.000', image: 'assets/img/shop/puma-suede-white.png', sizes: ['38', '39', '40', '41', '42', '43'], description: 'Puma Suede Classic con empeine de gamuza, Formstrip lateral y una silueta atemporal nacida en la cultura urbana.' },
     { id: 'puma-palermo', brand: 'puma', name: 'Puma Palermo', price: '$175.000', image: 'assets/img/shop/Sin título (270 x 274 px).png', sizes: ['38', '39', '40', '41', '42'], description: 'Puma Palermo de perfil bajo, inspirada en los clásicos de terraza y terminada con detalles retro de la marca.' },
     { id: 'nike-dunk-low-year-rabbit', brand: 'nike', name: 'Nike Dunk Low Retro PRM Year of the Rabbit', price: '$250.000', image: 'assets/img/shop/816619.png', sizes: ['38', '39', '40', '41', '42', '43'], description: 'Nike Dunk Low Retro PRM Year of the Rabbit con cuero blanco, detalles en tonos tierra y acabados inspirados en esta edición especial.' },
-    { id: 'nike-sb-dunk-low-travis-scott', brand: 'nike', name: 'Nike SB Dunk Low x Travis Scott Cactus Jack', price: '$260.000', image: 'assets/img/shop/27734.png', sizes: ['38', '39', '40', '41', '42', '43'], description: 'Nike SB Dunk Low x Travis Scott Cactus Jack con paneles de gamuza, estampados distintivos y una combinación de tonos tierra y verde.' },
+    { id: 'nike-sb-dunk-low-travis-scott', brand: 'nike', name: 'Nike SB Dunk Low x Travis Scott Cactus Jack', price: '$260.000', image: 'assets/img/shop/541x540/8743.png', gallery: [
+      { image: 'assets/img/shop/541x540/8743.png', alt: 'Vista lateral Nike SB Dunk Low x Travis Scott Cactus Jack' },
+      { image: 'assets/img/shop/541x540/8276.png', alt: 'Vista frontal Nike SB Dunk Low x Travis Scott Cactus Jack' },
+      { image: 'assets/img/shop/541x540/7173.png', alt: 'Vista posterior Nike SB Dunk Low x Travis Scott Cactus Jack' },
+      { image: 'assets/img/shop/541x540/823763.png', alt: 'Suela Nike SB Dunk Low x Travis Scott Cactus Jack' }
+    ], sizes: ['38', '39', '40', '41', '42', '43'], description: 'Nike SB Dunk Low x Travis Scott Cactus Jack con paneles de gamuza, estampados distintivos y una combinación de tonos tierra y verde.' },
     { id: 'nike-calm-mule', brand: 'nike', name: 'Nike Calm Mule', price: '$180.000', image: 'assets/img/shop/Sin título (270 x 274 px) (4).png', sizes: ['38', '39', '40', '41', '42', '43'], description: 'Nike Calm Mule de espuma ligera con diseño slip-on, plantilla contorneada y una silueta cómoda para el día a día.' }
   ]
 };

@@ -1,3 +1,4 @@
+{% load store_extras %}
 <!DOCTYPE html>
 <html lang="es">
 
@@ -175,125 +176,8 @@
     <!--== End Page Header Area Wrapper ==-->
 
     <!--== Start Blog Area Wrapper ==-->
-    <section class="shopping-cart-area">
+    <section id="shipping-calculator" class="shopping-cart-area">
       <div class="container">
-        <div class="row">
-          <div class="col-md-12">
-            <div class="shopping-cart-form table-responsive">
-              <form action="buscar/" method="get" role="search">
-                <table class="table text-center">
-                  <thead>
-                    <tr>
-                      <th class="product-remove">&nbsp;</th>
-                      <th class="product-thumb">&nbsp;</th>
-                      <th class="product-name">Producto</th>
-                      <th class="product-price">Precio</th>
-                      <th class="product-quantity">Cantidad</th>
-                      <th class="product-subtotal">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody id="django-cart-items">
-                    <tr class="cart-product-item">
-                      <td class="product-remove">
-                        <a href="#/" aria-label="Eliminar producto"><i class="fa fa-trash-o"></i></a>
-                      </td>
-                      <td class="product-thumb">
-                        <a href="single-product.html">
-                          <img src="assets/img/shop/27734.png" width="90" height="110" alt="Sneaker blanco y cafe">
-                        </a>
-                      </td>
-                      <td class="product-name">
-                        <h4 class="title"><a href="single-product.html">Nike SB Dunk Low x Travis Scott</a></h4>
-                      </td>
-                      <td class="product-price">
-                        <span class="price">$240.000 COP</span>
-                      </td>
-                      <td class="product-quantity">
-                        <div class="pro-qty">
-                          <input type="text" class="quantity" title="Cantidad" value="1">
-                        </div>
-                      </td>
-                      <td class="product-subtotal">
-                        <span class="price">$240.000 COP</span>
-                      </td>
-                    </tr>
-                    <tr class="cart-product-item">
-                      <td class="product-remove">
-                        <a href="#/" aria-label="Eliminar producto"><i class="fa fa-trash-o"></i></a>
-                      </td>
-                      <td class="product-thumb">
-                        <a href="single-product.html">
-                          <img src="assets/img/shop/727340.png" width="90" height="110" alt="Adidas Forum Low verde y blanco">
-                        </a>
-                      </td>
-                      <td class="product-name">
-                        <h4 class="title"><a href="single-product.html">Adidas Forum Low Verde/Blanco</a></h4>
-                      </td>
-                      <td class="product-price">
-                        <span class="price">$190.000 COP</span>
-                      </td>
-                      <td class="product-quantity">
-                        <div class="pro-qty">
-                          <input type="text" class="quantity" title="Cantidad" value="1">
-                        </div>
-                      </td>
-                      <td class="product-subtotal">
-                        <span class="price">$190.000 COP</span>
-                      </td>
-                    </tr>
-                    <tr class="cart-product-item">
-                      <td class="product-remove">
-                        <a href="#/" aria-label="Eliminar producto"><i class="fa fa-trash-o"></i></a>
-                      </td>
-                      <td class="product-thumb">
-                        <a href="single-product.html">
-                          <img src="assets/img/shop/product-mini/3.webp" width="90" height="110" alt="Sneaker urbano clasico">
-                        </a>
-                      </td>
-                      <td class="product-name">
-                        <h4 class="title"><a href="single-product.html">Sneakers urbanos cl&aacute;sicos</a></h4>
-                      </td>
-                      <td class="product-price">
-                        <span class="price">$180.000 COP</span>
-                      </td>
-                      <td class="product-quantity">
-                        <div class="pro-qty">
-                          <input type="text" class="quantity" title="Cantidad" value="1">
-                        </div>
-                      </td>
-                      <td class="product-subtotal">
-                        <span class="price">$180.000 COP</span>
-                      </td>
-                    </tr>
-                    <tr class="cart-product-item">
-                      <td class="product-remove"><a href="#/" aria-label="Eliminar producto"><i class="fa fa-trash-o"></i></a></td>
-                      <td class="product-thumb"><a href="single-product.html"><img src="assets/img/shop/jordan423.png" width="90" height="110" alt="Air Jordan 4 Retro SE Paris Olympics"></a></td>
-                      <td class="product-name"><h4 class="title"><a href="single-product.html">Air Jordan 4 Retro SE Paris Olympics</a></h4></td>
-                      <td class="product-price"><span class="price">$241.000 COP</span></td>
-                      <td class="product-quantity"><div class="pro-qty"><input type="text" class="quantity" title="Cantidad" value="1"></div></td>
-                      <td class="product-subtotal"><span class="price">$241.000 COP</span></td>
-                    </tr>
-                    <tr class="cart-product-item">
-                      <td class="product-remove"><a href="#/" aria-label="Eliminar producto"><i class="fa fa-trash-o"></i></a></td>
-                      <td class="product-thumb"><a href="single-product.html"><img src="assets/img/shop/2634.png" width="90" height="110" alt="Jordan 4 J Balvin"></a></td>
-                      <td class="product-name"><h4 class="title"><a href="single-product.html">Jordan 4 J Balvin</a></h4></td>
-                      <td class="product-price"><span class="price">$450.000 COP</span></td>
-                      <td class="product-quantity"><div class="pro-qty"><input type="text" class="quantity" title="Cantidad" value="1"></div></td>
-                      <td class="product-subtotal"><span class="price">$450.000 COP</span></td>
-                    </tr>
-                    <tr class="actions">
-                      <td class="border-0" colspan="6">
-                        <button type="submit" class="update-cart" disabled>Actualizar carrito</button>
-                        <button type="submit" class="clear-cart">Vaciar carrito</button>
-                        <a href="shop.html" class="btn-theme btn-flat">Seguir comprando</a>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </form>
-            </div>
-          </div>
-        </div>
         <div class="row row-gutter-50">
           <div class="col-md-6 col-lg-4">
             <div id="CategoriesAccordion" class="shipping-form-calculate">
@@ -305,42 +189,78 @@
               </div>
               <span data-bs-toggle="collapse" data-bs-target="#CategoriesTwo" aria-expanded="true" role="button">Calcular env&iacute;o</span>
               <div id="CategoriesTwo" class="collapse show" data-bs-parent="#CategoriesAccordion">
-                <form action="buscar/" method="get" role="search">
+                  <form action="{% url 'shipping_quote' %}" method="post" class="shipping-estimator-form">
+                  {% csrf_token %}
                   <div class="row row-gutter-50">
                     <div class="col-md-12">
                       <div class="form-group">
-                        <label class="visually-hidden" for="FormCountry">Pais</label>
-                        <select id="FormCountry" class="form-control">
-                          <option selected>Selecciona un pais…</option>
-                          <option>...</option>
+                        <label class="visually-hidden" for="FormCountry">Pa&iacute;s</label>
+                        <select id="FormCountry" class="form-control" aria-label="Pa&iacute;s" disabled>
+                          <option selected>Colombia</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-md-12">
+                      <div class="form-group">
+                        <label for="deliveryMethod" class="visually-hidden">Modalidad</label>
+                        <select id="deliveryMethod" name="delivery_method" class="form-control">
+                          <option value="courier"{% if not shipping_quote or shipping_quote.method == 'courier' %} selected{% endif %}>Env&iacute;o nacional desde Neiva</option>
+                          <option value="pickup"{% if shipping_quote.method == 'pickup' %} selected{% endif %}>Recogida en Neiva, Huila</option>
                         </select>
                       </div>
                     </div>
                     <div class="col-md-12">
                       <div class="form-group">
                         <label for="stateCounty" class="visually-hidden">Departamento</label>
-                        <input type="text" id="stateCounty" class="form-control" placeholder="Departamento / Provincia">
+                        <select id="stateCounty" name="department" class="form-control">
+                          <option value="">Selecciona un departamento...</option>
+                          {% for destination in destinations %}
+                          <option value="{{ destination }}"{% if shipping_quote.department == destination %} selected{% endif %}>{{ destination }}</option>
+                          {% endfor %}
+                        </select>
                       </div>
                     </div>
                     <div class="col-md-12">
                       <div class="form-group">
-                        <label for="townCity" class="visually-hidden">Ciudad</label>
-                        <input type="text" id="townCity" class="form-control" placeholder="Ciudad">
+                        <label for="townCity" class="visually-hidden">Ciudad o municipio</label>
+                        <input type="text" id="townCity" name="city" value="{{ shipping_quote.city|default:'' }}" class="form-control" maxlength="80" placeholder="Ciudad / municipio">
+                      </div>
+                    </div>
+                    <div class="col-sm-6 col-md-12">
+                      <div class="form-group">
+                        <label for="postcodeZip" class="visually-hidden">C&oacute;digo postal</label>
+                        <input type="text" id="postcodeZip" name="postal_code" value="{{ shipping_quote.postal_code|default:'' }}" class="form-control" maxlength="12" inputmode="numeric" placeholder="C&oacute;digo postal (opcional)">
+                      </div>
+                    </div>
+                    <div class="col-sm-6 col-md-12">
+                      <div class="form-group">
+                        <label for="shippingWeight" class="visually-hidden">Peso del paquete</label>
+                        <input type="number" id="shippingWeight" name="weight_kg" value="{% if shipping_quote.weight_kg and shipping_quote.method == 'courier' %}{{ shipping_quote.weight_kg }}{% else %}{{ estimated_weight }}{% endif %}" class="form-control" min="0.1" max="30" step="0.1" placeholder="Peso estimado (kg)">
                       </div>
                     </div>
                     <div class="col-md-12">
                       <div class="form-group">
-                        <label for="postcodeZip" class="visually-hidden">Codigo postal</label>
-                        <input type="text" id="postcodeZip" class="form-control" placeholder="C&oacute;digo postal">
-                      </div>
-                    </div>
-                    <div class="col-md-12">
-                      <div class="form-group">
-                        <button type="submit" class="update-totals">Actualizar totales</button>
+                        <button type="submit" class="update-totals">Calcular env&iacute;o</button>
                       </div>
                     </div>
                   </div>
                 </form>
+                {% if shipping_quote %}
+                <div class="shipping-estimator-result" aria-live="polite">
+                  <div class="shipping-estimator-result__heading">
+                    <span>{{ shipping_quote.zone_label }}</span>
+                    <strong>{% if cart.subtotal >= 400000 %}Gratis{% else %}{{ shipping_quote.cost|cop }}{% endif %}</strong>
+                  </div>
+                  <p>Neiva → {{ shipping_quote.city }}, {{ shipping_quote.department }}</p>
+                  {% if shipping_quote.method == 'courier' %}
+                  <small>{{ shipping_quote.billable_kg }} kg facturable · {{ shipping_quote.delivery_days }}</small>
+                  {% else %}
+                  <small>{{ shipping_quote.delivery_days }}</small>
+                  {% endif %}
+                  <small>{{ shipping_quote.rate_reference }}. <a href="{{ shipping_quote.source_url }}" target="_blank" rel="noopener">Ver fuente oficial</a></small>
+                  {% if shipping_quote.zone == 'special' %}<small>La tipolog&iacute;a especial depende del municipio y se confirma antes del despacho.</small>{% endif %}
+                </div>
+                {% endif %}
               </div>
             </div>
           </div>
@@ -352,12 +272,17 @@
                   <p>Ingresa tu c&oacute;digo de descuento si tienes uno.</p>
                 </div>
               </div>
-              <form action="buscar/" method="get" role="search">
+              {% if messages %}{% for message in messages %}<div class="coupon-feedback{% if message.tags == 'error' %} is-error{% endif %}">{{ message }}</div>{% endfor %}{% endif %}
+              {% if coupon %}
+              <div class="coupon-applied"><span><i class="fa fa-ticket"></i><strong>{{ coupon.code }}</strong><small>Descuento: {{ discount|cop }}</small></span><form action="{% url 'coupon_remove' %}" method="post">{% csrf_token %}<button type="submit">Retirar</button></form></div>
+              {% else %}
+              <form action="{% url 'coupon_apply' %}" method="post">
+                {% csrf_token %}
                 <div class="row">
                   <div class="col-md-12">
                     <div class="form-group">
                       <label for="couponCode" class="visually-hidden">Codigo de descuento</label>
-                      <input type="text" id="couponCode" class="form-control" placeholder="Ingresa tu c&oacute;digo de descuento">
+                      <input type="text" id="couponCode" name="code" class="form-control" maxlength="40" required autocomplete="off" placeholder="Ingresa tu c&oacute;digo de descuento">
                     </div>
                   </div>
                   <div class="col-md-12">
@@ -367,6 +292,7 @@
                   </div>
                 </div>
               </form>
+              {% endif %}
             </div>
           </div>
           <div class="col-md-12 col-lg-4">
@@ -382,28 +308,20 @@
                         <p class="value">Subtotal</p>
                       </td>
                       <td>
-                        <p class="price">$1.301.000 COP</p>
+                        <p class="price">{{ cart.subtotal|cop }}</p>
                       </td>
                     </tr>
+                    <tr class="cart-discount"{% if not coupon %} hidden{% endif %}>
+                      <td><p class="value">Descuento <span data-coupon-code>{% if coupon %}({{ coupon.code }}){% endif %}</span></p></td><td><p class="price" data-cart-discount>-{{ discount|cop }}</p></td>
+                    </tr>
                     <tr class="shipping">
+                      <td><p class="value">Env&iacute;o</p></td>
                       <td>
-                        <p class="value">Env&iacute;o</p>
-                      </td>
-                      <td>
-                        <ul class="shipping-list">
-                          <li class="radio">
-                            <input type="radio" name="shipping" id="radio1" checked>
-                            <label for="radio1"><span></span> Tarifa fija</label>
-                          </li>
-                          <li class="radio">
-                            <input type="radio" name="shipping" id="radio2" data-free-shipping-threshold="400000" disabled>
-                            <label for="radio2"><span></span> Env&iacute;o gratis (compras superiores a $400.000 COP)</label>
-                          </li>
-                          <li class="radio">
-                            <input type="radio" name="shipping" id="radio3">
-                            <label for="radio3"><span></span> Recogida local</label>
-                          </li>
-                        </ul>
+                        <p class="shipping-total-line">
+                          <span>{% if shipping_quote %}{{ shipping_quote.zone_label }}{% else %}Calcula tu destino{% endif %}</span>
+                          <strong data-cart-shipping>{{ shipping_cost|cop }}</strong>
+                        </p>
+                        <small class="shipping-free-note">Gratis desde $400.000 COP o recogida en Neiva.</small>
                       </td>
                     </tr>
                     <tr class="order-total">
@@ -411,7 +329,7 @@
                         <p class="value">Total</p>
                       </td>
                       <td>
-                        <p class="price">$1.301.000 COP</p>
+                        <p class="price">{{ total|cop }}</p>
                       </td>
                     </tr>
                   </tbody>

@@ -1,7 +1,7 @@
 <div class="tab-pane fade{% if active_tab == 'addresses' %} show active{% endif %}" id="addresses" role="tabpanel" aria-labelledby="addresses-tab">
   <div class="myaccount-content">
     <h3>Direcciones</h3>
-    <p class="saved-message">Te quedan <strong>{{ remaining_address_slots }} de 5</strong> entradas para tus direcciones.</p>
+    <p class="address-limit-notice">Te quedan <strong>{{ remaining_address_slots }} de 5</strong> entradas para tus direcciones.</p>
     {% for message in messages %}<p class="saved-message">{{ message }}</p>{% endfor %}
 
     <div class="row mb-4">
@@ -11,7 +11,7 @@
           <p class="mb-2"><strong>{{ address.label }}</strong>{% if address.is_default %} <span class="text-danger">· Principal</span>{% endif %}</p>
           <p class="mb-3">{{ address.recipient_name }}<br>{{ address.address_line_1 }}{% if address.address_line_2 %}, {{ address.address_line_2 }}{% endif %}<br>{{ address.city }}, {{ address.department }}{% if address.postal_code %} · {{ address.postal_code }}{% endif %}<br>Tel. {{ address.phone }}</p>
           <a href="?editar={{ address.id }}&tab=addresses" class="check-btn sqr-btn">Editar</a>
-          <form action="account-addresses/{{ address.id }}/delete/" method="post" class="d-inline">{% csrf_token %}<button class="check-btn sqr-btn" type="submit">Eliminar</button></form>
+          <form action="account-addresses/{{ address.id }}/delete/" method="post" class="d-inline">{% csrf_token %}<button class="check-btn sqr-btn address-delete-button" type="submit">Eliminar</button></form>
         </div>
       </div>
       {% empty %}
@@ -33,7 +33,7 @@
           </div>
           {% endfor %}
         </div>
-        <button type="submit" class="btn-theme btn-sm">{% if editing_address %}Guardar cambios{% else %}Guardar dirección{% endif %}</button>
+        <button type="submit" class="btn-theme address-save-button">{% if editing_address %}Guardar cambios{% else %}Guardar dirección{% endif %}</button>
         {% if editing_address %}<a href="account.html?tab=addresses" class="check-btn sqr-btn">Cancelar</a>{% endif %}
       </form>
     </div>
