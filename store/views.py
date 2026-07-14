@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model, login, logout, update_session_au
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.forms import PasswordChangeForm
-from django.http import Http404, JsonResponse
+from django.http import FileResponse, Http404, JsonResponse
 from django.db.models import Avg, Count, DecimalField, ExpressionWrapper, F, Prefetch, Q, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.db.models.functions import TruncMonth
@@ -20,6 +20,7 @@ from .forms import AccountDetailsForm, AddressForm, BlogCommentForm, CheckoutFor
 from .models import Address, BlogCategory, BlogComment, BlogPost, Cart, CartItem, ContactRequest, Coupon, CustomerProfile, Favorite, HomeBanner, MarketingPopup, NewsletterSubscription, Order, OrderItem, Product, ProductReview
 from .search import UnifiedSearchService
 from .services import CouponError, CheckoutError, coupon_totals, create_order_from_cart, ensure_session_key, get_cart, shipping_cost_for
+from .receipts import build_order_receipt
 from .shipping import DEPARTMENTS, DESTINATIONS, calculate_shipping
 
 
@@ -617,6 +618,7 @@ def checkout(request):
                     notes=notes,
                     coupon_code=coupon.code if coupon else "",
                     shipping_cost=order_shipping,
+                    delivery_method=delivery_method,
                 )
             except CheckoutError as exc:
                 messages.error(request, str(exc))
@@ -657,6 +659,16 @@ def order_confirmation(request, number):
     order = get_object_or_404(Order.objects.prefetch_related("items"), number=number, user=request.user)
     return render(request, "store/order-confirmation.html", {"order": order})
 
+
+@login_required
+def order_receipt_pdf(request, number):
+    order = get_object_or_404(Order.objects.prefetch_related("items"), number=number, user=request.user)
+    return FileResponse(
+        build_order_receipt(order),
+        as_attachment=True,
+        filename=f"comprobante-{order.number}.pdf",
+        content_type="application/pdf",
+    )
 
 def _cart_payload(cart, request=None):
     items = [

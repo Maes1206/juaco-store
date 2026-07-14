@@ -21,6 +21,7 @@ urlpatterns = [
     path("shop-wishlist.html", views.wishlist, name="wishlist"),
     path("shop-checkout.html", views.checkout, name="checkout"),
     path("order-confirmation/<str:number>/", views.order_confirmation, name="order_confirmation"),
+    path("orders/<str:number>/comprobante.pdf", views.order_receipt_pdf, name="order_receipt_pdf"),
     path("orders/<str:number>/", views.order_detail, name="order_detail"),
     path("page-not-found.html", views.not_found, name="not_found"),
     path("account-login.html", views.login_view, name="login"),

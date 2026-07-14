@@ -1,0 +1,19 @@
+<section class="shipping-tracking" aria-labelledby="shipping-tracking-title">
+  <div class="shipping-tracking__heading">
+    <div>
+      <span class="shipping-tracking__eyebrow">Tipo de envío: {{ order.get_delivery_method_display }}</span>
+      <h4 id="shipping-tracking-title">Estado de tu producto</h4>
+    </div>
+    <span class="shipping-status shipping-status--{{ order.fulfillment_status }}">{{ order.get_fulfillment_status_display }}</span>
+  </div>
+  <ol class="shipping-tracking__steps">
+    {% for step in order.fulfillment_steps %}
+    <li class="shipping-tracking__step{% if step.completed %} is-complete{% endif %}{% if step.current %} is-current{% endif %}">
+      <span class="shipping-tracking__marker" aria-hidden="true">
+        {% if step.completed %}<i class="fa fa-check"></i>{% else %}{{ forloop.counter }}{% endif %}
+      </span>
+      <span>{{ step.label }}</span>
+    </li>
+    {% endfor %}
+  </ol>
+</section>

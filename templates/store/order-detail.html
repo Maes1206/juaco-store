@@ -34,9 +34,13 @@
             <h3 class="order-detail-number">{{ order.number }}</h3>
             <p class="order-detail-date">Realizado el {{ order.created_at|date:"d M Y, H:i" }}</p>
           </div>
-          <span class="order-status order-status--{{ order.status }}">{{ order.get_status_display }}</span>
+          <div class="order-detail-statuses">
+            <span class="order-detail-status-label">Pago <span class="order-status order-status--{{ order.status }}">{{ order.get_status_display }}</span></span>
+            <span class="order-detail-status-label">Envío <span class="shipping-status shipping-status--{{ order.fulfillment_status }}">{{ order.get_fulfillment_status_display }}</span></span>
+          </div>
         </div>
 
+        {% include "store/_shipping_tracking.html" %}
         {% include "store/_order_summary.html" %}
 
         <div class="order-confirmation-actions">

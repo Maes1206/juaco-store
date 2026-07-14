@@ -77,9 +77,9 @@ class OrderItemInline(admin.TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ("number", "user", "recipient_name", "purchase_value", "sale_value", "discount_amount", "gross_profit_display", "status", "payment_method", "created_at")
-    list_filter = ("status", "payment_method", "created_at")
-    list_editable = ("purchase_value", "sale_value", "status")
+    list_display = ("number", "user", "recipient_name", "purchase_value", "sale_value", "discount_amount", "gross_profit_display", "status", "payment_method", "delivery_method", "fulfillment_status", "created_at")
+    list_filter = ("status", "payment_method", "delivery_method", "fulfillment_status", "created_at")
+    list_editable = ("purchase_value", "sale_value", "status", "fulfillment_status")
     search_fields = ("number", "recipient_name", "user__username", "user__email", "city")
     date_hierarchy = "created_at"
     inlines = [OrderItemInline]

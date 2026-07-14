@@ -18,7 +18,7 @@
               {% for item in order.items.all %}
               <tr>
                 <td class="order-item-name">
-                  {% if item.product_image %}<img src="assets/img/shop/{{ item.product_image }}" width="54" height="54" alt="{{ item.product_name }}" onerror="this.style.display='none'">{% endif %}
+                  {% if item.product_image %}<img src="{{ item.product_image }}" width="54" height="54" alt="{{ item.product_name }}" onerror="this.style.display='none'">{% endif %}
                   <span>{{ item.product_name }}</span>
                 </td>
                 <td>{% if item.size %}{{ item.size }}{% endif %}{% if item.color %}<small class="admin-table-note">Color: {{ item.color }}</small>{% endif %}{% if not item.size and not item.color %}—{% endif %}</td>
@@ -48,7 +48,7 @@
     </div>
     <div class="col-lg-5">
       <div class="order-summary-block">
-        <h5 class="order-summary-title">Envío</h5>
+        <h5 class="order-summary-title">Envío · {{ order.get_delivery_method_display }}</h5>
         <p class="order-address">
           <strong>{{ order.recipient_name }}</strong><br>
           {{ order.address_line_1 }}{% if order.address_line_2 %}, {{ order.address_line_2 }}{% endif %}<br>

@@ -67,7 +67,7 @@ class CheckoutError(Exception):
 
 
 @transaction.atomic
-def create_order_from_cart(user, cart, address, payment_method, notes="", coupon_code="", shipping_cost=None):
+def create_order_from_cart(user, cart, address, payment_method, notes="", coupon_code="", shipping_cost=None, delivery_method=Order.DeliveryMethod.COURIER):
     items = list(cart.items.select_related("product"))
     if not items:
         raise CheckoutError("Tu carrito está vacío.")
@@ -93,6 +93,7 @@ def create_order_from_cart(user, cart, address, payment_method, notes="", coupon
         user=user,
         number=_generate_order_number(),
         payment_method=payment_method,
+        delivery_method=delivery_method,
         recipient_name=address.recipient_name,
         phone=address.phone,
         address_line_1=address.address_line_1,

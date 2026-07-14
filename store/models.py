@@ -444,10 +444,28 @@ class Order(models.Model):
         CASH_ON_DELIVERY = "cash_on_delivery", "Pago contra entrega"
         BOLD = "bold", "Pago con Bold"
 
+    class DeliveryMethod(models.TextChoices):
+        COURIER = "courier", "Domicilio"
+        PICKUP = "pickup", "Recogida en Neiva"
+
+    class FulfillmentStatus(models.TextChoices):
+        PENDING_SHIPMENT = "pending_shipment", "Pendiente de envío"
+        PACKING = "packing", "Empacando producto"
+        IN_TRANSIT = "in_transit", "En camino"
+        DELIVERED = "delivered", "Entregado"
+
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="orders")
     number = models.CharField("número de pedido", max_length=20, unique=True, editable=False)
     status = models.CharField("estado", max_length=12, choices=Status.choices, default=Status.PENDING, db_index=True)
     payment_method = models.CharField("método de pago", max_length=20, choices=PaymentMethod.choices, default=PaymentMethod.BANK_TRANSFER)
+    delivery_method = models.CharField("tipo de envío", max_length=10, choices=DeliveryMethod.choices, default=DeliveryMethod.COURIER)
+    fulfillment_status = models.CharField(
+        "estado del envío",
+        max_length=20,
+        choices=FulfillmentStatus.choices,
+        default=FulfillmentStatus.PENDING_SHIPMENT,
+        db_index=True,
+    )
 
     # Snapshot de la dirección de envío (para que el historial no cambie si se edita/elimina la dirección)
     recipient_name = models.CharField("destinatario", max_length=161)
@@ -495,6 +513,20 @@ class Order(models.Model):
         if self.purchase_value is None or self.sale_value is None:
             return None
         return self.sale_value - self.purchase_value
+
+    @property
+    def fulfillment_steps(self):
+        steps = tuple(self.FulfillmentStatus.choices)
+        current_index = next((index for index, (value, _) in enumerate(steps) if value == self.fulfillment_status), 0)
+        return tuple(
+            {
+                "value": value,
+                "label": label,
+                "completed": index < current_index,
+                "current": index == current_index,
+            }
+            for index, (value, label) in enumerate(steps)
+        )
 
     def __str__(self):
         return self.number

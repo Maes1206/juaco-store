@@ -242,7 +242,9 @@
                           <div class="account-recent-order-info">
                             <span class="num">{{ last_order.number }}</span>
                             <span class="date">{{ last_order.created_at|date:"d M Y" }}</span>
-                            <span class="order-status order-status--{{ last_order.status }}">{{ last_order.get_status_display }}</span>
+                            <span class="order-status order-status--{{ last_order.status }}" title="Estado del pago">Pago: {{ last_order.get_status_display }}</span>
+                            <span class="account-shipping-method"><i class="fa fa-truck" aria-hidden="true"></i> {{ last_order.get_delivery_method_display }}</span>
+                            <span class="shipping-status shipping-status--{{ last_order.fulfillment_status }}">{{ last_order.get_fulfillment_status_display }}</span>
                           </div>
                           <div class="account-recent-order-total">{{ last_order.total|cop }}</div>
                           <a class="check-btn sqr-btn" href="orders/{{ last_order.number }}/">Ver detalle</a>
@@ -275,22 +277,26 @@
                     <div class="myaccount-content">
                       <h3>Mis pedidos</h3>
                       {% if orders %}
-                      <div class="myaccount-table table-responsive">
+                      <div class="myaccount-table table-responsive orders-history">
                         <table class="table orders-table">
+                          <colgroup>
+                            <col class="orders-table__product-col">
+                            <col class="orders-table__order-col">
+                            <col class="orders-table__status-col">
+                            <col class="orders-table__total-col">
+                          </colgroup>
                           <thead class="thead-light">
                             <tr>
                               <th>Producto</th>
                               <th>Pedido</th>
-                              <th>Fecha</th>
                               <th>Estado</th>
                               <th>Total</th>
-                              <th></th>
                             </tr>
                           </thead>
                           <tbody>
                             {% for order in orders %}
                             <tr>
-                              <td data-label="Producto">
+                              <td data-label="Producto" class="order-product-cell">
                                 {% with item=order.prefetched_items.0 %}
                                 {% if item %}
                                 {% if item.product %}<a class="order-product-preview" href="single-product.html?producto={{ item.product.slug }}" aria-label="Ver {{ item.product_name }}">{% else %}<div class="order-product-preview">{% endif %}
@@ -303,11 +309,24 @@
                                 {% else %}<span class="order-product-unavailable">Producto no disponible</span>{% endif %}
                                 {% endwith %}
                               </td>
-                              <td data-label="Pedido">{{ order.number }}</td>
-                              <td data-label="Fecha">{{ order.created_at|date:"d M Y" }}</td>
-                              <td data-label="Estado"><span class="order-status order-status--{{ order.status }}">{{ order.get_status_display }}</span></td>
-                              <td data-label="Total">{{ order.total|cop }}</td>
-                              <td class="text-end"><a href="orders/{{ order.number }}/" class="check-btn sqr-btn">Ver detalle</a></td>
+                              <td data-label="Pedido" class="order-reference-cell">
+                                <strong>{{ order.number }}</strong>
+                                <span>{{ order.created_at|date:"d M Y" }}</span>
+                              </td>
+                              <td data-label="Estado" class="order-state-cell">
+                                <span class="order-state-group">
+                                  <small>Pago</small>
+                                  <span class="order-status order-status--{{ order.status }}">{{ order.get_status_display }}</span>
+                                </span>
+                                <span class="order-state-group">
+                                  <small>Envío · {{ order.get_delivery_method_display }}</small>
+                                  <span class="shipping-status shipping-status--{{ order.fulfillment_status }}">{{ order.get_fulfillment_status_display }}</span>
+                                </span>
+                              </td>
+                              <td data-label="Total" class="order-total-cell">
+                                <strong>{{ order.total|cop }}</strong>
+                                <a href="orders/{{ order.number }}/" class="order-detail-link">Ver detalle <i class="fa fa-arrow-right" aria-hidden="true"></i></a>
+                              </td>
                             </tr>
                             {% endfor %}
                           </tbody>

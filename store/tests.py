@@ -1,6 +1,7 @@
 import json
 from datetime import timedelta
 
+from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.utils import timezone
@@ -402,6 +403,37 @@ class StoreFlowTests(TestCase):
         self.assertContains(response, self.product.name)
         self.assertContains(response, self.product.image)
         self.assertContains(response, f"single-product.html?producto={self.product.slug}")
+
+    def test_shipping_type_and_fulfillment_status_are_visible_and_admin_editable(self):
+        user = User.objects.create_user(username="seguimiento", password="ClaveSegura123!")
+        order = Order.objects.create(
+            user=user,
+            number="JS-TRACK-0001",
+            recipient_name="Cliente Seguimiento",
+            phone="300",
+            address_line_1="Recogida en tienda",
+            department="Huila",
+            city="Neiva",
+            subtotal=self.product.price,
+            total=self.product.price,
+            delivery_method=Order.DeliveryMethod.PICKUP,
+            fulfillment_status=Order.FulfillmentStatus.PACKING,
+        )
+        self.client.force_login(user)
+
+        account_response = self.client.get("/account.html?tab=orders")
+        self.assertContains(account_response, "Recogida en Neiva")
+        self.assertContains(account_response, "Empacando producto")
+
+        detail_response = self.client.get(f"/orders/{order.number}/")
+        for label in ("Pendiente de envío", "Empacando producto", "En camino", "Entregado"):
+            self.assertContains(detail_response, label)
+        self.assertContains(detail_response, "shipping-tracking__step is-current", html=False)
+
+        order_admin = admin.site._registry[Order]
+        self.assertIn("fulfillment_status", order_admin.list_editable)
+        self.assertIn("fulfillment_status", order_admin.list_filter)
+
     def test_new_account_dashboard_has_clickable_stats_checklist_and_recommendations(self):
         user = User.objects.create_user(username="nuevo", password="ClaveSegura123!")
         self.client.force_login(user)
@@ -427,6 +459,26 @@ class StoreFlowTests(TestCase):
         self.client.force_login(owner)
         self.assertEqual(self.client.get(f"/orders/{order.number}/").status_code, 200)
 
+    def test_order_receipt_pdf_is_downloadable_and_scoped_to_owner(self):
+        owner = User.objects.create_user(username="dueno-pdf", password="ClaveSegura123!")
+        other = User.objects.create_user(username="ajeno-pdf", password="ClaveSegura123!")
+        order = Order.objects.create(
+            user=owner, number="JS-PDF-0001", recipient_name="Cliente PDF", phone="300",
+            address_line_1="Calle 1", department="Huila", city="Neiva",
+            subtotal=self.product.price, total=self.product.price,
+        )
+        OrderItem.objects.create(
+            order=order, product=self.product, product_name=self.product.name,
+            product_image=self.product.image, unit_price=self.product.price, quantity=1, size="39",
+        )
+        self.client.force_login(other)
+        self.assertEqual(self.client.get(f"/orders/{order.number}/comprobante.pdf").status_code, 404)
+        self.client.force_login(owner)
+        response = self.client.get(f"/orders/{order.number}/comprobante.pdf")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/pdf")
+        self.assertIn(f'filename="comprobante-{order.number}.pdf"', response["Content-Disposition"])
+        self.assertTrue(b"".join(response.streaming_content).startswith(b"%PDF"))
     def test_admin_dashboard_requires_staff_and_exposes_management_sections(self):
         regular_user = User.objects.create_user(username="cliente-panel", first_name="Emanuel", last_name="Cantillo", password="ClaveSegura123!")
         CustomerProfile.objects.create(user=regular_user, document_number="1075000000", phone="3001234567")

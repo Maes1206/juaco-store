@@ -20,7 +20,7 @@
     </div>
 
     <div class="account-details-form border p-4">
-      <h4>{% if editing_address %}Editar dirección{% else %}Nueva dirección{% endif %}</h4>
+      <h4 class="address-form-title">{% if editing_address %}Editar dirección{% else %}Nueva dirección{% endif %}</h4>
       <form action="{% if editing_address %}account-addresses/{{ editing_address.id }}/{% else %}account-addresses/{% endif %}" method="post">
         {% csrf_token %}
         <div class="row">
