@@ -54,8 +54,19 @@
 
   document.title = collection.label + ' | Juaco Store';
   document.getElementById('catalog-title').textContent = collection.label;
-  document.getElementById('catalog-breadcrumb').textContent = collection.label;
-
+  var heroImage = document.getElementById('catalog-hero-image');
+  var heroSubtitle = document.getElementById('catalog-hero-subtitle');
+  var revealCatalogHero = function () {
+    var banner = document.getElementById('catalog-page-header');
+    banner.classList.remove('is-loading');
+    banner.classList.add('is-ready');
+  };
+  heroImage.addEventListener('load', revealCatalogHero, { once: true });
+  heroImage.addEventListener('error', revealCatalogHero, { once: true });
+  heroImage.alt = 'Sneaker ' + collection.label + ' en campaña urbana';
+  heroSubtitle.textContent = collection.subtitle || 'Modelos seleccionados para tu estilo.';
+  heroImage.src = collection.heroImage || collection.banner;
+  if (heroImage.complete) revealCatalogHero();
   var pageHeader = document.getElementById('catalog-page-header');
   // El catálogo usa banners propios por marca. Se desactiva el parallax
   // genérico de la cabecera para que no sobrescriba esta imagen estática.
@@ -63,7 +74,7 @@
   pageHeader.style.removeProperty('--page-parallax-image');
   pageHeader.style.removeProperty('--page-parallax-position');
   pageHeader.style.removeProperty('--page-parallax-offset');
-  pageHeader.style.backgroundImage = 'url("' + collection.banner + '")';
+  pageHeader.style.backgroundImage = 'none';
   pageHeader.style.backgroundPosition = 'center center';
   pageHeader.style.backgroundRepeat = 'no-repeat';
   pageHeader.style.backgroundSize = 'cover';

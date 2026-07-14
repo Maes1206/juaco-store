@@ -2,19 +2,19 @@ from django.contrib import admin
 from django.utils import timezone
 
 from .forms import ProductAdminForm
-from .models import Address, BlogCategory, BlogComment, BlogPost, Cart, CartItem, ContactRequest, Coupon, CouponRedemption, CustomerProfile, Favorite, HomeBanner, MarketingPopup, Order, OrderItem, Product, ProductReview
+from .models import Address, BlogCategory, BlogComment, BlogPost, Cart, CartItem, ContactRequest, Coupon, CouponRedemption, CustomerProfile, Favorite, HomeBanner, MarketingPopup, NewsletterSubscription, Order, OrderItem, Product, ProductReview
 
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     form = ProductAdminForm
     prepopulated_fields = {"slug": ("name",)}
-    list_display = ("name", "sku", "brand", "audience", "product_type", "price", "stock", "is_active")
-    list_filter = ("audience", "product_type", "brand", "is_active")
+    list_display = ("name", "sku", "brand", "audience", "collection", "product_type", "price", "stock", "is_active")
+    list_filter = ("audience", "collection", "product_type", "brand", "is_active")
     search_fields = ("name", "brand", "sku", "slug", "description", "tags")
     readonly_fields = ("created_at",)
     fieldsets = (
-        ("Identidad y publicacion", {"fields": ("name", "slug", "sku", "brand", "audience", "product_type", "is_active")}),
+        ("Identidad y publicacion", {"fields": ("name", "slug", "sku", "brand", "audience", "collection", "product_type", "is_active")}),
         ("Contenido de la ficha", {"fields": ("description", "additional_information", "detailed_description")}),
         ("Precio e inventario", {"fields": ("price", "compare_at_price", "stock", "weight_kg")}),
         ("Imagenes", {"fields": ("image", "image_alt", "gallery")}),
@@ -125,6 +125,15 @@ class HomeBannerAdmin(admin.ModelAdmin):
     search_fields = ("name", "title", "subtitle", "button_label", "button_url")
     ordering = ("position", "id")
 
+
+@admin.register(NewsletterSubscription)
+class NewsletterSubscriptionAdmin(admin.ModelAdmin):
+    list_display = ("email", "is_active", "subscribed_at", "updated_at")
+    list_filter = ("is_active", "subscribed_at")
+    list_editable = ("is_active",)
+    search_fields = ("email",)
+    readonly_fields = ("subscribed_at", "updated_at")
+    date_hierarchy = "subscribed_at"
 
 @admin.register(MarketingPopup)
 class MarketingPopupAdmin(admin.ModelAdmin):

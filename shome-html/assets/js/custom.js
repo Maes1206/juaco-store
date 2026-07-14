@@ -749,6 +749,53 @@
         evt.preventDefault();
       });
     }
-    scrollToTop();
+    function getCookie(name) {
+      var cookieValue = null;
+      document.cookie.split(';').some(function (cookie) {
+        var trimmedCookie = cookie.trim();
+        if (trimmedCookie.indexOf(name + '=') === 0) {
+          cookieValue = decodeURIComponent(trimmedCookie.substring(name.length + 1));
+          return true;
+        }
+        return false;
+      });
+      return cookieValue;
+    }
+
+    var newsletterForm = document.querySelector('[data-newsletter-form]');
+    if (newsletterForm) {
+      newsletterForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        var email = newsletterForm.querySelector('input[type="email"]');
+        var message = document.querySelector('[data-newsletter-message]');
+        var submitButton = newsletterForm.querySelector('button[type="submit"]');
+        if (!email.checkValidity()) {
+          email.reportValidity();
+          return;
+        }
+        submitButton.disabled = true;
+        message.textContent = 'Guardando tu suscripción...';
+        fetch(newsletterForm.action, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+          },
+          body: JSON.stringify({ email: email.value })
+        }).then(function (response) {
+          return response.json().then(function (data) {
+            if (!response.ok) throw new Error(data.message || 'No fue posible registrar el correo.');
+            return data;
+          });
+        }).then(function (data) {
+          message.textContent = data.message;
+          newsletterForm.reset();
+        }).catch(function (error) {
+          message.textContent = error.message || 'No fue posible registrar el correo.';
+        }).finally(function () {
+          submitButton.disabled = false;
+        });
+      });
+    }    scrollToTop();
 
 })(window.jQuery);

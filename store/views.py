@@ -13,10 +13,11 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.db.models.functions import TruncMonth
 from django.views.decorators.http import require_http_methods, require_POST
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 
-from .forms import AccountDetailsForm, AddressForm, BlogCommentForm, CheckoutForm, ContactRequestForm, EmailOrUsernameAuthenticationForm, ProductReviewForm, RegisterForm
-from .models import Address, BlogCategory, BlogComment, BlogPost, Cart, CartItem, ContactRequest, Coupon, CustomerProfile, Favorite, HomeBanner, MarketingPopup, Order, OrderItem, Product, ProductReview
+from .forms import AccountDetailsForm, AddressForm, BlogCommentForm, CheckoutForm, ContactRequestForm, EmailOrUsernameAuthenticationForm, NewsletterSubscriptionForm, ProductReviewForm, RegisterForm
+from .models import Address, BlogCategory, BlogComment, BlogPost, Cart, CartItem, ContactRequest, Coupon, CustomerProfile, Favorite, HomeBanner, MarketingPopup, NewsletterSubscription, Order, OrderItem, Product, ProductReview
 from .search import UnifiedSearchService
 from .services import CouponError, CheckoutError, coupon_totals, create_order_from_cart, ensure_session_key, get_cart, shipping_cost_for
 from .shipping import DEPARTMENTS, DESTINATIONS, calculate_shipping
@@ -30,6 +31,13 @@ PUBLIC_TEMPLATES = {
     "checkout": "shop-checkout.html",
 }
 
+
+CATALOG_SECTIONS = {
+    "hombre": {"title": "Hombre", "subtitle": "Sneakers seleccionados para hombre.", "image": "https://unsplash.com/photos/SUUGUg7RXYY/download?force=true&w=1800", "alt": "Hombre con sneakers negros y blancos en estilo urbano", "banner_credit_name": "Creaslim", "banner_credit_url": "https://unsplash.com/photos/um-homem-encostado-a-uma-parede-usando-tenis-preto-e-branco-SUUGUg7RXYY", "editorial_image": "https://unsplash.com/photos/k4ucH7p-aNE/download?force=true&w=1200", "editorial_alt": "Hombre mostrando sus sneakers", "credit_name": "Kaithleen Gonzalez", "credit_url": "https://unsplash.com/photos/man-showing-his-sneaker-k4ucH7p-aNE"},
+    "mujer": {"title": "Mujer", "subtitle": "Sneakers para combinar a tu manera.", "image": "https://unsplash.com/photos/7WRaJmvTJLQ/download?force=true&w=1800", "alt": "Mujer saltando con sneakers blancos", "banner_credit_name": "Frankie", "banner_credit_url": "https://unsplash.com/photos/woman-jumps-using-white-sneakers-7WRaJmvTJLQ", "editorial_image": "https://unsplash.com/photos/DM5iENjcd30/download?force=true&w=1200", "editorial_alt": "Mujer con sneakers de estilo creativo", "credit_name": "ZUZANA", "credit_url": "https://unsplash.com/photos/woman-wearing-sneaker-and-sandal-DM5iENjcd30"},
+    "clasicas": {"title": "Clasicas", "subtitle": "Los modelos esenciales de todos los tiempos.", "image": "https://unsplash.com/photos/RVlCGo-KHeA/download?force=true&w=1800", "alt": "Par de sneakers blancos clasicos", "banner_credit_name": "SJ", "banner_credit_url": "https://unsplash.com/photos/a-pair-of-white-sneakers-RVlCGo-KHeA", "editorial_image": "https://unsplash.com/photos/XwWGyrVidZE/download?force=true&w=1200", "editorial_alt": "Sneakers Adidas blanco y negro", "credit_name": "Eddie Palmore", "credit_url": "https://unsplash.com/photos/black-and-white-adidas-sneakers-XwWGyrVidZE"},
+    "nike": {"title": "Nike", "subtitle": "Siluetas iconicas que marcaron la cultura sneaker.", "image": "https://unsplash.com/photos/GXNOb23Jon8/download?force=true&w=1800", "alt": "Sneakers Nike en entorno urbano", "editorial_image": "https://unsplash.com/photos/GXNOb23Jon8/download?force=true&w=1200", "editorial_alt": "Sneakers Nike negros, blancos y naranjas", "credit_name": "Erik Mclean", "credit_url": "https://unsplash.com/photos/a-close-up-of-a-persons-feet-wearing-nike-sneakers-GXNOb23Jon8"},
+}
 
 @ensure_csrf_cookie
 def page(request, name):
@@ -52,6 +60,27 @@ def page(request, name):
         context["contact_form"] = form
     return render(request, f"store/{template}", context)
 
+
+@require_POST
+def newsletter_subscribe(request):
+    try:
+        payload = json.loads(request.body or "{}") if request.content_type == "application/json" else request.POST
+    except json.JSONDecodeError:
+        return JsonResponse({"message": "La solicitud no es válida."}, status=400)
+
+    form = NewsletterSubscriptionForm(payload)
+    if not form.is_valid():
+        return JsonResponse({"message": "Ingresa un correo electrónico válido."}, status=400)
+
+    email = form.cleaned_data["email"]
+    subscription, created = NewsletterSubscription.objects.get_or_create(email=email)
+    if not created and not subscription.is_active:
+        subscription.is_active = True
+        subscription.updated_at = timezone.now()
+        subscription.save(update_fields=("is_active", "updated_at"))
+
+    message = "¡Listo! Te avisaremos de los próximos drops." if created else "Este correo ya está suscrito a los próximos drops."
+    return JsonResponse({"message": message, "created": created})
 
 @ensure_csrf_cookie
 def search(request):
@@ -114,15 +143,26 @@ def wishlist(request):
 def shop(request):
     products = Product.objects.filter(is_active=True)
     audience = request.GET.get("genero")
+    collection = request.GET.get("coleccion")
     product_type = request.GET.get("tipo")
     brand = request.GET.get("marca")
     if audience:
         products = products.filter(audience=audience)
+    if collection:
+        products = products.filter(collection=collection)
     if product_type:
         products = products.filter(product_type=product_type)
     if brand:
         products = products.filter(brand__iexact=brand)
     return render(request, "store/shop.html", {"products": products})
+
+
+@ensure_csrf_cookie
+def catalog_section(request, section):
+    section_data = CATALOG_SECTIONS.get(section)
+    if section_data is None:
+        raise Http404
+    return render(request, "store/catalog-section.html", {"catalog_section": section_data})
 
 
 @ensure_csrf_cookie

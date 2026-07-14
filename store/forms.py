@@ -28,6 +28,12 @@ class ProductAdminForm(forms.ModelForm):
         widget=forms.Textarea(attrs={"rows": 5, "placeholder": "Ruta o URL | texto alternativo"}),
     )
 
+    tags = forms.CharField(
+        label="Etiquetas",
+        required=False,
+        help_text="Escribe etiquetas separadas por coma. Ejemplo: Retro, cuero, edicion limitada.",
+        widget=forms.TextInput(attrs={"placeholder": "Retro, cuero, edicion limitada"}),
+    )
     class Meta:
         model = Product
         fields = "__all__"
@@ -47,6 +53,7 @@ class ProductAdminForm(forms.ModelForm):
                 if isinstance(item, dict) and item.get("url")
             )
 
+            self.initial["tags"] = ", ".join(str(tag) for tag in (self.instance.tags or []))
     def clean_sizes(self):
         values = re.split(r"[,;\n]+", self.cleaned_data.get("sizes", ""))
         sizes = []
@@ -95,6 +102,20 @@ class ProductAdminForm(forms.ModelForm):
                 colors.append({"name": name, "hex": hex_value.upper()})
         return colors
 
+    def clean_tags(self):
+        raw_value = self.cleaned_data.get("tags", "")
+        values = re.split(r"[,;\n]+", raw_value)
+        tags = []
+        for value in values:
+            tag = value.strip()
+            if not tag or tag == "[]":
+                continue
+            if len(tag) > 80:
+                raise forms.ValidationError("Cada etiqueta puede tener maximo 80 caracteres.")
+            if tag.casefold() not in {item.casefold() for item in tags}:
+                tags.append(tag)
+        return tags
+
 class EmailOrUsernameAuthenticationForm(AuthenticationForm):
     username = forms.CharField(label="Usuario o correo electrónico")
 
@@ -102,6 +123,7 @@ class EmailOrUsernameAuthenticationForm(AuthenticationForm):
         identifier = self.cleaned_data.get("username")
         password = self.cleaned_data.get("password")
         if identifier and password:
+
             username = identifier
             if "@" in identifier:
                 user = User.objects.filter(email__iexact=identifier).order_by("id").first()
@@ -307,3 +329,9 @@ class AddressForm(forms.ModelForm):
             "phone": forms.TextInput(attrs={"placeholder": "Ej. 300 123 4567", "autocomplete": "tel"}),
             "is_default": forms.CheckboxInput(attrs={"style": "width: 18px; height: 18px; min-height: 0; padding: 0; margin: 0 8px 0 0; vertical-align: middle;"}),
         }
+
+class NewsletterSubscriptionForm(forms.Form):
+    email = forms.EmailField()
+
+    def clean_email(self):
+        return self.cleaned_data["email"].strip().lower()

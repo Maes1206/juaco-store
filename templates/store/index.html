@@ -172,7 +172,7 @@
     <section class="product-area product-collection-area collection-entry-section">
       <div class="container">
         <div class="row">
-          <div class="col-lg-4 col-md-6">
+          <div class="col-lg-3 col-md-6">
             <!--== Start Product Collection Item ==-->
             <div class="product-collection">
               <div class="inner-content">
@@ -188,7 +188,7 @@
             </div>
             <!--== End Product Collection Item ==-->
           </div>
-          <div class="col-lg-4 col-md-6">
+          <div class="col-lg-3 col-md-6">
             <!--== Start Product Collection Item ==-->
             <div class="product-collection">
               <div class="inner-content">
@@ -204,7 +204,7 @@
             </div>
             <!--== End Product Collection Item ==-->
           </div>
-          <div class="col-lg-4 col-md-6">
+          <div class="col-lg-3 col-md-6">
             <!--== Start Product Collection Item ==-->
             <div class="product-collection">
               <div class="inner-content">
@@ -216,6 +216,22 @@
                 </div>
                 <div class="product-collection-thumb" data-bg-img="assets/img/shop/puma.png" style="background-position: center center;"></div>
                 <a class="banner-link-overlay" href="shop.html?marca=puma" aria-label="Ver colección Puma"></a>
+              </div>
+            </div>
+            <!--== End Product Collection Item ==-->
+          </div>
+          <div class="col-lg-3 col-md-6">
+            <!--== Start Product Collection Item ==-->
+            <div class="product-collection nike-collection">
+              <div class="inner-content">
+                <div class="product-collection-content">
+                  <div class="content">
+                    <h3 class="title"><a href="{% url 'catalog_section' 'nike' %}">Nike</a></h3>
+                    <h4 class="price">Desde $230.000</h4>
+                  </div>
+                </div>
+                <div class="product-collection-thumb" data-bg-img="assets/img/shop/sbdunknike.png"></div>
+                <a class="banner-link-overlay" href="{% url 'catalog_section' 'nike' %}" aria-label="Ver seccion Nike"></a>
               </div>
             </div>
             <!--== End Product Collection Item ==-->
@@ -887,7 +903,7 @@
           <div class="col-lg-6">
             <div class="divider-thumb-content">
               <div class="thumb">
-                <a href="shop.html">
+                <a href="{% url 'catalog_section' 'hombre' %}">
                   <img src="assets/img/shop/hombre.png" width="570" height="350" alt="Sneakers Jordan en escalon">
                 </a>
                 <div class="promo-image-copy">
@@ -897,7 +913,7 @@
               </div>
               <div class="content promo-extra-content">
                 <div class="thumb promo-extra-thumb">
-                  <a href="shop.html">
+                  <a href="{% url 'catalog_section' 'mujer' %}">
                     <img src="assets/img/shop/mujer.png" width="570" height="350" alt="Sneakers blancas con outfit azul">
                   </a>
                   <div class="promo-image-copy">
@@ -911,7 +927,7 @@
           <div class="col-lg-6">
             <div class="divider-thumb-content">
               <div class="thumb">
-                <a href="shop.html">
+                <a href="{% url 'catalog_section' 'clasicas' %}">
                   <img src="assets/img/shop/clasicas.png" width="570" height="700" alt="Sneakers clasicas Adidas">
                 </a>
                 <div class="promo-image-copy">
@@ -943,6 +959,37 @@
       </div>
     </section>
     <!--== End Blog Area Wrapper ==-->
+    <!--== Start Newsletter Area Wrapper ==-->
+    <section class="newsletter-area" aria-labelledby="newsletter-title">
+      <div class="container">
+        <div class="newsletter-panel">
+          <div class="newsletter-panel__signup">
+            <p class="newsletter-panel__eyebrow">Comunidad Juaco</p>
+            <h2 id="newsletter-title">Entérate antes que nadie</h2>
+            <p>Recibe lanzamientos, reposiciones y tendencias sneaker seleccionadas para tu estilo.</p>
+            <form class="newsletter-form" data-newsletter-form action="{% url 'newsletter_subscribe' %}" novalidate>
+              <label class="visually-hidden" for="newsletter-email">Tu correo electrónico</label>
+              <input id="newsletter-email" name="email" type="email" autocomplete="email" placeholder="Tu correo electrónico" required>
+              <button type="submit">Suscribirme</button>
+            </form>
+            <p class="newsletter-form__message" data-newsletter-message aria-live="polite"></p>
+          </div>
+          <div class="newsletter-panel__benefit">
+            <div class="newsletter-panel__icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12.834 20.167H9.167c-3.457 0-5.186 0-6.26-1.074s-1.074-2.802-1.074-6.26V11c0-3.457 0-5.185 1.074-6.26 1.074-1.073 2.803-1.073 6.26-1.073h3.667c3.456 0 5.185 0 6.259 1.074s1.074 2.802 1.074 6.26v1.833c0 3.457 0 5.185-1.074 6.259-.599.599-1.401.864-2.593.981M6.417 3.667V2.292m9.167 1.375V2.292m4.125 5.958H9.854m-8.02 0h3.552" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+            <div><h3>Drops semanales</h3><p>Las novedades y lanzamientos más esperados, directamente en tu correo.</p></div>
+          </div>
+          <div class="newsletter-panel__benefit">
+            <div class="newsletter-panel__icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12.834 3.208v6.875-5.958a1.375 1.375 0 1 1 2.75 0v5.958-3.208a1.375 1.375 0 1 1 2.75 0v7.791a5.5 5.5 0 0 1-5.5 5.5H11.8a5.5 5.5 0 0 1-3.76-1.486l-4.546-4.261a1.594 1.594 0 1 1 2.218-2.291l1.623 1.623V5.958a1.375 1.375 0 1 1 2.75 0v4.125-6.875a1.375 1.375 0 1 1 2.75 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div><h3>Solo lo importante</h3><p>Sin mensajes de sobra: contenido útil para quienes viven la cultura sneaker.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!--== End Newsletter Area Wrapper ==-->
   </main>
 
   <!--== Start Footer Area Wrapper ==-->

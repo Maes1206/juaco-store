@@ -128,8 +128,9 @@
                   <li><a href="about-us.html"><span>Nosotros</span></a></li>
                   <li class="has-submenu"><a href="shop.html"><span>Tienda</span></a>
                     <ul class="submenu-nav">
-                      <li><a href="shop.html"><span>Hombre</span></a></li>
-                      <li><a href="shop.html"><span>Mujer</span></a></li>
+                      <li><a href="{% url 'catalog_section' 'hombre' %}"><span>Hombre</span></a></li>
+                      <li><a href="{% url 'catalog_section' 'mujer' %}"><span>Mujer</span></a></li>
+                      <li><a href="{% url 'catalog_section' 'nike' %}"><span>Nike</span></a></li>
                       <li><a href="shop.html"><span>Ofertas</span></a></li>
                       <li><a href="shop.html"><span>Accesorios</span></a></li>
                     </ul>
@@ -310,8 +311,9 @@
           <li><a href="about-us.html">Nosotros</a></li>
           <li><a href="shop.html">Tienda</a>
             <ul class="sub-menu">
-              <li><a href="shop.html">Hombre</a></li>
-              <li><a href="shop.html">Mujer</a></li>
+              <li><a href="{% url 'catalog_section' 'hombre' %}">Hombre</a></li>
+              <li><a href="{% url 'catalog_section' 'nike' %}">Nike</a></li>
+              <li><a href="{% url 'catalog_section' 'mujer' %}">Mujer</a></li>
               <li><a href="shop.html">Ofertas</a></li>
               <li><a href="shop.html">Accesorios</a></li>
             </ul>

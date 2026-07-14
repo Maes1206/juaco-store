@@ -705,3 +705,104 @@ body.marketing-popup-open { overflow: hidden; }
 .product-stock-status i { margin-right: 6px; }
 .product-stock-status.is-out { color: #b13c34; }
 .product-quick-action .btn-theme[disabled] { cursor: not-allowed; opacity: .55; }
+
+/* Individual catalog section landing banners. */
+.catalog-section-banner { position: relative; min-height: clamp(330px, 48vw, 620px); overflow: hidden; background: #161616; }
+.catalog-section-banner__image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.catalog-brand-banner.is-loading .catalog-section-banner__image,
+.catalog-brand-banner.is-loading .catalog-section-banner__content {
+  visibility: hidden;
+  opacity: 0 !important;
+}
+.catalog-section-banner:after { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0, 0, 0, .72) 0%, rgba(0, 0, 0, .28) 58%, rgba(0, 0, 0, .06) 100%); content: ""; }
+.catalog-section-banner__content { position: relative; z-index: 1; display: flex; min-height: inherit; align-items: flex-end; padding: 70px 0; color: #fff; }
+.catalog-section-banner__content > div { max-width: 560px; }
+.catalog-section-banner__eyebrow { margin: 0 0 10px; font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
+.catalog-section-banner h1 { margin: 0; color: #fff; font-size: clamp(42px, 7vw, 82px); font-weight: 800; letter-spacing: .06em; line-height: 1; text-transform: uppercase; }
+.catalog-section-banner p:last-child { margin: 13px 0 0; color: #fff; font-size: clamp(14px, 1.8vw, 20px); font-weight: 600; }
+.catalog-section-blank { min-height: 340px; background: #fff; }
+@media (max-width: 767px) { .catalog-section-banner { min-height: 390px; } .catalog-section-banner__content { padding: 48px 24px; } .catalog-section-banner:after { background: rgba(0, 0, 0, .48); } .catalog-section-blank { min-height: 220px; } }
+
+/* Editorial image and empty-state message for individual sections. */
+.catalog-section-blank { display: flex; min-height: 440px; align-items: center; padding: 70px 0; }
+.catalog-section-empty { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1fr); align-items: center; gap: clamp(32px, 7vw, 100px); }
+.catalog-section-editorial { margin: 0; }
+.catalog-section-editorial img { display: block; width: 100%; min-height: 310px; max-height: 460px; object-fit: cover; }
+.catalog-section-editorial figcaption { margin-top: 9px; color: #8a8a8a; font-size: 10px; }
+.catalog-section-editorial a { color: inherit; text-decoration: underline; }
+.catalog-section-empty__notice > span { color: var(--juaco-red); font-size: 11px; font-weight: 800; letter-spacing: 1.8px; text-transform: uppercase; }
+.catalog-section-empty__notice h2 { margin: 12px 0; color: var(--juaco-ink); font-size: clamp(27px, 3.5vw, 44px); line-height: 1.15; }
+.catalog-section-empty__notice p { max-width: 500px; margin: 0 0 24px; color: var(--juaco-muted); font-size: 14px; line-height: 1.75; }
+.catalog-section-empty__notice .btn-theme { display: inline-flex; }
+@media (max-width: 767px) { .catalog-section-blank { min-height: 0; padding: 48px 0; } .catalog-section-empty { grid-template-columns: 1fr; gap: 30px; } .catalog-section-editorial img { min-height: 250px; max-height: 360px; } }
+
+.catalog-section-banner__credit { position: absolute; right: 18px; bottom: 14px; z-index: 2; color: rgba(255,255,255,.75); font-size: 9px; }
+.catalog-section-banner__credit:hover { color: #fff; }
+/* Nike card: match the collection cards while integrating the white product image. */
+.collection-entry-section .nike-collection {
+  height: 400px;
+  background: #f1f1f3;
+}
+.collection-entry-section .nike-collection .product-collection-thumb {
+  background-color: #f1f1f3;
+  background-position: center center !important;
+  background-size: auto 110%;
+  filter: brightness(1.17) contrast(.92);
+}
+.collection-entry-section .nike-collection .product-collection-content {
+  position: relative;
+  z-index: 2;
+}
+@media only screen and (max-width: 1199px) { .collection-entry-section .nike-collection { height: 360px; } }
+
+/* Professional entrance motion for catalog section heroes. */
+.catalog-section-banner {
+  animation: catalogBannerLift .8s cubic-bezier(.22, 1, .36, 1) both;
+}
+.catalog-section-banner__image {
+  animation: catalogBannerImageReveal 1.25s cubic-bezier(.22, 1, .36, 1) both;
+  transform-origin: center center;
+}
+.catalog-section-banner:after {
+  animation: catalogBannerOverlayIn .7s ease-out both;
+}
+.catalog-section-banner__content > div > * {
+  animation: catalogBannerCopyIn .72s cubic-bezier(.22, 1, .36, 1) both;
+}
+.catalog-section-banner__eyebrow { animation-delay: .18s !important; }
+.catalog-section-banner h1 { animation-delay: .3s !important; }
+.catalog-section-banner p:last-child { animation-delay: .44s !important; }
+@keyframes catalogBannerLift { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes catalogBannerImageReveal { from { opacity: .72; transform: scale(1.075); } to { opacity: 1; transform: scale(1); } }
+@keyframes catalogBannerOverlayIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes catalogBannerCopyIn { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Keep the remove control alongside the mini-cart product. */
+.aside-cart-wrapper .aside-cart-product-list .product-list-item .remove {
+  top: 50%;
+  transform: translateY(-50%);
+}
+/* Center the benefits group within the promotional strip on desktop. */
+@media only screen and (min-width: 992px) {
+  .collection-feature-section .feature-box-wrap {
+    justify-content: center;
+  }
+}
+/* Home newsletter: a concise signup block before the latest news. */
+.newsletter-area { padding: 22px 0 52px; }
+.newsletter-panel { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(180px, .7fr) minmax(180px, .7fr); gap: clamp(28px, 4vw, 60px); align-items: start; padding: clamp(30px, 4vw, 48px); border: 1px solid #d9dce1; border-radius: 12px; background: #fff; }
+.newsletter-panel__eyebrow { margin: 0 0 8px; color: var(--juaco-red); font-size: 11px; font-weight: 800; letter-spacing: 1.7px; text-transform: uppercase; }
+.newsletter-panel h2 { margin: 0; color: var(--juaco-ink); font-size: clamp(28px, 3vw, 40px); line-height: 1.1; }
+.newsletter-panel__signup > p:not(.newsletter-panel__eyebrow):not(.newsletter-form__message) { max-width: 520px; margin: 13px 0 0; color: var(--juaco-muted); font-size: 15px; line-height: 1.65; }
+.newsletter-form { display: flex; gap: 12px; margin-top: 25px; }
+.newsletter-form input { min-width: 0; flex: 1; border: 1px solid #d2d6dc; border-radius: 5px; padding: 12px 14px; color: var(--juaco-ink); font-size: 14px; outline: 0; }
+.newsletter-form input:focus { border-color: var(--juaco-red); box-shadow: 0 0 0 3px rgba(238, 61, 53, .12); }
+.newsletter-form button { border: 0; border-radius: 5px; background: var(--juaco-red); color: #fff; cursor: pointer; font-size: 13px; font-weight: 800; padding: 12px 20px; transition: background .2s ease, transform .2s ease; }
+.newsletter-form button:hover { background: #c92d28; transform: translateY(-1px); }
+.newsletter-form__message { min-height: 18px; margin: 8px 0 0; color: #438449; font-size: 12px; font-weight: 600; }
+.newsletter-panel__benefit { display: grid; grid-template-columns: 44px 1fr; gap: 13px; }
+.newsletter-panel__icon { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 7px; background: rgba(31, 35, 43, .07); color: var(--juaco-ink); }
+.newsletter-panel__benefit h3 { margin: 8px 0 0; color: var(--juaco-ink); font-size: 16px; font-weight: 700; }
+.newsletter-panel__benefit p { margin: 13px 0 0; color: var(--juaco-muted); font-size: 13px; line-height: 1.6; }
+@media (max-width: 991px) { .newsletter-panel { grid-template-columns: 1fr 1fr; } .newsletter-panel__signup { grid-column: 1 / -1; } }
+@media (max-width: 575px) { .newsletter-area { padding: 15px 0 38px; } .newsletter-panel { grid-template-columns: 1fr; padding: 28px 22px; } .newsletter-panel__signup { grid-column: auto; } .newsletter-form { flex-direction: column; } .newsletter-form button { width: 100%; } }

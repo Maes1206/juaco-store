@@ -1,0 +1,29 @@
+{% extends "store/base.html" %}
+
+{% block title %}{{ catalog_section.title }} | Juaco Store{% endblock %}
+
+{% block content %}
+<section class="catalog-section-banner" aria-labelledby="catalog-section-title">
+  <img class="catalog-section-banner__image" src="{{ catalog_section.image }}" alt="{{ catalog_section.alt }}">
+  <div class="container catalog-section-banner__content">
+    <div>
+      <p class="catalog-section-banner__eyebrow">Juaco Store</p>
+      <h1 id="catalog-section-title">{{ catalog_section.title }}</h1>
+      <p>{{ catalog_section.subtitle }}</p>
+    </div>
+  </div>
+</section>
+<section class="catalog-section-blank" aria-labelledby="catalog-empty-title">
+  <div class="container catalog-section-empty">
+    <figure class="catalog-section-editorial">
+      <img src="{{ catalog_section.editorial_image }}" alt="{{ catalog_section.editorial_alt }}">
+    </figure>
+    <div class="catalog-section-empty__notice">
+      <span>Catalogo en preparacion</span>
+      <h2 id="catalog-empty-title">Aun no hemos agregado productos</h2>
+      <p>Estamos seleccionando los modelos que formaran parte de esta seccion. Vuelve pronto para descubrirlos.</p>
+      <a class="btn-theme" href="shop.html">Explorar toda la tienda</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

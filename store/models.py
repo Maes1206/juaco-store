@@ -7,10 +7,22 @@ from django.core.validators import FileExtensionValidator, MaxValueValidator, Mi
 
 
 class Product(models.Model):
+    class Brand(models.TextChoices):
+        JORDAN = "Jordan", "Jordan"
+        ADIDAS = "Adidas", "Adidas"
+        PUMA = "Puma", "Puma"
+        NIKE = "Nike", "Nike"
+
     class Audience(models.TextChoices):
         MEN = "men", "Hombre"
         WOMEN = "women", "Mujer"
         UNISEX = "unisex", "Unisex"
+
+    class Collection(models.TextChoices):
+        CLASSICS = "classics", "Clasicas"
+        URBAN = "urban", "Urbanas"
+        SPORT = "sport", "Deportivas"
+        LIMITED = "limited", "Edicion limitada"
 
     class ProductType(models.TextChoices):
         FOOTWEAR = "footwear", "Calzado"
@@ -18,10 +30,11 @@ class Product(models.Model):
 
     slug = models.SlugField(max_length=120, unique=True)
     sku = models.CharField("referencia", max_length=80, blank=True, db_index=True)
-    brand = models.CharField("marca", max_length=40)
+    brand = models.CharField("marca", max_length=40, choices=Brand.choices)
     name = models.CharField("nombre", max_length=180)
     audience = models.CharField("seccion", max_length=12, choices=Audience.choices, default=Audience.UNISEX, db_index=True)
     product_type = models.CharField("tipo", max_length=12, choices=ProductType.choices, default=ProductType.FOOTWEAR, db_index=True)
+    collection = models.CharField("coleccion", max_length=16, choices=Collection.choices, blank=True, db_index=True)
     description = models.TextField("descripcion corta", blank=True, help_text="Texto principal junto al precio.")
     detailed_description = models.TextField("descripcion detallada", blank=True, help_text="Contenido de la pestaña Descripcion.")
     additional_information = models.TextField("informacion del producto", blank=True, help_text="Contenido de la pestaña Informacion.")
@@ -157,6 +170,20 @@ class HomeBanner(models.Model):
     def __str__(self):
         return self.name
 
+
+class NewsletterSubscription(models.Model):
+    email = models.EmailField("correo electrónico", unique=True)
+    is_active = models.BooleanField("suscripción activa", default=True)
+    subscribed_at = models.DateTimeField("fecha de suscripción", auto_now_add=True)
+    updated_at = models.DateTimeField("última actualización", auto_now=True)
+
+    class Meta:
+        verbose_name = "suscripción al newsletter"
+        verbose_name_plural = "suscripciones al newsletter"
+        ordering = ("-subscribed_at",)
+
+    def __str__(self):
+        return self.email
 
 class MarketingPopup(models.Model):
     class ImagePosition(models.TextChoices):

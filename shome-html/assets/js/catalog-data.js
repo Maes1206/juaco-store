@@ -1,10 +1,10 @@
 /* Catálogo único: la colección y la ficha de detalle consumen estos mismos datos. */
 window.JuacoCatalog = {
   collections: {
-    jordan: { label: 'Jordan', banner: 'assets/img/jordan.png' },
-    adidas: { label: 'Adidas', banner: 'assets/img/adidas.png' },
-    puma: { label: 'Puma', banner: 'assets/img/puma.png' },
-    nike: { label: 'Nike', banner: 'assets/img/shop/storesneaker.png' }
+    jordan: { label: 'Jordan', heroImage: 'https://unsplash.com/photos/eBW4S-S9DtQ/download?force=true&w=1800', subtitle: 'La leyenda del baloncesto llevada a la calle.' },
+    adidas: { label: 'Adidas', heroImage: 'https://unsplash.com/photos/t9AmebKuFh4/download?force=true&w=1800', subtitle: 'Herencia deportiva, actitud urbana y diseño atemporal.' },
+    puma: { label: 'Puma', heroImage: 'https://about.puma.com/sites/default/files/styles/dd_hero_wide/public/media/news/images/64abeb35d673b.jpg?itok=EOF-6LHT', subtitle: 'Energía nocturna para moverte con estilo propio.' },
+    nike: { label: 'Nike', heroImage: 'https://unsplash.com/photos/GXNOb23Jon8/download?force=true&w=1800', subtitle: 'Siluetas icónicas que marcaron la cultura sneaker.' }
   },
   products: [
     { id: 'jordan-4-paris-olympics', brand: 'jordan', name: 'Air Jordan 4 Retro SE Paris Olympics', price: '$241.000', image: 'assets/img/shop/jordan423.png', sizes: ['38', '39', '40', '41', '42'], description: 'Air Jordan 4 Retro SE con una silueta clásica, amortiguación Air visible y detalles inspirados en la edición Paris Olympics.' },

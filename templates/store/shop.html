@@ -127,8 +127,9 @@
                   <li><a href="about-us.html"><span>Nosotros</span></a></li>
                   <li class="has-submenu"><a href="shop.html"><span>Tienda</span></a>
                     <ul class="submenu-nav">
-                      <li><a href="shop.html"><span>Hombre</span></a></li>
-                      <li><a href="shop.html"><span>Mujer</span></a></li>
+                      <li><a href="{% url 'catalog_section' 'hombre' %}"><span>Hombre</span></a></li>
+                      <li><a href="{% url 'catalog_section' 'mujer' %}"><span>Mujer</span></a></li>
+                      <li><a href="{% url 'catalog_section' 'nike' %}"><span>Nike</span></a></li>
                       <li><a href="shop.html"><span>Ofertas</span></a></li>
                       <li><a href="shop.html"><span>Accesorios</span></a></li>
                     </ul>
@@ -148,24 +149,16 @@
 
   <main class="main-content">
     <!--== Start Page Header Area Wrapper ==-->
-    <div class="page-header-area" id="catalog-page-header" data-bg-img="assets/img/photos/bg3.webp">
-      <div class="container pt--0 pb--0">
-        <div class="row">
-          <div class="col-12">
-            <div class="page-header-content">
-              <h2 class="title" id="catalog-title" data-aos="fade-down" data-aos-duration="1000">Todos los sneakers</h2>
-              <nav class="breadcrumb-area" data-aos="fade-down" data-aos-duration="1200">
-                <ul class="breadcrumb">
-                  <li><a href="index.html">Inicio</a></li>
-                  <li class="breadcrumb-sep">//</li>
-                  <li id="catalog-breadcrumb">Tienda</li>
-                </ul>
-              </nav>
-            </div>
-          </div>
+    <section class="catalog-section-banner catalog-brand-banner is-loading" id="catalog-page-header" aria-labelledby="catalog-title">
+      <img class="catalog-section-banner__image" id="catalog-hero-image" alt="Banner de colección">
+      <div class="container catalog-section-banner__content">
+        <div>
+          <p class="catalog-section-banner__eyebrow">Juaco Store</p>
+          <h1 id="catalog-title">Jordan</h1>
+          <p id="catalog-hero-subtitle">La leyenda del baloncesto llevada a la calle.</p>
         </div>
       </div>
-    </div>
+    </section>
     <!--== End Page Header Area Wrapper ==-->
 
     <!--== Start Product Area Wrapper ==-->
@@ -1188,8 +1181,9 @@
           <li><a href="about-us.html">Nosotros</a></li>
           <li><a href="shop.html">Tienda</a>
             <ul class="sub-menu">
-              <li><a href="shop.html">Hombre</a></li>
-              <li><a href="shop.html">Mujer</a></li>
+              <li><a href="{% url 'catalog_section' 'hombre' %}">Hombre</a></li>
+              <li><a href="{% url 'catalog_section' 'nike' %}">Nike</a></li>
+              <li><a href="{% url 'catalog_section' 'mujer' %}">Mujer</a></li>
               <li><a href="shop.html">Ofertas</a></li>
               <li><a href="shop.html">Accesorios</a></li>
             </ul>

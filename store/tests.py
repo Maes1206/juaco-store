@@ -6,7 +6,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from .forms import ProductAdminForm
-from .models import Address, BlogCategory, BlogComment, BlogPost, Cart, CartItem, ContactRequest, Coupon, CouponRedemption, CustomerProfile, Favorite, HomeBanner, MarketingPopup, Order, OrderItem, Product, ProductReview
+from .models import Address, BlogCategory, BlogComment, BlogPost, Cart, CartItem, ContactRequest, Coupon, CouponRedemption, CustomerProfile, Favorite, HomeBanner, MarketingPopup, NewsletterSubscription, Order, OrderItem, Product, ProductReview
 from .shipping import DEPARTMENTS, calculate_shipping
 
 
@@ -33,6 +33,48 @@ class StoreFlowTests(TestCase):
         self.assertRedirects(self.client.get("/shop-wishlist.html"), "/account-login.html?next=/shop-wishlist.html")
         self.assertRedirects(self.client.get("/shop-checkout.html"), "/account-login.html?next=/shop-checkout.html")
         self.assertEqual(self.client.get("/page-not-found.html").status_code, 404)
+
+    def test_newsletter_subscription_is_persisted_without_duplicates(self):
+        response = self.client.post(
+            "/newsletter/subscribe/",
+            data=json.dumps({"email": "sneakerhead@example.com"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["created"])
+        self.assertTrue(NewsletterSubscription.objects.filter(email="sneakerhead@example.com", is_active=True).exists())
+
+        duplicate = self.client.post(
+            "/newsletter/subscribe/",
+            data=json.dumps({"email": "SNEAKERHEAD@example.com"}),
+            content_type="application/json",
+        )
+        self.assertEqual(duplicate.status_code, 200)
+        self.assertFalse(duplicate.json()["created"])
+        self.assertEqual(NewsletterSubscription.objects.count(), 1)
+
+        invalid = self.client.post(
+            "/newsletter/subscribe/",
+            data=json.dumps({"email": "correo-invalido"}),
+            content_type="application/json",
+        )
+        self.assertEqual(invalid.status_code, 400)
+    def test_individual_catalog_sections_are_blank_and_use_their_banners(self):
+        sections = (
+            ("hombre", "Hombre", "SUUGUg7RXYY"),
+            ("mujer", "Mujer", "7WRaJmvTJLQ"),
+            ("clasicas", "Clasicas", "RVlCGo-KHeA"),
+            ("nike", "Nike", "GXNOb23Jon8"),
+        )
+        for slug, title, image in sections:
+            with self.subTest(section=slug):
+                response = self.client.get(f"/secciones/{slug}/")
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, title)
+                self.assertContains(response, image)
+                self.assertContains(response, "Aun no hemos agregado productos")
+                self.assertContains(response, "unsplash.com/photos/")
+                self.assertNotContains(response, self.product.name)
 
     def test_blog_uses_published_articles_and_slug_detail_url(self):
         post = BlogPost.objects.get(slug="siluetas-basket-urbanas")
@@ -620,6 +662,7 @@ class StoreFlowTests(TestCase):
             "name": "Producto con variantes",
             "audience": Product.Audience.UNISEX,
             "product_type": Product.ProductType.FOOTWEAR,
+            "collection": Product.Collection.CLASSICS,
             "description": "Producto creado desde el CRUD.",
             "additional_information": "Capellada premium y suela de caucho.",
             "detailed_description": "Descripcion completa controlada por el administrador.",
@@ -628,7 +671,7 @@ class StoreFlowTests(TestCase):
             "image": "assets/img/shop/jordan423.png",
             "image_alt": "Vista principal del producto de prueba",
             "gallery": "assets/img/shop/jordan623.png | Vista lateral\nassets/img/shop/jordan723.png | Vista posterior",
-            "tags": "[]",
+            "tags": "Retro, cuero, Retro",
             "sizes": "38, 39, 40, 40",
             "colors": "Gris oscuro | #505050\nAzul | #586882",
             "weight_kg": "1.25",
@@ -652,6 +695,8 @@ class StoreFlowTests(TestCase):
 
         response = self.client.get(f"/single-product.html?producto={product.slug}")
         self.assertContains(response, 'data-color="Gris oscuro"')
+        self.assertEqual(product.collection, Product.Collection.CLASSICS)
+        self.assertEqual(product.tags, ["Retro", "cuero"])
         self.assertContains(response, 'data-bg-color="#586882"')
         self.assertContains(response, 'data-size="38"')
         self.assertContains(response, 'data-size="40"')
@@ -665,6 +710,10 @@ class StoreFlowTests(TestCase):
         self.assertContains(response, "10 unidades")
         self.assertContains(response, "1,25 kg")
 
+        collection_response = self.client.get("/shop.html", {"coleccion": Product.Collection.CLASSICS})
+        self.assertEqual(collection_response.status_code, 200)
+        self.assertIn(product, collection_response.context["products"])
+
     def test_product_admin_exposes_complete_detail_fields(self):
         staff = User.objects.create_superuser(
             username="catalog-admin",
@@ -676,7 +725,7 @@ class StoreFlowTests(TestCase):
         for field_name in (
             "sku", "description", "additional_information", "detailed_description",
             "price", "compare_at_price", "stock", "weight_kg", "image",
-            "image_alt", "gallery", "sizes", "colors", "tags", "is_active",
+            "image_alt", "gallery", "sizes", "colors", "tags", "collection", "is_active",
         ):
             self.assertContains(response, f'id="id_{field_name}"', html=False)
 
