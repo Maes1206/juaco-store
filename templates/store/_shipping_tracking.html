@@ -4,7 +4,6 @@
       <span class="shipping-tracking__eyebrow">Tipo de envío: {{ order.get_delivery_method_display }}</span>
       <h4 id="shipping-tracking-title">Estado de tu producto</h4>
     </div>
-    <span class="shipping-status shipping-status--{{ order.fulfillment_status }}">{{ order.get_fulfillment_status_display }}</span>
   </div>
   <ol class="shipping-tracking__steps">
     {% for step in order.fulfillment_steps %}

@@ -887,8 +887,7 @@ body.marketing-popup-open { overflow: hidden; }
 .order-detail-statuses { display: flex; flex-wrap: wrap; gap: 10px 18px; }
 .order-detail-status-label { display: flex; align-items: center; gap: 8px; color: #777; font-size: 12px; font-weight: 600; }
 .order-detail-statuses .order-status,
-.order-detail-statuses .shipping-status,
-.shipping-tracking__heading > .shipping-status {
+.order-detail-statuses .shipping-status {
   padding: 0;
   border-radius: 0;
   background: transparent;
