@@ -90,6 +90,16 @@
 
   function renderCart(cart) {
     updateBadges(cart);
+    var weightInput = document.querySelector('[data-auto-shipping-weight-input]');
+    if (weightInput) {
+      var nextWeight = String(cart.estimated_weight || 0.1);
+      var weightChanged = Number(weightInput.value) !== Number(nextWeight);
+      weightInput.value = nextWeight;
+      document.querySelectorAll('[data-auto-shipping-weight]').forEach(function (node) {
+        node.textContent = Number(nextWeight).toLocaleString('es-CO', { maximumFractionDigits: 2 });
+      });
+      if (weightChanged) document.dispatchEvent(new CustomEvent('cart:weight-updated'));
+    }
     document.querySelectorAll('.aside-cart-product-list').forEach(function (list) {
       list.innerHTML = cart.items.length
         ? cart.items.map(asideCartItem).join('')
@@ -105,7 +115,36 @@
       node.textContent = money(cart.subtotal);
     });
     document.querySelectorAll('[data-cart-shipping]').forEach(function (node) {
-      node.textContent = money(cart.shipping);
+      var isFree = cart.shipping === 0 && cart.count > 0;
+      node.textContent = isFree ? 'GRATIS' : money(cart.shipping);
+      node.classList.toggle('is-free', isFree);
+    });
+    document.querySelectorAll('[data-free-shipping-callout]').forEach(function (callout) {
+      var unlocked = Boolean(cart.free_shipping_unlocked && cart.count > 0);
+      var remaining = Number(cart.free_shipping_remaining || 0);
+      var progress = Math.max(0, Math.min(100, Number(cart.free_shipping_progress || 0)));
+      callout.classList.toggle('is-unlocked', unlocked);
+
+      var title = callout.querySelector('[data-free-shipping-title]');
+      var message = callout.querySelector('[data-free-shipping-message]');
+      var badge = callout.querySelector('[data-free-shipping-badge]');
+      var icon = callout.querySelector('[data-free-shipping-icon]');
+      var progressRoot = callout.querySelector('[data-free-shipping-progress]');
+      var progressBar = callout.querySelector('[data-free-shipping-progress-bar]');
+      var action = callout.querySelector('[data-free-shipping-action]');
+
+      if (title) title.textContent = unlocked ? '¡Envío gratis desbloqueado!' : 'Estás cerca del envío gratis';
+      if (message) message.textContent = unlocked
+        ? 'Ahorras el costo del envío en esta compra.'
+        : 'Agrega ' + money(remaining) + ' más a tu carrito y recíbelo gratis.';
+      if (badge) badge.textContent = unlocked ? 'ACTIVO' : 'META ' + money(cart.free_shipping_threshold);
+      if (icon) {
+        icon.classList.toggle('fa-check', unlocked);
+        icon.classList.toggle('fa-truck', !unlocked);
+      }
+      if (progressRoot) progressRoot.setAttribute('aria-valuenow', String(progress));
+      if (progressBar) progressBar.style.width = progress + '%';
+      if (action) action.hidden = unlocked;
     });
     document.querySelectorAll('.order-total .price').forEach(function (node) {
       node.textContent = money(cart.total);
@@ -122,6 +161,8 @@
     document.querySelectorAll('.aside-cart-wrapper .cart-total .amount').forEach(function (node) {
       node.textContent = money(cart.subtotal);
     });
+    window.JuacoCartState = cart;
+    document.dispatchEvent(new CustomEvent('cart:rendered', { detail: cart }));
   }
 
   function notify(message, isError) {
@@ -223,6 +264,44 @@
       body: JSON.stringify({ quantity: Math.max(1, Number(quantity.value) || 1) })
     }).then(renderCart).catch(function (error) { notify(error.message, true); });
   });
+
+  var shippingForm = document.querySelector('[data-auto-shipping-form]');
+  if (shippingForm) {
+    var shippingTimer;
+    var shippingStatus = shippingForm.querySelector('[data-auto-shipping-status]');
+    var shippingMethod = shippingForm.querySelector('[name="delivery_method"]');
+    var shippingDepartment = shippingForm.querySelector('[name="department"]');
+    var shippingCity = shippingForm.querySelector('[name="city"]');
+
+    function shippingReady() {
+      return Boolean(shippingMethod && shippingMethod.value === 'pickup') ||
+        Boolean(shippingDepartment && shippingDepartment.value && shippingCity && shippingCity.value.trim().length >= 2);
+    }
+
+    function scheduleShippingQuote() {
+      window.clearTimeout(shippingTimer);
+      if (!shippingReady()) {
+        if (shippingStatus) shippingStatus.innerHTML = '<i class="fa fa-bolt" aria-hidden="true"></i> Completa departamento y ciudad; calcularemos el envío automáticamente.';
+        return;
+      }
+      if (shippingStatus) {
+        shippingStatus.classList.add('is-calculating');
+        shippingStatus.innerHTML = '<i class="fa fa-spinner fa-spin" aria-hidden="true"></i> Calculando la mejor opción de envío…';
+      }
+      shippingTimer = window.setTimeout(function () {
+        if (shippingForm.requestSubmit) shippingForm.requestSubmit();
+        else shippingForm.submit();
+      }, 900);
+    }
+
+    shippingForm.addEventListener('input', function (event) {
+      if (event.target.matches('[name="city"], [name="postal_code"]')) scheduleShippingQuote();
+    });
+    shippingForm.addEventListener('change', function (event) {
+      if (event.target.matches('[name="delivery_method"], [name="department"]')) scheduleShippingQuote();
+    });
+    document.addEventListener('cart:weight-updated', scheduleShippingQuote);
+  }
 
   request('/api/favorites/').then(function (favorites) {
     var favoriteIds = favorites.items.map(function (item) { return item.product_id; });

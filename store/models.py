@@ -28,8 +28,24 @@ class Product(models.Model):
         FOOTWEAR = "footwear", "Calzado"
         ACCESSORY = "accessory", "Accesorio"
 
+    class ReleaseDateSource(models.TextChoices):
+        UNKNOWN = "", "Sin definir"
+        MANUAL = "manual", "Ingresada manualmente"
+        STOCKX = "stockx", "StockX"
+
     slug = models.SlugField(max_length=120, unique=True)
     sku = models.CharField("referencia", max_length=80, blank=True, db_index=True)
+    release_date = models.DateField("fecha de lanzamiento", null=True, blank=True)
+    release_date_source = models.CharField(
+        "origen de la fecha",
+        max_length=12,
+        choices=ReleaseDateSource.choices,
+        default=ReleaseDateSource.UNKNOWN,
+        blank=True,
+        editable=False,
+    )
+    stockx_product_id = models.CharField("ID de producto en StockX", max_length=80, blank=True, editable=False)
+    release_date_checked_at = models.DateTimeField("última consulta de lanzamiento", null=True, blank=True, editable=False)
     brand = models.CharField("marca", max_length=40, choices=Brand.choices)
     name = models.CharField("nombre", max_length=180)
     audience = models.CharField("seccion", max_length=12, choices=Audience.choices, default=Audience.UNISEX, db_index=True)
@@ -62,6 +78,10 @@ class Product(models.Model):
     @property
     def reference(self):
         return self.sku or self.slug.upper()
+
+    @property
+    def release_year(self):
+        return self.release_date.year if self.release_date else None
 
     @property
     def main_image_alt(self):

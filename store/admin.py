@@ -1,26 +1,71 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.utils import timezone
 
 from .forms import ProductAdminForm
 from .models import Address, BlogCategory, BlogComment, BlogPost, Cart, CartItem, ContactRequest, Coupon, CouponRedemption, CustomerProfile, Favorite, HomeBanner, MarketingPopup, NewsletterSubscription, Order, OrderItem, Product, ProductReview
+from .stockx import StockXLookupError, StockXNotConfigured, lookup_release_date
 
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     form = ProductAdminForm
     prepopulated_fields = {"slug": ("name",)}
-    list_display = ("name", "sku", "brand", "audience", "collection", "product_type", "price", "stock", "is_active")
+    list_display = ("name", "sku", "brand", "release_date", "audience", "collection", "product_type", "price", "stock", "is_active")
     list_filter = ("audience", "collection", "product_type", "brand", "is_active")
     search_fields = ("name", "brand", "sku", "slug", "description", "tags")
-    readonly_fields = ("created_at",)
+    readonly_fields = ("release_date_source", "stockx_product_id", "release_date_checked_at", "created_at")
     fieldsets = (
         ("Identidad y publicacion", {"fields": ("name", "slug", "sku", "brand", "audience", "collection", "product_type", "is_active")}),
+        ("Lanzamiento", {
+            "fields": ("release_date", "lookup_release_date", "release_date_source", "stockx_product_id", "release_date_checked_at"),
+            "description": "Puedes escribir la fecha manualmente o dejarla vacía y consultar StockX usando la referencia.",
+        }),
         ("Contenido de la ficha", {"fields": ("description", "additional_information", "detailed_description")}),
         ("Precio e inventario", {"fields": ("price", "compare_at_price", "stock", "weight_kg")}),
         ("Imagenes", {"fields": ("image", "image_alt", "gallery")}),
         ("Variaciones y clasificacion", {"fields": ("sizes", "colors", "tags")}),
         ("Auditoria", {"fields": ("created_at",), "classes": ("collapse",)}),
     )
+
+    def save_model(self, request, obj, form, change):
+        manual_date_changed = "release_date" in form.changed_data
+        lookup_requested = form.cleaned_data.get("lookup_release_date", False)
+
+        if manual_date_changed and obj.release_date:
+            obj.release_date_source = Product.ReleaseDateSource.MANUAL
+        elif manual_date_changed and not obj.release_date:
+            obj.release_date_source = Product.ReleaseDateSource.UNKNOWN
+
+        if lookup_requested and not (manual_date_changed and obj.release_date):
+            try:
+                result = lookup_release_date(obj.sku)
+            except StockXNotConfigured:
+                self.message_user(
+                    request,
+                    "Producto guardado sin consulta externa: StockX aún no está configurado. Puedes usar la fecha manual.",
+                    level=messages.WARNING,
+                )
+            except StockXLookupError as exc:
+                self.message_user(request, f"No fue posible consultar StockX: {exc}", level=messages.WARNING)
+            else:
+                obj.release_date_checked_at = timezone.now()
+                if result:
+                    obj.release_date = result.release_date
+                    obj.release_date_source = Product.ReleaseDateSource.STOCKX
+                    obj.stockx_product_id = result.product_id
+                    self.message_user(
+                        request,
+                        f"Lanzamiento completado desde StockX: {result.release_date:%d/%m/%Y}.",
+                        level=messages.SUCCESS,
+                    )
+                else:
+                    self.message_user(
+                        request,
+                        "StockX no encontró una coincidencia exacta para esa referencia. Ingresa la fecha manualmente.",
+                        level=messages.WARNING,
+                    )
+
+        super().save_model(request, obj, form, change)
 
 
 class CartItemInline(admin.TabularInline):

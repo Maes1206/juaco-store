@@ -5343,12 +5343,20 @@ table p {
   }
 }
 
+.shopping-cart-products-area .container {
+  padding-bottom: 24px;
+}
 .shopping-cart-area .container {
   padding-bottom: 110px;
+  padding-top: 36px;
 }
 @media only screen and (max-width: 1199px) {
+  .shopping-cart-products-area .container {
+    padding-bottom: 18px;
+  }
   .shopping-cart-area .container {
     padding-bottom: 85px;
+    padding-top: 28px;
   }
 }
 

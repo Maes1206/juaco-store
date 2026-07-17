@@ -118,3 +118,12 @@ LOGGING = {
     "handlers": {"console": {"class": "logging.StreamHandler"}},
     "root": {"handlers": ["console"], "level": os.getenv("DJANGO_LOG_LEVEL", "INFO")},
 }
+
+# Integración opcional de catálogo. Si no está configurada, los productos
+# continúan usando la fecha de lanzamiento ingresada manualmente.
+STOCKX_API_KEY = os.getenv("STOCKX_API_KEY", "")
+STOCKX_CLIENT_ID = os.getenv("STOCKX_CLIENT_ID", "")
+STOCKX_CLIENT_SECRET = os.getenv("STOCKX_CLIENT_SECRET", "")
+STOCKX_REFRESH_TOKEN = os.getenv("STOCKX_REFRESH_TOKEN", "")
+STOCKX_ACCESS_TOKEN = os.getenv("STOCKX_ACCESS_TOKEN", "")
+STOCKX_TIMEOUT_SECONDS = int(os.getenv("STOCKX_TIMEOUT_SECONDS", "5"))

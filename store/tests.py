@@ -1,14 +1,16 @@
 import json
-from datetime import timedelta
+from datetime import date, timedelta
+from unittest.mock import MagicMock, patch
 
 from django.contrib import admin
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from .forms import ProductAdminForm
 from .models import Address, BlogCategory, BlogComment, BlogPost, Cart, CartItem, ContactRequest, Coupon, CouponRedemption, CustomerProfile, Favorite, HomeBanner, MarketingPopup, NewsletterSubscription, Order, OrderItem, Product, ProductReview
 from .shipping import DEPARTMENTS, calculate_shipping
+from .stockx import StockXReleaseDate, lookup_release_date
 
 
 User = get_user_model()
@@ -20,6 +22,20 @@ class StoreFlowTests(TestCase):
 
     def test_catalog_seeded(self):
         self.assertEqual(Product.objects.count(), 16)
+
+    def test_travis_scott_featured_card_opens_its_own_detail_with_gallery(self):
+        slug = "nike-sb-dunk-low-travis-scott"
+        home = self.client.get("/")
+        detail_url = f"single-product.html?producto={slug}"
+        self.assertContains(home, detail_url, count=3)
+
+        product = Product.objects.get(slug=slug)
+        self.assertEqual(len(product.product_images), 4)
+
+        detail = self.client.get(f"/{detail_url}")
+        self.assertContains(detail, product.name)
+        for image in product.product_images:
+            self.assertContains(detail, image["url"])
 
     def test_public_routes_render(self):
         routes = [
@@ -181,6 +197,126 @@ class StoreFlowTests(TestCase):
         response = self.client.get("/")
         self.assertContains(response, '<sup class="shop-count" aria-label="2 artículos en el carrito">2</sup>', html=True)
         self.assertEqual(self.client.get("/api/cart/").json()["count"], 2)
+
+    def test_cart_page_renders_the_same_items_as_the_cart_api(self):
+        add = self.client.post(
+            "/api/cart/items/",
+            data=json.dumps({"product_id": self.product.slug, "quantity": 2, "size": "40"}),
+            content_type="application/json",
+        )
+        item = add.json()["items"][0]
+
+        response = self.client.get("/shop-cart.html")
+        self.assertContains(response, 'id="django-cart-items"')
+        self.assertContains(response, f'data-cart-row="{item["id"]}"')
+        self.assertContains(response, self.product.name)
+        self.assertContains(response, "Talla: 40")
+        self.assertContains(response, 'data-cart-comparison')
+        self.assertContains(response, "Compara antes de elegir")
+        self.assertContains(response, 'data-comparison-open')
+        self.assertContains(response, 'data-comparison-modal hidden')
+        self.assertNotContains(response, "Tu carrito está vacío")
+
+    def test_cart_comparison_api_exposes_two_real_products_and_specs(self):
+        second_product = Product.objects.exclude(pk=self.product.pk).first()
+        ProductReview.objects.create(
+            product=self.product,
+            name="Cliente uno",
+            email="cliente-uno@example.com",
+            rating=5,
+            recommends=True,
+            title="Excelente",
+            body="Muy cómodo.",
+            is_approved=True,
+        )
+        ProductReview.objects.create(
+            product=self.product,
+            name="Cliente dos",
+            email="cliente-dos@example.com",
+            rating=4,
+            recommends=False,
+            title="Buen producto",
+            body="Buen diseño.",
+            is_approved=True,
+        )
+        ProductReview.objects.create(
+            product=self.product,
+            name="Pendiente",
+            email="pendiente@example.com",
+            rating=1,
+            recommends=True,
+            title="No publicada",
+            body="Esta reseña no debe afectar las estadísticas.",
+            is_approved=False,
+        )
+        for product in (self.product, second_product):
+            add = self.client.post(
+                "/api/cart/items/",
+                data=json.dumps({"product_id": product.slug, "quantity": 1}),
+                content_type="application/json",
+            )
+            self.assertEqual(add.status_code, 201)
+
+        payload = self.client.get("/api/cart/").json()
+        self.assertEqual(len({item["product_id"] for item in payload["items"]}), 2)
+        for item in payload["items"]:
+            for field in ("brand", "audience", "reference", "release_date", "release_year", "description", "stock", "weight_kg", "review_average", "review_count", "recommendation_percent", "sizes", "colors"):
+                self.assertIn(field, item)
+
+        reviewed = next(item for item in payload["items"] if item["product_id"] == self.product.slug)
+        self.assertEqual(reviewed["review_average"], 4.5)
+        self.assertEqual(reviewed["review_count"], 2)
+        self.assertEqual(reviewed["recommendation_percent"], 50)
+
+        without_reviews = next(item for item in payload["items"] if item["product_id"] == second_product.slug)
+        self.assertIsNone(without_reviews["review_average"])
+        self.assertEqual(without_reviews["review_count"], 0)
+        self.assertEqual(without_reviews["recommendation_percent"], 0)
+
+        page = self.client.get("/shop-cart.html")
+        self.assertContains(page, 'assets/js/cart-comparison.js')
+
+    def test_free_shipping_callout_tracks_the_purchase_goal(self):
+        self.product.price = 250000
+        self.product.save(update_fields=["price"])
+        add = self.client.post(
+            "/api/cart/items/",
+            data=json.dumps({"product_id": self.product.slug, "quantity": 1}),
+            content_type="application/json",
+        )
+        payload = add.json()
+        self.assertFalse(payload["free_shipping_unlocked"])
+        self.assertEqual(payload["free_shipping_remaining"], 150000)
+        self.assertEqual(payload["free_shipping_progress"], 62)
+
+        item_id = payload["items"][0]["id"]
+        updated = self.client.patch(
+            f"/api/cart/items/{item_id}/",
+            data=json.dumps({"quantity": 2}),
+            content_type="application/json",
+        ).json()
+        self.assertTrue(updated["free_shipping_unlocked"])
+        self.assertEqual(updated["shipping"], 0)
+
+        page = self.client.get("/shop-cart.html")
+        self.assertContains(page, "¡Envío gratis desbloqueado!")
+        self.assertContains(page, 'class="fa fa-check" data-free-shipping-icon')
+        self.assertContains(page, ">GRATIS<")
+
+    def test_shipping_weight_is_calculated_from_cart_products(self):
+        self.product.weight_kg = "1.35"
+        self.product.save(update_fields=["weight_kg"])
+        response = self.client.post(
+            "/api/cart/items/",
+            data=json.dumps({"product_id": self.product.slug, "quantity": 2}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.json()["estimated_weight"], 2.7)
+
+        page = self.client.get("/shop-cart.html")
+        self.assertContains(page, "Peso calculado automáticamente")
+        self.assertContains(page, 'value="2.70" data-auto-shipping-weight-input')
+        self.assertContains(page, "calcularemos el envío automáticamente")
 
     def test_guest_cart_merges_after_login(self):
         self.client.post(
@@ -710,6 +846,7 @@ class StoreFlowTests(TestCase):
         form = ProductAdminForm(data={
             "slug": "producto-variantes",
             "sku": "TEST-CRUD-001",
+            "release_date": "2020-02-29",
             "brand": "Jordan",
             "name": "Producto con variantes",
             "audience": Product.Audience.UNISEX,
@@ -742,6 +879,8 @@ class StoreFlowTests(TestCase):
             {"url": "assets/img/shop/jordan723.png", "alt": "Vista posterior"},
         ])
         self.assertEqual(product.reference, "TEST-CRUD-001")
+        self.assertEqual(product.release_date, date(2020, 2, 29))
+        self.assertEqual(product.release_date_source, Product.ReleaseDateSource.MANUAL)
         self.assertTrue(product.has_discount)
         self.assertEqual(product.discount_percent, 11)
 
@@ -756,6 +895,7 @@ class StoreFlowTests(TestCase):
         self.assertContains(response, product.additional_information)
         self.assertContains(response, product.detailed_description)
         self.assertContains(response, product.sku)
+        self.assertContains(response, 'datetime="2020-02-29"')
         self.assertContains(response, "Vista lateral")
         self.assertContains(response, "Vista posterior")
         self.assertContains(response, "$280.000 COP")
@@ -775,11 +915,160 @@ class StoreFlowTests(TestCase):
         self.client.force_login(staff)
         response = self.client.get("/admin/store/product/add/")
         for field_name in (
-            "sku", "description", "additional_information", "detailed_description",
+            "sku", "release_date", "lookup_release_date", "description", "additional_information", "detailed_description",
             "price", "compare_at_price", "stock", "weight_kg", "image",
             "image_alt", "gallery", "sizes", "colors", "tags", "collection", "is_active",
         ):
             self.assertContains(response, f'id="id_{field_name}"', html=False)
+
+    def test_product_admin_can_show_remove_and_clear_sizes_and_colors(self):
+        self.product.sizes = ["38", "39", "40"]
+        self.product.colors = [
+            {"name": "Negro", "hex": "#111111"},
+            {"name": "Rojo", "hex": "#CC2222"},
+        ]
+        self.product.save(update_fields=["sizes", "colors"])
+        staff = User.objects.create_superuser(
+            username="variants-admin",
+            email="variants@example.com",
+            password="ClaveSegura123!",
+        )
+        self.client.force_login(staff)
+        change_url = f"/admin/store/product/{self.product.pk}/change/"
+
+        change_page = self.client.get(change_url)
+        self.assertContains(change_page, 'value="38, 39, 40"', html=False)
+        self.assertContains(change_page, "Negro | #111111")
+        self.assertContains(change_page, "Rojo | #CC2222")
+
+        payload = {
+            "name": self.product.name,
+            "slug": self.product.slug,
+            "sku": self.product.sku,
+            "release_date": self.product.release_date.isoformat() if self.product.release_date else "",
+            "brand": self.product.brand,
+            "audience": self.product.audience,
+            "product_type": self.product.product_type,
+            "collection": self.product.collection,
+            "description": self.product.description,
+            "additional_information": self.product.additional_information,
+            "detailed_description": self.product.detailed_description,
+            "price": str(self.product.price),
+            "compare_at_price": str(self.product.compare_at_price) if self.product.compare_at_price else "",
+            "stock": str(self.product.stock),
+            "weight_kg": str(self.product.weight_kg),
+            "image": self.product.image,
+            "image_alt": self.product.image_alt,
+            "gallery": "\n".join(
+                f'{item.get("url", "")} | {item.get("alt", "")}'.rstrip(" |")
+                for item in (self.product.gallery or [])
+            ),
+            "sizes": "39, 40",
+            "colors": "Rojo | #CC2222",
+            "tags": ", ".join(self.product.tags or []),
+            "is_active": "on" if self.product.is_active else "",
+            "_save": "Guardar",
+        }
+        updated = self.client.post(change_url, payload)
+        self.assertEqual(updated.status_code, 302)
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.sizes, ["39", "40"])
+        self.assertEqual(self.product.colors, [{"name": "Rojo", "hex": "#CC2222"}])
+
+        detail_url = f"/single-product.html?producto={self.product.slug}"
+        detail = self.client.get(detail_url)
+        self.assertNotContains(detail, 'data-size="38"')
+        self.assertContains(detail, 'data-size="39"')
+        self.assertNotContains(detail, 'data-color="Negro"')
+        self.assertContains(detail, 'data-color="Rojo"')
+
+        payload.update({"sizes": "", "colors": ""})
+        cleared = self.client.post(change_url, payload)
+        self.assertEqual(cleared.status_code, 302)
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.sizes, [])
+        self.assertEqual(self.product.colors, [])
+
+        detail_without_variants = self.client.get(detail_url)
+        self.assertNotContains(detail_without_variants, '<div class="product-size">', html=False)
+        self.assertNotContains(detail_without_variants, '<div class="product-color">', html=False)
+
+    @override_settings(
+        STOCKX_API_KEY="api-key-prueba",
+        STOCKX_ACCESS_TOKEN="access-token-prueba",
+        STOCKX_CLIENT_ID="",
+        STOCKX_CLIENT_SECRET="",
+        STOCKX_REFRESH_TOKEN="",
+        STOCKX_TIMEOUT_SECONDS=2,
+    )
+    @patch("store.stockx.urlopen")
+    def test_stockx_lookup_matches_exact_style_id_and_release_date(self, mocked_urlopen):
+        mocked_urlopen.return_value.__enter__.return_value.read.return_value = json.dumps({
+            "products": [
+                {
+                    "productId": "stockx-product-1",
+                    "styleId": "FV5029-006",
+                    "title": "Nike Air",
+                    "productAttributes": {"releaseDate": "2024-05-11"},
+                }
+            ]
+        }).encode("utf-8")
+
+        result = lookup_release_date("fv5029-006")
+
+        self.assertEqual(result.release_date, date(2024, 5, 11))
+        self.assertEqual(result.product_id, "stockx-product-1")
+        request = mocked_urlopen.call_args.args[0]
+        self.assertIn("query=fv5029-006", request.full_url)
+        self.assertEqual(request.get_header("Authorization"), "Bearer access-token-prueba")
+        self.assertEqual(request.get_header("X-api-key"), "api-key-prueba")
+
+    @patch("store.admin.lookup_release_date")
+    def test_product_admin_can_autocomplete_release_date_from_stockx(self, mocked_lookup):
+        mocked_lookup.return_value = StockXReleaseDate(
+            release_date=date(2023, 8, 25),
+            product_id="stockx-product-admin",
+            title="Producto de prueba",
+        )
+        staff = User.objects.create_superuser(
+            username="stockx-admin",
+            email="stockx@example.com",
+            password="ClaveSegura123!",
+        )
+        self.client.force_login(staff)
+
+        response = self.client.post("/admin/store/product/add/", {
+            "name": "Producto híbrido",
+            "slug": "producto-hibrido",
+            "sku": "FV5029-006",
+            "brand": Product.Brand.NIKE,
+            "audience": Product.Audience.UNISEX,
+            "product_type": Product.ProductType.FOOTWEAR,
+            "collection": Product.Collection.URBAN,
+            "description": "Producto con fecha automática.",
+            "additional_information": "",
+            "detailed_description": "",
+            "price": "300000",
+            "compare_at_price": "",
+            "stock": "5",
+            "weight_kg": "1.00",
+            "image": "assets/img/shop/jordan423.png",
+            "image_alt": "Producto híbrido",
+            "gallery": "",
+            "sizes": "40, 41",
+            "colors": "Negro | #111111",
+            "tags": "Urbano",
+            "is_active": "on",
+            "lookup_release_date": "on",
+            "_save": "Guardar",
+        })
+
+        self.assertEqual(response.status_code, 302)
+        product = Product.objects.get(slug="producto-hibrido")
+        self.assertEqual(product.release_date, date(2023, 8, 25))
+        self.assertEqual(product.release_date_source, Product.ReleaseDateSource.STOCKX)
+        self.assertEqual(product.stockx_product_id, "stockx-product-admin")
+        self.assertIsNotNone(product.release_date_checked_at)
 
     def test_cart_validates_and_keeps_color_and_size(self):
         self.product.sizes = ["38", "40"]

@@ -19,7 +19,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from .forms import AccountDetailsForm, AddressForm, BlogCommentForm, CheckoutForm, ContactRequestForm, EmailOrUsernameAuthenticationForm, NewsletterSubscriptionForm, ProductReviewForm, RegisterForm
 from .models import Address, BlogCategory, BlogComment, BlogPost, Cart, CartItem, ContactRequest, Coupon, CustomerProfile, Favorite, HomeBanner, MarketingPopup, NewsletterSubscription, Order, OrderItem, Product, ProductReview
 from .search import UnifiedSearchService
-from .services import CouponError, CheckoutError, coupon_totals, create_order_from_cart, ensure_session_key, get_cart, shipping_cost_for
+from .services import FREE_SHIPPING_THRESHOLD, CouponError, CheckoutError, coupon_totals, create_order_from_cart, ensure_session_key, get_cart, shipping_cost_for
 from .receipts import build_order_receipt
 from .shipping import DEPARTMENTS, DESTINATIONS, calculate_shipping
 
@@ -513,12 +513,22 @@ def _shipping_state(request, subtotal):
     return quote, shipping_cost_for(subtotal, quoted_cost=quoted_cost)
 
 
+def _cart_estimated_weight(cart):
+    weight = sum(
+        (item.product.weight_kg * item.quantity for item in cart.items.select_related("product")),
+        Decimal("0"),
+    )
+    return min(Decimal("30"), max(Decimal("0.1"), weight))
+
+
 @ensure_csrf_cookie
 def cart_view(request):
     cart = get_cart(request)
     coupon, discount = _coupon_state(request, cart.subtotal)
     shipping_quote, shipping = _shipping_state(request, cart.subtotal)
     total = max(Decimal("0"), cart.subtotal - discount) + shipping
+    free_shipping_remaining = max(Decimal("0"), FREE_SHIPPING_THRESHOLD - cart.subtotal)
+    free_shipping_progress = min(100, round(cart.subtotal * 100 / FREE_SHIPPING_THRESHOLD))
     return render(request, "store/shop-cart.html", {
         "cart": cart,
         "coupon": coupon,
@@ -527,9 +537,12 @@ def cart_view(request):
         "shipping_quote": shipping_quote,
         "shipping_cost": shipping,
         "total": total,
+        "free_shipping_threshold": FREE_SHIPPING_THRESHOLD,
+        "free_shipping_remaining": free_shipping_remaining,
+        "free_shipping_progress": free_shipping_progress,
         "departments": DEPARTMENTS,
         "destinations": DESTINATIONS,
-        "estimated_weight": min(30, max(1, cart.item_count)),
+        "estimated_weight": _cart_estimated_weight(cart),
     })
 
 
@@ -671,20 +684,55 @@ def order_receipt_pdf(request, number):
     )
 
 def _cart_payload(cart, request=None):
-    items = [
-        {
+    cart_items = cart.items.select_related("product").annotate(
+        approved_review_average=Avg(
+            "product__reviews__rating",
+            filter=Q(product__reviews__is_approved=True),
+        ),
+        approved_review_count=Count(
+            "product__reviews",
+            filter=Q(product__reviews__is_approved=True),
+            distinct=True,
+        ),
+        approved_recommendation_count=Count(
+            "product__reviews",
+            filter=Q(product__reviews__is_approved=True, product__reviews__recommends=True),
+            distinct=True,
+        ),
+    )
+    items = []
+    for item in cart_items:
+        review_count = item.approved_review_count
+        items.append({
             "id": item.id,
             "product_id": item.product.slug,
             "name": item.product.name,
             "image": item.product.image,
+            "brand": item.product.get_brand_display(),
+            "audience": item.product.get_audience_display(),
+            "collection": item.product.get_collection_display() if item.product.collection else "Sin colección",
+            "reference": item.product.reference,
+            "release_date": item.product.release_date.isoformat() if item.product.release_date else None,
+            "release_year": item.product.release_year,
+            "description": item.product.description,
             "price": int(item.product.price),
+            "compare_at_price": int(item.product.compare_at_price) if item.product.compare_at_price else None,
+            "discount_percent": item.product.discount_percent,
+            "stock": item.product.stock,
+            "weight_kg": float(item.product.weight_kg),
+            "review_average": round(float(item.approved_review_average), 1) if review_count else None,
+            "review_count": review_count,
+            "recommendation_percent": round(item.approved_recommendation_count * 100 / review_count) if review_count else 0,
+            "sizes": item.product.sizes or [],
+            "colors": [
+                color.get("name", "") if isinstance(color, dict) else str(color)
+                for color in (item.product.colors or [])
+            ],
             "quantity": item.quantity,
             "size": item.size,
             "color": item.color,
             "subtotal": int(item.subtotal),
-        }
-        for item in cart.items.select_related("product")
-    ]
+        })
     coupon = None
     discount = Decimal("0")
     shipping = shipping_cost_for(cart.subtotal)
@@ -692,6 +740,7 @@ def _cart_payload(cart, request=None):
         coupon, discount = _coupon_state(request, cart.subtotal)
         _, shipping = _shipping_state(request, cart.subtotal)
     discounted_subtotal = max(Decimal("0"), cart.subtotal - discount)
+    free_shipping_remaining = max(Decimal("0"), FREE_SHIPPING_THRESHOLD - cart.subtotal)
     return {
         "id": cart.id,
         "count": cart.item_count,
@@ -701,6 +750,11 @@ def _cart_payload(cart, request=None):
         "total_after_discount": int(discounted_subtotal),
         "total": int(discounted_subtotal + shipping),
         "coupon_code": coupon.code if coupon else "",
+        "free_shipping_threshold": int(FREE_SHIPPING_THRESHOLD),
+        "free_shipping_remaining": int(free_shipping_remaining),
+        "free_shipping_progress": min(100, round(cart.subtotal * 100 / FREE_SHIPPING_THRESHOLD)),
+        "free_shipping_unlocked": cart.subtotal >= FREE_SHIPPING_THRESHOLD,
+        "estimated_weight": float(_cart_estimated_weight(cart)),
         "items": items,
     }
 

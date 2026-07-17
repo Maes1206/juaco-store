@@ -296,80 +296,12 @@
           newVal = 1;
         }
       }
-      $button.parent().find('input').val(newVal);
-      $(this).closest('.shopping-cart-area').trigger('cart:updated');
-    });
-
-  // Carrito dinamico: eliminar productos, vaciar el carrito y recalcular totales.
-  var $cartArea = $('.shopping-cart-area');
-  if ($cartArea.length) {
-    var formatCop = function (value) {
-      return '$' + Math.round(value).toLocaleString('es-CO') + ' COP';
-    };
-
-    var updateCart = function () {
-      var total = 0;
-      var itemCount = 0;
-      var $items = $cartArea.find('tbody .cart-product-item');
-
-      $items.each(function () {
-        var $item = $(this);
-        var price = parseInt(($item.find('.product-price .price').text() || '').replace(/[^0-9]/g, ''), 10) || 0;
-        var quantity = parseInt($item.find('.quantity').val(), 10) || 1;
-        quantity = Math.max(1, quantity);
-        $item.find('.quantity').val(quantity);
-        $item.find('.product-subtotal .price').text(formatCop(price * quantity));
-        total += price * quantity;
-        itemCount += quantity;
-      });
-
-      $cartArea.find('.cart-subtotal .price, .order-total .price').text(formatCop(total));
-      $('.shop-count').text(String(itemCount).padStart(2, '0'));
-
-      var $freeShipping = $cartArea.find('#radio2');
-      var $fixedShipping = $cartArea.find('#radio1');
-      var freeShippingThreshold = parseInt($freeShipping.data('free-shipping-threshold'), 10) || 400000;
-      var freeShippingAvailable = total > freeShippingThreshold;
-      $freeShipping.prop('disabled', !freeShippingAvailable);
-      $freeShipping.closest('li').toggleClass('is-available', freeShippingAvailable);
-      if (freeShippingAvailable) {
-        $freeShipping.prop('checked', true);
-        $fixedShipping.prop('checked', false);
-      } else {
-        $freeShipping.prop('checked', false);
-        $fixedShipping.prop('checked', true);
+      var $quantityInput = $button.parent().find('input');
+      $quantityInput.val(newVal);
+      if ($quantityInput.is('[data-cart-quantity]') && $quantityInput[0]) {
+        $quantityInput[0].dispatchEvent(new Event('change', { bubbles: true }));
       }
-
-      var $emptyRow = $cartArea.find('.cart-empty-row');
-      if (!$items.length) {
-        if (!$emptyRow.length) {
-          $cartArea.find('tbody').prepend('<tr class="cart-empty-row"><td colspan="6">Tu carrito está vacío.</td></tr>');
-        }
-        $cartArea.find('.actions').hide();
-      } else {
-        $emptyRow.remove();
-        $cartArea.find('.actions').show();
-      }
-    };
-
-    $cartArea.on('click', '.product-remove a', function (event) {
-      event.preventDefault();
-      $(this).closest('.cart-product-item').fadeOut(220, function () {
-        $(this).remove();
-        updateCart();
-      });
     });
-
-    $cartArea.on('input change', '.quantity', updateCart);
-    $cartArea.on('cart:updated', updateCart);
-    $cartArea.on('click', '.clear-cart', function (event) {
-      event.preventDefault();
-      $cartArea.find('.cart-product-item').remove();
-      updateCart();
-    });
-
-    updateCart();
-  }
 
   // Zoom de detalle en la imagen principal de producto.
   var productZoomSlides = document.querySelectorAll('.product-single-thumb .single-product-thumb .swiper-slide');

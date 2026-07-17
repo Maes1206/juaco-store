@@ -175,7 +175,55 @@
     </div>
     <!--== End Page Header Area Wrapper ==-->
 
-    <!--== Start Blog Area Wrapper ==-->
+    <!--== Start Cart Products Area Wrapper ==-->
+    <section class="shopping-cart-products-area">
+      <div class="container">
+        <div class="row">
+          <div class="col-12">
+            <div class="shopping-cart-form table-responsive">
+              <table class="table align-middle">
+                <thead>
+                  <tr>
+                    <th class="product-remove" aria-label="Eliminar"></th>
+                    <th class="product-thumb">Producto</th>
+                    <th class="product-name">Nombre</th>
+                    <th class="product-price">Precio</th>
+                    <th class="product-quantity">Cantidad</th>
+                    <th class="product-subtotal">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody id="django-cart-items">
+                  {% for item in cart.items.all %}
+                  <tr class="cart-product-item" data-cart-row="{{ item.id }}">
+                    <td class="product-remove"><a href="#" data-cart-remove="{{ item.id }}" aria-label="Eliminar {{ item.product.name }}"><i class="fa fa-trash-o"></i></a></td>
+                    <td class="product-thumb"><a href="single-product.html?producto={{ item.product.slug }}"><img src="{{ item.product.image }}" width="90" height="110" alt="{{ item.product.main_image_alt }}"></a></td>
+                    <td class="product-name">
+                      <h4 class="title"><a href="single-product.html?producto={{ item.product.slug }}">{{ item.product.name }}</a></h4>
+                      {% if item.size %}<small>Talla: {{ item.size }}</small>{% endif %}
+                      {% if item.color %}<small>Color: {{ item.color }}</small>{% endif %}
+                    </td>
+                    <td class="product-price"><span class="price">{{ item.product.price|cop }}</span></td>
+                    <td class="product-quantity"><div class="pro-qty"><input type="number" min="1" max="{{ item.product.stock }}" class="quantity" data-cart-quantity="{{ item.id }}" value="{{ item.quantity }}" aria-label="Cantidad de {{ item.product.name }}"></div></td>
+                    <td class="product-subtotal"><span class="price">{{ item.subtotal|cop }}</span></td>
+                  </tr>
+                  {% empty %}
+                  <tr class="cart-empty-row"><td colspan="6">Tu carrito está vacío. <a href="shop.html">Explorar productos</a></td></tr>
+                  {% endfor %}
+                  {% if cart.items.all %}
+                  <tr class="actions">
+                    <td class="border-0" colspan="6"><button type="button" class="clear-cart">Vaciar carrito</button><a href="shop.html" class="btn-theme btn-flat">Seguir comprando</a></td>
+                  </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!--== End Cart Products Area Wrapper ==-->
+
+    <!--== Start Cart Totals Area Wrapper ==-->
     <section id="shipping-calculator" class="shopping-cart-area">
       <div class="container">
         <div class="row row-gutter-50">
@@ -189,7 +237,7 @@
               </div>
               <span data-bs-toggle="collapse" data-bs-target="#CategoriesTwo" aria-expanded="true" role="button">Calcular env&iacute;o</span>
               <div id="CategoriesTwo" class="collapse show" data-bs-parent="#CategoriesAccordion">
-                  <form action="{% url 'shipping_quote' %}" method="post" class="shipping-estimator-form">
+                  <form action="{% url 'shipping_quote' %}" method="post" class="shipping-estimator-form" data-auto-shipping-form>
                   {% csrf_token %}
                   <div class="row row-gutter-50">
                     <div class="col-md-12">
@@ -234,14 +282,15 @@
                     </div>
                     <div class="col-sm-6 col-md-12">
                       <div class="form-group">
-                        <label for="shippingWeight" class="visually-hidden">Peso del paquete</label>
-                        <input type="number" id="shippingWeight" name="weight_kg" value="{% if shipping_quote.weight_kg and shipping_quote.method == 'courier' %}{{ shipping_quote.weight_kg }}{% else %}{{ estimated_weight }}{% endif %}" class="form-control" min="0.1" max="30" step="0.1" placeholder="Peso estimado (kg)">
+                        <div class="shipping-auto-weight">
+                          <span><i class="fa fa-balance-scale" aria-hidden="true"></i> Peso calculado automáticamente</span>
+                          <strong><span data-auto-shipping-weight>{{ estimated_weight|floatformat:-2 }}</span> kg</strong>
+                        </div>
+                        <input type="hidden" id="shippingWeight" name="weight_kg" value="{{ estimated_weight|floatformat:"-2u" }}" data-auto-shipping-weight-input>
                       </div>
                     </div>
                     <div class="col-md-12">
-                      <div class="form-group">
-                        <button type="submit" class="update-totals">Calcular env&iacute;o</button>
-                      </div>
+                      <p class="shipping-auto-status" data-auto-shipping-status aria-live="polite"><i class="fa fa-bolt" aria-hidden="true"></i> Completa departamento y ciudad; calcularemos el envío automáticamente.</p>
                     </div>
                   </div>
                 </form>
@@ -293,6 +342,7 @@
                 </div>
               </form>
               {% endif %}
+              {% include "store/_cart_comparison.html" %}
             </div>
           </div>
           <div class="col-md-12 col-lg-4">
@@ -301,6 +351,19 @@
                 <h5 class="title">Totales del carrito</h5>
               </div>
               <div class="cart-total-table">
+                <div class="free-shipping-callout{% if free_shipping_remaining == 0 and cart.item_count %} is-unlocked{% endif %}" data-free-shipping-callout>
+                  <div class="free-shipping-callout__icon" aria-hidden="true"><i class="fa {% if free_shipping_remaining == 0 and cart.item_count %}fa-check{% else %}fa-truck{% endif %}" data-free-shipping-icon></i></div>
+                  <div class="free-shipping-callout__content">
+                    <span class="free-shipping-callout__eyebrow">Beneficio Juaco Store</span>
+                    <strong data-free-shipping-title>{% if free_shipping_remaining == 0 and cart.item_count %}¡Envío gratis desbloqueado!{% else %}Estás cerca del envío gratis{% endif %}</strong>
+                    <p data-free-shipping-message>{% if free_shipping_remaining == 0 and cart.item_count %}Ahorras el costo del envío en esta compra.{% else %}Agrega {{ free_shipping_remaining|cop }} más a tu carrito y recíbelo gratis.{% endif %}</p>
+                  </div>
+                  <span class="free-shipping-callout__badge" data-free-shipping-badge>{% if free_shipping_remaining == 0 and cart.item_count %}ACTIVO{% else %}META {{ free_shipping_threshold|cop }}{% endif %}</span>
+                  <div class="free-shipping-progress" role="progressbar" aria-label="Progreso para obtener envío gratis" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ free_shipping_progress }}" data-free-shipping-progress>
+                    <span style="width: {{ free_shipping_progress }}%" data-free-shipping-progress-bar></span>
+                  </div>
+                  <a href="shop.html" class="free-shipping-callout__action" data-free-shipping-action{% if free_shipping_remaining == 0 and cart.item_count %} hidden{% endif %}>Agregar otro producto <i class="fa fa-arrow-right"></i></a>
+                </div>
                 <table class="table">
                   <tbody>
                     <tr class="cart-subtotal">
@@ -319,9 +382,9 @@
                       <td>
                         <p class="shipping-total-line">
                           <span>{% if shipping_quote %}{{ shipping_quote.zone_label }}{% else %}Calcula tu destino{% endif %}</span>
-                          <strong data-cart-shipping>{{ shipping_cost|cop }}</strong>
+                          <strong data-cart-shipping{% if shipping_cost == 0 and cart.item_count %} class="is-free"{% endif %}>{% if shipping_cost == 0 and cart.item_count %}GRATIS{% else %}{{ shipping_cost|cop }}{% endif %}</strong>
                         </p>
-                        <small class="shipping-free-note">Gratis desde $400.000 COP o recogida en Neiva.</small>
+                        <small class="shipping-free-note">Se aplica automáticamente desde {{ free_shipping_threshold|cop }} o con recogida en Neiva.</small>
                       </td>
                     </tr>
                     <tr class="order-total">
@@ -341,7 +404,7 @@
         </div>
       </div>
     </section>
-    <!--== End Blog Area Wrapper ==-->
+    <!--== End Cart Totals Area Wrapper ==-->
   </main>
 
   <!--== Start Footer Area Wrapper ==-->
@@ -675,6 +738,7 @@
 
 <script src="assets/js/payment-methods.js"></script>
 <script src="assets/js/cart.js"></script>
+<script src="assets/js/cart-comparison.js"></script>
 </body>
 
 </html>

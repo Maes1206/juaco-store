@@ -9,16 +9,22 @@ from .models import Address, BlogComment, ContactRequest, CustomerProfile, Order
 User = get_user_model()
 
 class ProductAdminForm(forms.ModelForm):
+    lookup_release_date = forms.BooleanField(
+        label="Consultar lanzamiento en StockX al guardar",
+        required=False,
+        initial=True,
+        help_text="Usa la referencia para completar la fecha. La fecha escrita manualmente siempre tiene prioridad.",
+    )
     sizes = forms.CharField(
         label="Tallas disponibles",
         required=False,
-        help_text="Escribe las tallas separadas por coma. Ejemplo: 38, 39, 40, 41, 42.",
+        help_text="Separa las tallas con comas. Borra una talla para quitarla o deja el campo vacío para ocultar todas.",
         widget=forms.TextInput(attrs={"placeholder": "38, 39, 40, 41, 42"}),
     )
     colors = forms.CharField(
         label="Colores disponibles",
         required=False,
-        help_text="Un color por linea usando Nombre | #HEX. Ejemplo: Gris | #505050.",
+        help_text="Usa una línea por color: Nombre | #HEX. Borra la línea para quitarlo o deja el campo vacío para ocultar todos.",
         widget=forms.Textarea(attrs={"rows": 5, "placeholder": "Gris | #505050\nAzul | #586882"}),
     )
     gallery = forms.CharField(
@@ -41,6 +47,7 @@ class ProductAdminForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.pk:
+            self.fields["lookup_release_date"].initial = False
             self.initial["sizes"] = ", ".join(str(size) for size in (self.instance.sizes or []))
             self.initial["colors"] = "\n".join(
                 f'{color.get("name", "Color")} | {color.get("hex", "#505050")}'
@@ -54,6 +61,18 @@ class ProductAdminForm(forms.ModelForm):
             )
 
             self.initial["tags"] = ", ".join(str(tag) for tag in (self.instance.tags or []))
+
+    def save(self, commit=True):
+        product = super().save(commit=False)
+        if "release_date" in self.changed_data:
+            product.release_date_source = (
+                Product.ReleaseDateSource.MANUAL if product.release_date else Product.ReleaseDateSource.UNKNOWN
+            )
+        if commit:
+            product.save()
+            self.save_m2m()
+        return product
+
     def clean_sizes(self):
         values = re.split(r"[,;\n]+", self.cleaned_data.get("sizes", ""))
         sizes = []

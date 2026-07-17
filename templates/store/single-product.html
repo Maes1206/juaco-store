@@ -251,6 +251,7 @@
                     </div>
                     <div class="product-info-footer">
                       <h6 class="code"><span>Referencia:</span> {{ product.reference }}</h6>
+                      {% if product.release_date %}<h6 class="code"><span>Lanzamiento:</span> <time datetime="{{ product.release_date|date:'Y-m-d' }}" title="{{ product.release_date|date:'d/m/Y' }}">{{ product.release_date|date:"Y" }}</time></h6>{% endif %}
                       <div class="social-icons product-social-share">
                         <span>Compartir</span>
                         <a href="#" data-product-share-network="facebook" aria-label="Compartir en Facebook" title="Compartir en Facebook"><i class="fa fa-facebook"></i></a>
