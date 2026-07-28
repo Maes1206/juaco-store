@@ -52,7 +52,7 @@
   var colorFilter = document.getElementById('catalog-color-filter');
   var clearColorFilter = document.getElementById('clear-color-filter');
 
-  document.title = collection.label + ' | Juaco Store';
+  document.title = collection.label + ' | Nexus Luxury Footwear';
   document.getElementById('catalog-title').textContent = collection.label;
   var heroImage = document.getElementById('catalog-hero-image');
   var heroSubtitle = document.getElementById('catalog-hero-subtitle');

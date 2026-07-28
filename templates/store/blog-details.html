@@ -10,7 +10,7 @@
     <meta name="keywords" content="footwear, shoes, modern, shop, store, ecommerce, responsive, e-commerce"/>
     <meta name="author" content="codecarnival"/>
 
-    <title>{{ post.title }} | Juaco Store</title>
+    <title>{{ post.title }} | Nexus Luxury Footwear</title>
 
     <!--== Favicon ==-->
     <link rel="icon" type="image/png" href="assets/img/favicon.png" />
@@ -83,8 +83,8 @@
               <div class="header-middle-align-start">
                 <div class="header-logo-area">
                   <a href="index.html">
-                    <img class="logo-main" src="assets/img/shop/logohorizontal.png" width="199" height="55" alt="JUACO Store" />
-                    <img class="logo-light" src="assets/img/shop/logohorizontal.png" width="199" height="55" alt="JUACO Store" />
+                    <img class="logo-main" src="assets/img/shop/nexus-logo-horizontal.png" srcset="assets/img/shop/nexus-logo-horizontal.png 1x, assets/img/shop/nexus-logo-horizontal@2x.png 2x" width="199" height="55" alt="Nexus Luxury Footwear" />
+                    <img class="logo-light" src="assets/img/shop/nexus-logo-horizontal.png" srcset="assets/img/shop/nexus-logo-horizontal.png 1x, assets/img/shop/nexus-logo-horizontal@2x.png 2x" width="199" height="55" alt="Nexus Luxury Footwear" />
                   </a>
                 </div>
               </div>
@@ -128,17 +128,18 @@
           <div class="col-12">
             <div class="header-align">
               <div class="header-navigation-area position-relative">
-                <ul class="main-menu nav">                  <li><a href="index.html"><span>Inicio</span></a></li>
+                <ul class="main-menu nav">
+                  <li><a href="index.html"><span>Inicio</span></a></li>
                   <li><a href="about-us.html"><span>Nosotros</span></a></li>
                   <li class="has-submenu"><a href="shop.html"><span>Tienda</span></a>
                     <ul class="submenu-nav">
-                      <li><a href="shop.html"><span>Hombre</span></a></li>
-                      <li><a href="shop.html"><span>Mujer</span></a></li>
+                      <li><a href="{% url 'catalog_section' 'hombre' %}"><span>Hombre</span></a></li>
+                      <li><a href="{% url 'catalog_section' 'mujer' %}"><span>Mujer</span></a></li>
+                      <li><a href="{% url 'catalog_section' 'nike' %}"><span>Nike</span></a></li>
                       <li><a href="shop.html"><span>Ofertas</span></a></li>
                       <li><a href="shop.html"><span>Accesorios</span></a></li>
                     </ul>
                   </li>
-
                   <li><a href="blog.html"><span>Blog</span></a></li>
                   <li><a href="contact.html"><span>Contacto</span></a></li>
                 </ul>
@@ -183,12 +184,12 @@
                 <div class="blog-details-thumb"><img src="{{ post.image }}" width="750" height="459" alt="{{ post.image_alt }}"></div>
                 <div class="blog-meta-post"><ul>
                   <li class="post-date"><i class="fa fa-calendar"></i><a href="{% url 'blog' %}">{{ post.published_at|date:"j F Y" }}</a></li>
-                  <li class="author-info"><i class="fa fa-user"></i><span>{{ post.author }}</span></li>
+                  <li class="author-info"><i class="fa fa-user"></i><span>{% if post.author == "Juaco Store" or post.author == "Equipo Juaco Store" %}Equipo Nexus Luxury Footwear{% else %}{{ post.author }}{% endif %}</span></li>
                 </ul></div>
                 <h1 class="main-title">{{ post.title }}</h1>
                 <div class="details-wrapper details-wrapper-style1" data-margin-bottom="38">
                   <p>{{ post.summary }}</p>
-                  <blockquote><div class="inner-content"><p>Una buena elección no sigue una tendencia a ciegas: se adapta a tu forma de vivir la ciudad.</p><span class="user-name">{{ post.author }}</span><img class="inner-shape" src="assets/img/icons/quote2.webp" width="82" height="59" alt="Comillas"></div></blockquote>
+                  <blockquote><div class="inner-content"><p>Una buena elección no sigue una tendencia a ciegas: se adapta a tu forma de vivir la ciudad.</p><span class="user-name">{% if post.author == "Juaco Store" or post.author == "Equipo Juaco Store" %}Equipo Nexus Luxury Footwear{% else %}{{ post.author }}{% endif %}</span><img class="inner-shape" src="assets/img/icons/quote2.webp" width="82" height="59" alt="Comillas"></div></blockquote>
                   <p>{{ post.content|linebreaksbr }}</p>
                 </div>
                 <div class="blog-details-footer">
@@ -288,12 +289,12 @@
                     <div class="author-info">
                       <h4 class="title">{{ comment.name }} <span> - </span> <span class="comment-date">{{ comment.created_at|date:"d M Y" }}</span></h4>
                       <p>{{ comment.body }}</p>
-                      {% if comment.admin_response %}<div class="juaco-official-response"><strong><i class="fa fa-reply"></i> Respuesta de Juaco Store</strong><p>{{ comment.admin_response }}</p>{% if comment.responded_at %}<small>{{ comment.responded_at|date:"d M Y" }}</small>{% endif %}</div>{% endif %}
+                      {% if comment.admin_response %}<div class="juaco-official-response"><strong><i class="fa fa-reply"></i> Respuesta de Nexus Luxury Footwear</strong><p>{{ comment.admin_response }}</p>{% if comment.responded_at %}<small>{{ comment.responded_at|date:"d M Y" }}</small>{% endif %}</div>{% endif %}
                       <details class="blog-reply-box"><summary>Responder</summary><form action="{% url 'blog_detail' post.slug %}#comentarios" method="post">{% csrf_token %}<input type="hidden" name="parent_id" value="{{ comment.id }}"><div class="row"><div class="col-md-6"><input class="form-control" required name="name" placeholder="Nombre *" value="{% if user.is_authenticated %}{{ user.get_full_name|default:user.username }}{% endif %}"></div><div class="col-md-6"><input class="form-control" required type="email" name="email" placeholder="Correo *" value="{% if user.is_authenticated %}{{ user.email }}{% endif %}"></div><div class="col-12"><textarea class="form-control" required name="body" rows="3" placeholder="Escribe tu respuesta"></textarea></div><div class="col-12"><button class="btn-theme" type="submit">Enviar respuesta</button></div></div></form></details>
                     </div>
                   </div>
                   {% for reply in comment.approved_replies %}
-                  <div class="single-comment reply-comment"><div class="author-pic"><img src="assets/img/blog/author2.webp" width="101" height="118" alt="{{ reply.name }}"></div><div class="author-info"><h4 class="title">{{ reply.name }} <span> - </span> <span class="comment-date">{{ reply.created_at|date:"d M Y" }}</span></h4><p>{{ reply.body }}</p>{% if reply.admin_response %}<div class="juaco-official-response"><strong><i class="fa fa-reply"></i> Respuesta de Juaco Store</strong><p>{{ reply.admin_response }}</p></div>{% endif %}</div></div>
+                  <div class="single-comment reply-comment"><div class="author-pic"><img src="assets/img/blog/author2.webp" width="101" height="118" alt="{{ reply.name }}"></div><div class="author-info"><h4 class="title">{{ reply.name }} <span> - </span> <span class="comment-date">{{ reply.created_at|date:"d M Y" }}</span></h4><p>{{ reply.body }}</p>{% if reply.admin_response %}<div class="juaco-official-response"><strong><i class="fa fa-reply"></i> Respuesta de Nexus Luxury Footwear</strong><p>{{ reply.admin_response }}</p></div>{% endif %}</div></div>
                   {% endfor %}
                   {% empty %}<p>Aun no hay comentarios aprobados. Se el primero en participar.</p>{% endfor %}
                 </div>
@@ -431,7 +432,7 @@
               <div class="about-widget-wrap">
                 <div class="widget-logo-area">
                   <a href="index.html">
-                    <img class="footer-logo-horizontal" src="assets/img/shop/logohorizontal-footer.png" width="240" height="66" alt="JUACO Store" />
+                    <img class="footer-logo-horizontal" src="assets/img/shop/nexus-logo-horizontal.png" srcset="assets/img/shop/nexus-logo-horizontal.png 1x, assets/img/shop/nexus-logo-horizontal@2x.png 2x" width="240" height="66" alt="Nexus Luxury Footwear" />
                   </a>
                 </div>
                 <p class="desc">Sneakers seleccionados para todos los estilos, con envíos nacionales y atención personalizada.</p>
@@ -512,7 +513,7 @@
       <div class="container pt--0 pb--0">
         <div class="row">
           <div class="col-md-7 col-lg-6">
-            <p class="copyright">&copy; 2026. Juaco Store. Hecho con amor por <a class="digital-brain-link" href="#" aria-label="Digital Brain"><img class="digital-brain-icon" src="assets/img/logdb.png" width="20" height="20" alt=""><span class="digital-brain-text">Digital Brain.</span></a></p>
+            <p class="copyright">&copy; 2026. Nexus Luxury Footwear. Hecho con amor por <a class="digital-brain-link" href="#" aria-label="Digital Brain"><img class="digital-brain-icon" src="assets/img/logdb.png" width="20" height="20" alt=""><span class="digital-brain-text">Digital Brain.</span></a></p>
           </div>
           <div class="col-md-5 col-lg-6">
             <div class="payment">
@@ -660,35 +661,19 @@
       </div>
       <!-- Mobile Menu Start -->
       <div class="mobile-menu-items">
-        <ul class="nav-menu">          <li><a href="index.html">Inicio</a></li>
+        <ul class="nav-menu">
+          <li><a href="index.html">Inicio</a></li>
           <li><a href="about-us.html">Nosotros</a></li>
           <li><a href="shop.html">Tienda</a>
             <ul class="sub-menu">
-              <li><a href="shop.html">Hombre</a></li>
-              <li><a href="shop.html">Mujer</a></li>
+              <li><a href="{% url 'catalog_section' 'hombre' %}">Hombre</a></li>
+              <li><a href="{% url 'catalog_section' 'nike' %}">Nike</a></li>
+              <li><a href="{% url 'catalog_section' 'mujer' %}">Mujer</a></li>
               <li><a href="shop.html">Ofertas</a></li>
               <li><a href="shop.html">Accesorios</a></li>
             </ul>
           </li>
-
-          <li><a href="#">Blog</a>
-            <ul class="sub-menu">
-              <li><a href="#">Blog Layout</a>
-                <ul class="sub-menu">
-                  <li><a href="blog.html">Blog Grid</a></li>
-                  <li><a href="blog.html">Blog Left Sidebar</a></li>
-                  <li><a href="blog.html">Blog Right Sidebar</a></li>
-                </ul>
-              </li>
-              <li><a href="#">Single Blog</a>
-                <ul class="sub-menu">
-                  <li><a href="blog-details.html">Blog Details</a></li>
-                  <li><a href="blog-details.html">Blog Details Left Sidebar</a></li>
-                  <li><a href="blog-details.html">Blog Details Right Sidebar</a></li>
-                </ul>
-              </li>
-            </ul>
-          </li>
+          <li><a href="blog.html">Blog</a></li>
           <li><a href="contact.html">Contacto</a></li>
         </ul>
       </div>

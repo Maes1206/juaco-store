@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 165" role="img" aria-labelledby="nexus-logo-title nexus-logo-desc">
+  <title id="nexus-logo-title">Nexus Luxury Footwear</title>
+  <desc id="nexus-logo-desc">Dos círculos entrelazados en negro y dorado junto al nombre Nexus Luxury Footwear.</desc>
+  <g fill="none" stroke-linecap="butt" stroke-width="11">
+    <path d="M92 125a55 55 0 1 1 31-100" stroke="#111111"/>
+    <path d="M116 123a55 55 0 1 0 4-98" stroke="#C7A26A"/>
+  </g>
+  <g font-family="Poppins, Arial, sans-serif">
+    <text x="190" y="92" fill="#111111" font-size="68" font-weight="300" letter-spacing="12">NEXUS</text>
+    <text x="194" y="125" fill="#C7A26A" font-size="19" font-weight="400" letter-spacing="6">LUXURY FOOTWEAR</text>
+  </g>
+</svg>

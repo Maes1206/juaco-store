@@ -5,6 +5,12 @@
 */
 
 // Header Top
+.main-header-wrapper {
+  isolation: isolate;
+  position: relative;
+  z-index: 100;
+}
+
 .header-top {
   background-color: $white-f4;
   padding: 8px 0 9px;
@@ -101,7 +107,30 @@
     align-items: center;
     display: flex;
     position: relative;
-    z-index: 2;
+    width: 100%;
+    z-index: 101;
+
+    & > .container {
+      width: 100%;
+    }
+
+    @media #{$md-up-device} {
+      display: flex !important;
+      height: 50px !important;
+      min-height: 50px;
+      position: relative !important;
+      visibility: visible !important;
+
+      .header-align {
+        display: flex !important;
+        height: 50px !important;
+        min-height: 50px;
+      }
+
+      .main-menu.nav {
+        display: flex !important;
+      }
+    }
   }
 
   // Header Align
@@ -115,6 +144,9 @@
 
   // Header Navigation Style
   .header-navigation-area {
+    @media #{$md-up-device} {
+      display: block !important;
+    }
     @media #{$md-device} {
       display: none;
     }
@@ -445,6 +477,9 @@
   @media #{$md-device} {
     display: block;
   }
+  @media #{$md-up-device} {
+    display: none !important;
+  }
 
   &:hover {
     color: $theme-color;
@@ -655,8 +690,8 @@
         color: $theme-color;
       }
       .shop-count {
-        background-color: #eb3e32;
-        color: #fff;
+        background-color: #C7A26A;
+        color: #111;
         font-size: 13px;
         height: 21px;
         width: 21px;

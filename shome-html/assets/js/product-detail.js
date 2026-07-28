@@ -27,13 +27,13 @@
 
   setMeta('name', 'description', description);
   setMeta('property', 'og:type', 'product');
-  setMeta('property', 'og:title', productName + ' | Juaco Store');
+  setMeta('property', 'og:title', productName + ' | Nexus Luxury Footwear');
   setMeta('property', 'og:description', description);
   setMeta('property', 'og:image', productImage);
   setMeta('property', 'og:image:alt', productName);
   setMeta('property', 'og:url', productUrl);
   setMeta('name', 'twitter:card', 'summary_large_image');
-  setMeta('name', 'twitter:title', productName + ' | Juaco Store');
+  setMeta('name', 'twitter:title', productName + ' | Nexus Luxury Footwear');
   setMeta('name', 'twitter:description', description);
   setMeta('name', 'twitter:image', productImage);
 

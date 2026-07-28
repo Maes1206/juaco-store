@@ -10,7 +10,7 @@
     <meta name="keywords" content="footwear, shoes, modern, shop, store, ecommerce, responsive, e-commerce"/>
     <meta name="author" content="codecarnival"/>
 
-    <title>Registrarse - Juaco Store</title>
+    <title>Registrarse - Nexus Luxury Footwear</title>
 
     <!--== Favicon ==-->
     <link rel="icon" type="image/png" href="assets/img/favicon.png" />
@@ -83,8 +83,8 @@
               <div class="header-middle-align-start">
                 <div class="header-logo-area">
                   <a href="index.html">
-                    <img class="logo-main" src="assets/img/shop/logohorizontal.png" width="199" height="55" alt="JUACO Store" />
-                    <img class="logo-light" src="assets/img/shop/logohorizontal.png" width="199" height="55" alt="JUACO Store" />
+                    <img class="logo-main" src="assets/img/shop/nexus-logo-horizontal.png" srcset="assets/img/shop/nexus-logo-horizontal.png 1x, assets/img/shop/nexus-logo-horizontal@2x.png 2x" width="199" height="55" alt="Nexus Luxury Footwear" />
+                    <img class="logo-light" src="assets/img/shop/nexus-logo-horizontal.png" srcset="assets/img/shop/nexus-logo-horizontal.png 1x, assets/img/shop/nexus-logo-horizontal@2x.png 2x" width="199" height="55" alt="Nexus Luxury Footwear" />
                   </a>
                 </div>
               </div>
@@ -133,13 +133,13 @@
                   <li><a href="about-us.html"><span>Nosotros</span></a></li>
                   <li class="has-submenu"><a href="shop.html"><span>Tienda</span></a>
                     <ul class="submenu-nav">
-                      <li><a href="shop.html"><span>Hombre</span></a></li>
-                      <li><a href="shop.html"><span>Mujer</span></a></li>
+                      <li><a href="{% url 'catalog_section' 'hombre' %}"><span>Hombre</span></a></li>
+                      <li><a href="{% url 'catalog_section' 'mujer' %}"><span>Mujer</span></a></li>
+                      <li><a href="{% url 'catalog_section' 'nike' %}"><span>Nike</span></a></li>
                       <li><a href="shop.html"><span>Ofertas</span></a></li>
                       <li><a href="shop.html"><span>Accesorios</span></a></li>
                     </ul>
                   </li>
-
                   <li><a href="blog.html"><span>Blog</span></a></li>
                   <li><a href="contact.html"><span>Contacto</span></a></li>
                 </ul>
@@ -236,7 +236,7 @@
               <div class="about-widget-wrap">
                 <div class="widget-logo-area">
                   <a href="index.html">
-                    <img class="footer-logo-horizontal" src="assets/img/shop/logohorizontal-footer.png" width="240" height="66" alt="JUACO Store" />
+                    <img class="footer-logo-horizontal" src="assets/img/shop/nexus-logo-horizontal.png" srcset="assets/img/shop/nexus-logo-horizontal.png 1x, assets/img/shop/nexus-logo-horizontal@2x.png 2x" width="240" height="66" alt="Nexus Luxury Footwear" />
                   </a>
                 </div>
                 <p class="desc">Encuentra zapatillas para todos los estilos, con modelos seleccionados y atenci&oacute;n personalizada.</p>
@@ -322,7 +322,7 @@
       <div class="container pt--0 pb--0">
         <div class="row">
           <div class="col-md-7 col-lg-6">
-            <p class="copyright">&copy; 2026. Juaco Store. Hecho con amor por <a class="digital-brain-link" href="#" aria-label="Digital Brain"><img class="digital-brain-icon" src="assets/img/logdb.png" width="20" height="20" alt=""><span class="digital-brain-text">Digital Brain.</span></a></p>
+            <p class="copyright">&copy; 2026. Nexus Luxury Footwear. Hecho con amor por <a class="digital-brain-link" href="#" aria-label="Digital Brain"><img class="digital-brain-icon" src="assets/img/logdb.png" width="20" height="20" alt=""><span class="digital-brain-text">Digital Brain.</span></a></p>
           </div>
           <div class="col-md-5 col-lg-6">
             <div class="payment">
@@ -474,35 +474,19 @@
       </div>
       <!-- Mobile Menu Start -->
       <div class="mobile-menu-items">
-        <ul class="nav-menu">          <li><a href="index.html">Inicio</a></li>
+        <ul class="nav-menu">
+          <li><a href="index.html">Inicio</a></li>
           <li><a href="about-us.html">Nosotros</a></li>
           <li><a href="shop.html">Tienda</a>
             <ul class="sub-menu">
-              <li><a href="shop.html">Hombre</a></li>
-              <li><a href="shop.html">Mujer</a></li>
+              <li><a href="{% url 'catalog_section' 'hombre' %}">Hombre</a></li>
+              <li><a href="{% url 'catalog_section' 'nike' %}">Nike</a></li>
+              <li><a href="{% url 'catalog_section' 'mujer' %}">Mujer</a></li>
               <li><a href="shop.html">Ofertas</a></li>
               <li><a href="shop.html">Accesorios</a></li>
             </ul>
           </li>
-
-          <li><a href="#">Blog</a>
-            <ul class="sub-menu">
-              <li><a href="#">Blog Layout</a>
-                <ul class="sub-menu">
-                  <li><a href="blog.html">Blog Grid</a></li>
-                  <li><a href="blog.html">Blog Left Sidebar</a></li>
-                  <li><a href="blog.html">Blog Right Sidebar</a></li>
-                </ul>
-              </li>
-              <li><a href="#">Single Blog</a>
-                <ul class="sub-menu">
-                  <li><a href="blog-details.html">Blog Details</a></li>
-                  <li><a href="blog-details.html">Blog Details Left Sidebar</a></li>
-                  <li><a href="blog-details.html">Blog Details Right Sidebar</a></li>
-                </ul>
-              </li>
-            </ul>
-          </li>
+          <li><a href="blog.html">Blog</a></li>
           <li><a href="contact.html">Contacto</a></li>
         </ul>
       </div>
@@ -557,7 +541,7 @@
     { color: "#dc3545", text: "Muy débil" },
     { color: "#dc3545", text: "Débil" },
     { color: "#f0ad4e", text: "Regular" },
-    { color: "#eb3e32", text: "Buena" },
+    { color: "#C7A26A", text: "Buena" },
     { color: "#28a745", text: "Fuerte" },
   ];
 

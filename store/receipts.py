@@ -11,7 +11,8 @@ from reportlab.lib.units import mm
 from reportlab.platypus import HRFlowable, Image, KeepTogether, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 
-RED = colors.HexColor("#f23831")
+# Nombre conservado para compatibilidad interna; ahora representa el dorado de marca.
+RED = colors.HexColor("#C7A26A")
 INK = colors.HexColor("#171717")
 MUTED = colors.HexColor("#6b7280")
 LINE = colors.HexColor("#e5e7eb")
@@ -61,7 +62,7 @@ def _footer(canvas, doc):
     canvas.line(18 * mm, 14 * mm, width - 18 * mm, 14 * mm)
     canvas.setFillColor(MUTED)
     canvas.setFont("Helvetica", 7.5)
-    canvas.drawString(18 * mm, 9 * mm, "JUACO STORE  |  Comprobante de compra")
+    canvas.drawString(18 * mm, 9 * mm, "NEXUS LUXURY FOOTWEAR  |  Comprobante de compra")
     canvas.drawRightString(width - 18 * mm, 9 * mm, f"Pagina {doc.page}")
     canvas.restoreState()
 
@@ -76,7 +77,7 @@ def build_order_receipt(order):
         topMargin=15 * mm,
         bottomMargin=21 * mm,
         title=f"Comprobante {order.number}",
-        author="Juaco Store",
+        author="Nexus Luxury Footwear",
         subject="Comprobante de compra",
     )
     styles = getSampleStyleSheet()
@@ -89,7 +90,7 @@ def build_order_receipt(order):
     total_style = ParagraphStyle("Total", parent=right, fontName="Helvetica-Bold", fontSize=13, leading=16, textColor=INK)
     center_small = ParagraphStyle("CenterSmall", parent=small, alignment=TA_CENTER)
 
-    logo_path = Path(settings.BASE_DIR) / "shome-html" / "assets" / "img" / "shop" / "logohorizontal.png"
+    logo_path = Path(settings.BASE_DIR) / "shome-html" / "assets" / "img" / "shop" / "nexus-logo-horizontal.png"
     logo = _scaled_image(logo_path, 49 * mm, 17 * mm)
     header_text = [
         Paragraph("COMPROBANTE DE COMPRA", eyebrow),
@@ -177,7 +178,7 @@ def build_order_receipt(order):
         ("RIGHTPADDING", (1, 0), (1, 0), 0), ("LINEBEFORE", (1, 0), (1, 0), 0.5, LINE),
     ]))
     thanks = ParagraphStyle("Thanks", parent=heading, alignment=TA_CENTER, fontSize=11, textColor=RED)
-    story.extend([KeepTogether(closing), Spacer(1, 9 * mm), Paragraph("Gracias por elegir Juaco Store", thanks), Paragraph("Conserva este comprobante como soporte de tu compra.", center_small)])
+    story.extend([KeepTogether(closing), Spacer(1, 9 * mm), Paragraph("Gracias por elegir Nexus Luxury Footwear", thanks), Paragraph("Conserva este comprobante como soporte de tu compra.", center_small)])
     doc.build(story, onFirstPage=_footer, onLaterPages=_footer)
     output.seek(0)
     return output

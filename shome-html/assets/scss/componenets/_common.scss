@@ -203,6 +203,12 @@
   }
 }
 
+// El banner de Nosotros incluye capas 3D y parallax más grandes que su caja.
+// Se recortan en el límite del banner para que no cubran el navbar superior.
+.page-header-area.about-page-header {
+  overflow: hidden;
+}
+
 .page-header-content {
   text-align: center;
   .title {

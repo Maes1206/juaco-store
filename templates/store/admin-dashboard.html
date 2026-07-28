@@ -1,7 +1,7 @@
 {% extends "store/base.html" %}
 {% load store_extras %}
 
-{% block title %}Panel administrativo | Juaco Store{% endblock %}
+{% block title %}Panel administrativo | Nexus Luxury Footwear{% endblock %}
 
 {% block content %}
 <div class="page-header-area login-page-header" data-bg-img="assets/img/shop/bannerlogin.png">
@@ -16,7 +16,7 @@
 <section class="my-account-area admin-panel-area">
   <div class="container pt--0 pb--0">
     <div class="admin-panel-intro">
-      <div><span class="admin-panel-eyebrow">JUACO STORE</span><h2>Hola, {{ request.user.get_full_name|default:request.user.username }}</h2><p>Gestiona ventas, clientes, contenido y catalogo desde un solo lugar.</p></div>
+      <div><span class="admin-panel-eyebrow">NEXUS LUXURY FOOTWEAR</span><h2>Hola, {{ request.user.get_full_name|default:request.user.username }}</h2><p>Gestiona ventas, clientes, contenido y catalogo desde un solo lugar.</p></div>
       <a class="admin-panel-store-link" href="index.html"><i class="fa fa-external-link"></i> Ver tienda</a>
     </div>
     <div class="row">
@@ -167,7 +167,7 @@
 
           {% elif section == 'blog' %}
           <div class="admin-section-heading"><div><h3>Blog</h3><p>CRUD de articulos y categorias editoriales.</p></div><div class="admin-heading-actions"><a href="{% url 'admin:store_blogcategory_changelist' %}">Categorias</a><a class="admin-primary-action" href="{% url 'admin:store_blogpost_add' %}"><i class="fa fa-plus"></i> Nuevo articulo</a></div></div>
-          <div class="myaccount-table table-responsive"><table class="table"><thead><tr><th>Articulo</th><th>Categoria</th><th>Autor</th><th>Publicacion</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{% for post in blog_posts %}<tr><td><strong>{{ post.title }}</strong></td><td>{{ post.category.name }}</td><td>{{ post.author }}</td><td>{{ post.published_at|date:"d M Y" }}</td><td>{% if post.is_published %}<span class="admin-state is-active">Publicado</span>{% else %}<span class="admin-state">Borrador</span>{% endif %}</td><td><div class="admin-row-actions"><a href="{% url 'admin:store_blogpost_change' post.id %}">Editar</a><a class="is-danger" href="{% url 'admin:store_blogpost_delete' post.id %}">Eliminar</a></div></td></tr>{% empty %}<tr><td colspan="6">No hay articulos.</td></tr>{% endfor %}</tbody></table></div>
+          <div class="myaccount-table table-responsive"><table class="table"><thead><tr><th>Articulo</th><th>Categoria</th><th>Autor</th><th>Publicacion</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{% for post in blog_posts %}<tr><td><strong>{{ post.title }}</strong></td><td>{{ post.category.name }}</td><td>{% if post.author == "Juaco Store" or post.author == "Equipo Juaco Store" %}Equipo Nexus Luxury Footwear{% else %}{{ post.author }}{% endif %}</td><td>{{ post.published_at|date:"d M Y" }}</td><td>{% if post.is_published %}<span class="admin-state is-active">Publicado</span>{% else %}<span class="admin-state">Borrador</span>{% endif %}</td><td><div class="admin-row-actions"><a href="{% url 'admin:store_blogpost_change' post.id %}">Editar</a><a class="is-danger" href="{% url 'admin:store_blogpost_delete' post.id %}">Eliminar</a></div></td></tr>{% empty %}<tr><td colspan="6">No hay articulos.</td></tr>{% endfor %}</tbody></table></div>
           {% endif %}
         </div>
       </div>

@@ -748,7 +748,7 @@ class StoreFlowTests(TestCase):
         public_comment = self.client.get(f"/blog/{post.slug}/")
         self.assertContains(public_comment, "Comentario pendiente de moderacion.")
         self.assertContains(public_comment, "Gracias por participar en nuestro blog.")
-        self.assertContains(public_comment, "Respuesta de Juaco Store")
+        self.assertContains(public_comment, "Respuesta de Nexus Luxury Footwear")
         reply_response = self.client.post(f"/blog/{post.slug}/", {
             "name": "Otro Lector", "email": "respuesta@example.com", "body": "Esta es una respuesta al comentario.",
             "parent_id": comment.id,

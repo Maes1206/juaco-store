@@ -1,4 +1,4 @@
-# Juaco Store
+# Nexus Luxury Footwear
 
 Ecommerce de sneakers migrado a Django con autenticación, catálogo y carrito persistente.
 

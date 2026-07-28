@@ -207,6 +207,11 @@ class BlogCommentAdmin(admin.ModelAdmin):
     date_hierarchy = "created_at"
     readonly_fields = ("responded_at", "created_at")
 
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        form.base_fields["admin_response"].label = "respuesta de Nexus Luxury Footwear"
+        return form
+
     @admin.display(boolean=True, description="respondido")
     def has_response(self, obj):
         return bool(obj.admin_response)
@@ -229,6 +234,11 @@ class ProductReviewAdmin(admin.ModelAdmin):
     date_hierarchy = "created_at"
     readonly_fields = ("responded_at", "created_at")
 
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        form.base_fields["admin_response"].label = "respuesta de Nexus Luxury Footwear"
+        return form
+
     @admin.display(boolean=True, description="respondida")
     def has_response(self, obj):
         return bool(obj.admin_response)
@@ -241,6 +251,6 @@ class ProductReviewAdmin(admin.ModelAdmin):
             obj.responded_at = None
         super().save_model(request, obj, form, change)
 
-admin.site.site_header = "Juaco Store - Administracion"
-admin.site.site_title = "Juaco Store Admin"
+admin.site.site_header = "Nexus Luxury Footwear - Administracion"
+admin.site.site_title = "Nexus Luxury Footwear Admin"
 admin.site.index_title = "Ediciones y operaciones"

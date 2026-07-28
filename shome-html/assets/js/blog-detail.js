@@ -6,7 +6,7 @@
   var article = window.JuacoBlogArticles && window.JuacoBlogArticles[params.get('articulo')];
   if (!article) return;
 
-  document.title = article.title + ' | Juaco Store';
+  document.title = article.title + ' | Nexus Luxury Footwear';
   document.querySelector('.page-header-content .title').textContent = 'Artículo';
   document.querySelector('.page-header-content .breadcrumb li:last-child').textContent = 'Artículo';
 
