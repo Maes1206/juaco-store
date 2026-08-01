@@ -11,12 +11,15 @@ from urllib.error import HTTPError, URLError
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
+from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.utils import timezone
+from PIL import Image
 
 from . import bold
 from .forms import ProductAdminForm
-from .models import Address, BlogCategory, BlogComment, BlogPost, Cart, CartItem, ContactRequest, Coupon, CouponRedemption, CustomerProfile, Favorite, HomeBanner, MarketingPopup, NewsletterSubscription, Order, OrderItem, Product, ProductReview
+from .models import Address, BlogCategory, BlogComment, BlogPost, Cart, CartItem, ContactRequest, Coupon, CouponRedemption, CustomerProfile, Favorite, HomeBanner, MarketingPopup, NewsletterSubscription, Order, OrderItem, Product, ProductReview, validate_uploaded_media
 from .receipts import receipt_verification_token
 from .services import apply_payment_status
 from .shipping import DEPARTMENTS, calculate_shipping
@@ -1287,6 +1290,63 @@ class StoreFlowTests(TestCase):
         )
         self.assertContains(response, "El peso debe estar entre 0,1 y 30 kg.")
         self.assertNotIn("cart_shipping_quote", self.client.session)
+
+
+def _fake_image_bytes(image_format):
+    buffer = io.BytesIO()
+    Image.new("RGB", (2, 2), color=(200, 30, 30)).save(buffer, format=image_format)
+    return buffer.getvalue()
+
+
+class UploadedMediaValidationTests(TestCase):
+    """FileExtensionValidator solo mira el nombre; esto valida el contenido real."""
+
+    def test_accepts_genuine_images_in_every_allowed_format(self):
+        for image_format, extension in (("PNG", "png"), ("JPEG", "jpg"), ("WEBP", "webp")):
+            upload = SimpleUploadedFile(f"banner.{extension}", _fake_image_bytes(image_format), content_type=f"image/{extension}")
+            validate_uploaded_media(upload)
+
+    def test_rejects_a_script_disguised_with_an_image_extension(self):
+        upload = SimpleUploadedFile("banner.jpg", b"<script>alert(document.cookie)</script>", content_type="image/jpeg")
+        with self.assertRaises(ValidationError):
+            validate_uploaded_media(upload)
+
+    def test_accepts_genuine_mp4_and_webm_signatures(self):
+        mp4 = SimpleUploadedFile("clip.mp4", b"\x00\x00\x00\x18ftypmp42" + b"\x00" * 20, content_type="video/mp4")
+        validate_uploaded_media(mp4)
+        webm = SimpleUploadedFile("clip.webm", b"\x1a\x45\xdf\xa3" + b"\x00" * 20, content_type="video/webm")
+        validate_uploaded_media(webm)
+
+    def test_rejects_a_video_extension_without_a_matching_signature(self):
+        upload = SimpleUploadedFile("clip.mp4", b"esto no es un video real", content_type="video/mp4")
+        with self.assertRaises(ValidationError):
+            validate_uploaded_media(upload)
+
+    def test_home_banner_full_clean_rejects_a_disguised_media_file(self):
+        banner = HomeBanner(
+            name="Banner de prueba",
+            media_type=HomeBanner.MediaType.IMAGE,
+            media_file=SimpleUploadedFile("banner.png", b"esto no es un png", content_type="image/png"),
+        )
+        with self.assertRaises(ValidationError):
+            banner.full_clean()
+
+    def test_home_banner_full_clean_accepts_a_genuine_image(self):
+        banner = HomeBanner(
+            name="Banner de prueba",
+            media_type=HomeBanner.MediaType.IMAGE,
+            media_file=SimpleUploadedFile("banner.png", _fake_image_bytes("PNG"), content_type="image/png"),
+        )
+        banner.full_clean()
+
+    def test_marketing_popup_full_clean_rejects_a_disguised_image_file(self):
+        popup = MarketingPopup(
+            name="Popup de prueba", title="Oferta", message="Mensaje de prueba.",
+            button_label="Comprar", button_url="shop.html",
+            image_file=SimpleUploadedFile("popup.webp", b"esto no es un webp", content_type="image/webp"),
+        )
+        with self.assertRaises(ValidationError):
+            popup.full_clean()
 
 
 @override_settings(

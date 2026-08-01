@@ -1,9 +1,46 @@
+import os
 from decimal import Decimal
 
 from django.conf import settings
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator, MaxValueValidator, MinValueValidator
+from PIL import Image, UnidentifiedImageError
+
+
+# Firmas mínimas de contenedor para los formatos de video aceptados. No hay una
+# libreria de video en el proyecto, así que en vez de decodificar el archivo se
+# comprueba su cabecera, igual que Pillow hace estructuralmente con imágenes.
+_VIDEO_SIGNATURE_CHECKS = {
+    "mp4": lambda header: header[4:8] == b"ftyp",
+    "webm": lambda header: header.startswith(b"\x1a\x45\xdf\xa3"),
+}
+_IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
+
+
+def validate_uploaded_media(file):
+    """Verifica que el contenido de un archivo subido coincida con su extensión.
+
+    FileExtensionValidator solo mira el nombre; un archivo con contenido
+    distinto (por ejemplo HTML o un script disfrazado de "banner.jpg") pasaría
+    esa comprobación igual. Aquí se abre y valida la firma real del archivo.
+    """
+    extension = os.path.splitext(file.name)[1].lstrip(".").lower()
+    file.seek(0)
+    try:
+        if extension in _IMAGE_EXTENSIONS:
+            with Image.open(file) as image:
+                image.verify()
+            return
+        signature_check = _VIDEO_SIGNATURE_CHECKS.get(extension)
+        if signature_check:
+            if not signature_check(file.read(12)):
+                raise ValidationError("El archivo no tiene un formato de video válido.")
+            return
+    except (UnidentifiedImageError, OSError) as exc:
+        raise ValidationError("El archivo no es una imagen válida.") from exc
+    finally:
+        file.seek(0)
 
 
 class Product(models.Model):
@@ -163,7 +200,7 @@ class HomeBanner(models.Model):
     eyebrow = models.CharField("texto decorativo", max_length=80, blank=True)
     media_type = models.CharField("tipo de medio", max_length=10, choices=MediaType.choices, default=MediaType.IMAGE)
     layout = models.CharField("estilo", max_length=12, choices=Layout.choices, default=Layout.EDITORIAL)
-    media_file = models.FileField("archivo de imagen o video", upload_to="marketing/banners/", blank=True, validators=(FileExtensionValidator(("jpg", "jpeg", "png", "webp", "mp4", "webm")),), help_text="Puedes subir JPG, PNG, WebP, MP4 o WebM de hasta 10 segundos.")
+    media_file = models.FileField("archivo de imagen o video", upload_to="marketing/banners/", blank=True, validators=(FileExtensionValidator(("jpg", "jpeg", "png", "webp", "mp4", "webm")), validate_uploaded_media), help_text="Puedes subir JPG, PNG, WebP, MP4 o WebM de hasta 10 segundos.")
     media_url = models.CharField("URL de imagen o video", max_length=500, blank=True, help_text="Alternativa al archivo: pega una URL o ruta existente.")
     background_url = models.CharField("URL de fondo", max_length=500, blank=True, default="assets/img/shape/1.webp")
     button_label = models.CharField("texto del boton", max_length=60, blank=True)
@@ -213,7 +250,7 @@ class MarketingPopup(models.Model):
     name = models.CharField("nombre interno", max_length=120)
     title = models.CharField("titulo", max_length=180)
     message = models.TextField("mensaje", max_length=600)
-    image_file = models.FileField("imagen", upload_to="marketing/popups/", blank=True, validators=(FileExtensionValidator(("jpg", "jpeg", "png", "webp")),))
+    image_file = models.FileField("imagen", upload_to="marketing/popups/", blank=True, validators=(FileExtensionValidator(("jpg", "jpeg", "png", "webp")), validate_uploaded_media))
     image_url = models.CharField("URL de imagen", max_length=500, blank=True)
     image_position = models.CharField("posicion de imagen", max_length=8, choices=ImagePosition.choices, default=ImagePosition.LEFT)
     button_label = models.CharField("texto del boton", max_length=60)
