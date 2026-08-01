@@ -1,0 +1,51 @@
+{% extends "store/base.html" %}
+{% load store_extras %}
+
+{% block title %}Inicio de sesión bloqueado - Nexus Luxury Footwear{% endblock %}
+
+{% block content %}
+<div class="page-header-area login-page-header" data-bg-img="assets/img/shop/bannerlogin.png">
+  <div class="container pt--0 pb--0">
+    <div class="row">
+      <div class="col-12">
+        <div class="page-header-content">
+          <h2 class="title">Inicio de sesión bloqueado</h2>
+          <nav class="breadcrumb-area">
+            <ul class="breadcrumb">
+              <li><a href="index.html">Inicio</a></li>
+              <li class="breadcrumb-sep">//</li>
+              <li>Inicio de sesión</li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="order-confirmation-area">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-7">
+        <section class="payment-result payment-result--rejected" aria-live="polite">
+          <span class="payment-result__icon" aria-hidden="true"><i class="fa fa-lock"></i></span>
+          <div class="payment-result__body">
+            <h3 class="payment-result__title">Demasiados intentos fallidos</h3>
+            <p class="payment-result__desc">
+              Detectamos varios intentos seguidos con contraseña incorrecta{% if username %} para <strong>{{ username }}</strong>{% endif %} y bloqueamos el acceso por seguridad.
+              {% if cooloff_timedelta %}Vuelve a intentarlo en unos {{ cooloff_timedelta|duration_minutes }} minutos.{% else %}Contáctanos para restablecer el acceso.{% endif %}
+            </p>
+          </div>
+        </section>
+        <div class="order-confirmation-actions">
+          <div class="order-confirmation-actions__links">
+            <a class="order-link" href="index.html">Ir al inicio</a>
+            <span class="order-confirmation-actions__sep" aria-hidden="true">·</span>
+            <a class="order-link" href="contact.html">Contactar a Nexus Luxury Footwear</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

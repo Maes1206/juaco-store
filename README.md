@@ -74,4 +74,8 @@ Los valores por defecto asumen producción: sin `DJANGO_DEBUG` el sitio arranca 
 
 `is_staff` abre el panel, pero cada sección exige su permiso: `store.view_order` para Ventas y Reportes, `auth.view_user` + `store.view_customerprofile` para Clientes, `store.view_contactrequest` para Marketing, `store.view_product` para Productos y `store.view_blogpost` para Blog. Las secciones sin permiso no aparecen en el menú, no se consultan en la base de datos y redirigen al Resumen si se piden por URL. Así una cuenta creada para moderar el blog no accede a cédulas, direcciones ni ventas.
 
+### Bloqueo de inicio de sesión
+
+[django-axes](https://github.com/jazzband/django-axes) bloquea el acceso tras `AXES_FAILURE_LIMIT` (5 por defecto) contraseñas incorrectas seguidas para el mismo usuario **desde la misma IP**; se bloquea solo por IP dejaría fuera a cualquier otra persona en la misma red (oficina, wifi compartido) apenas alguien fallara varias veces. El bloqueo se levanta solo tras `AXES_COOLOFF_MINUTES` (15 por defecto); seguir insistiendo durante ese tiempo no lo extiende. Aplica igual al login de la tienda y al de `/admin/`. Se desactiva automáticamente al correr `manage.py test`.
+
 La ruta `/healthz/` está disponible para health checks. La base PostgreSQL usa un volumen persistente; configura además copias de seguridad externas del volumen.

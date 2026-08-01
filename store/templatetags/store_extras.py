@@ -14,3 +14,13 @@ def cop(value):
         return value
     formatted = f"{amount:,.0f}".replace(",", ".")
     return f"${formatted} COP"
+
+
+@register.filter
+def duration_minutes(value):
+    """Redondea un timedelta hacia arriba a minutos completos, para mostrarlo al usuario."""
+    try:
+        seconds = value.total_seconds()
+    except AttributeError:
+        return value
+    return max(1, -(-int(seconds) // 60))

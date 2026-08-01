@@ -238,7 +238,10 @@ def register_view(request):
     if request.method == "POST" and form.is_valid():
         guest_cart = get_cart(request)
         user = form.save()
-        login(request, user)
+        # Recién se creó la cuenta: no pasa por authenticate() (que asignaría
+        # el backend automáticamente), así que hay que indicarlo explícito
+        # ahora que AxesBackend hace que haya más de uno configurado.
+        login(request, user, backend="django.contrib.auth.backends.ModelBackend")
         guest_cart.session_key = ensure_session_key(request)
         guest_cart.save(update_fields=["session_key", "updated_at"])
         get_cart(request)

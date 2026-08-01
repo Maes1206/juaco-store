@@ -1349,6 +1349,82 @@ class UploadedMediaValidationTests(TestCase):
             popup.full_clean()
 
 
+@override_settings(AXES_ENABLED=True, AXES_FAILURE_LIMIT=3, AXES_COOLOFF_TIME=timedelta(minutes=15))
+class LoginLockoutTests(TestCase):
+    """django-axes: bloqueo tras contraseñas incorrectas repetidas.
+
+    AXES_ENABLED se apaga durante `manage.py test` (ver settings.py); estas
+    pruebas lo reactivan explícitamente. Con el límite en 3, las primeras 2
+    fallas se tratan como un intento normal y la 3ª en adelante queda
+    bloqueada — confirmado empíricamente contra el backend real de axes.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="frecuente", password="ClaveSegura123!")
+
+    def _fail_login(self, username="frecuente"):
+        return self.client.post("/account-login.html", {"username": username, "password": "clave-incorrecta"})
+
+    def test_allows_up_to_the_limit_minus_one_failures_normally(self):
+        first = self._fail_login()
+        second = self._fail_login()
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        self.assertNotContains(first, "Demasiados intentos fallidos")
+        self.assertNotContains(second, "Demasiados intentos fallidos")
+
+    def test_locks_out_after_reaching_the_failure_limit(self):
+        self._fail_login()
+        self._fail_login()
+        third = self._fail_login()
+
+        self.assertEqual(third.status_code, 429)
+        self.assertContains(third, "Demasiados intentos fallidos", status_code=429)
+
+    def test_lockout_blocks_even_the_correct_password(self):
+        self._fail_login()
+        self._fail_login()
+        self._fail_login()
+
+        response = self.client.post("/account-login.html", {"username": "frecuente", "password": "ClaveSegura123!"})
+
+        self.assertEqual(response.status_code, 429)
+        self.assertContains(response, "Demasiados intentos fallidos", status_code=429)
+
+    def test_lockout_is_scoped_to_the_username_not_the_whole_ip(self):
+        """Un atacante fallando contra 'frecuente' no debe bloquear a otro usuario en la misma IP."""
+        other = User.objects.create_user(username="vecino", password="OtraClaveSegura123!")
+        self._fail_login()
+        self._fail_login()
+        self._fail_login()
+
+        response = self.client.post("/account-login.html", {"username": other.username, "password": "OtraClaveSegura123!"})
+
+        self.assertRedirects(response, "/account.html")
+
+    def test_successful_login_resets_the_failure_count(self):
+        self._fail_login()
+        self._fail_login()
+
+        ok = self.client.post("/account-login.html", {"username": "frecuente", "password": "ClaveSegura123!"})
+        self.assertRedirects(ok, "/account.html")
+        self.client.logout()
+
+        # Tras el éxito, el contador se reinicia: dos fallas más no bloquean.
+        first_again = self._fail_login()
+        second_again = self._fail_login()
+        self.assertEqual(first_again.status_code, 200)
+        self.assertEqual(second_again.status_code, 200)
+
+    def test_registration_still_works_with_two_authentication_backends(self):
+        """login() tras registrarse debe indicar el backend explícitamente (ver register_view)."""
+        response = self.client.post("/account-register.html", {
+            "first_name": "Nueva", "last_name": "Cuenta", "username": "cuenta-nueva",
+            "email": "nueva@example.com", "password1": "ClaveSegura123!", "password2": "ClaveSegura123!",
+        })
+        self.assertRedirects(response, "/account.html")
+
+
 @override_settings(
     BOLD_IDENTITY_KEY="llave-identidad-pruebas",
     BOLD_SECRET_KEY="llave-secreta-pruebas",

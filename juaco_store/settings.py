@@ -1,5 +1,6 @@
 import os
 import sys
+from datetime import timedelta
 from pathlib import Path
 
 
@@ -54,7 +55,15 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "axes",
     "store",
+]
+
+# AxesBackend debe ir primero: bloquea el intento antes de que ModelBackend
+# llegue a comprobar la contraseña real.
+AUTHENTICATION_BACKENDS = [
+    "axes.backends.AxesBackend",
+    "django.contrib.auth.backends.ModelBackend",
 ]
 
 MIDDLEWARE = [
@@ -66,6 +75,9 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # Al final, según recomienda django-axes: convierte el bloqueo detectado
+    # arriba en una respuesta 429 con la plantilla de cuenta bloqueada.
+    "axes.middleware.AxesMiddleware",
 ]
 
 ROOT_URLCONF = "juaco_store.urls"
@@ -110,6 +122,22 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
+
+# Bloqueo de intentos de inicio de sesión (django-axes). Se desactiva solo
+# durante `manage.py test`; las pruebas del bloqueo lo reactivan explícitamente
+# con override_settings para no interferir con el resto de la suite.
+AXES_ENABLED = not RUNNING_TESTS
+AXES_FAILURE_LIMIT = int(os.getenv("AXES_FAILURE_LIMIT", "5"))
+AXES_COOLOFF_TIME = timedelta(minutes=int(os.getenv("AXES_COOLOFF_MINUTES", "15")))
+# Combinación usuario+IP: bloquea solo esa cuenta desde ese origen. Bloquear
+# por IP a secas dejaría fuera a cualquiera en la misma red (oficina, wifi
+# compartido) apenas alguien más fallara varias veces desde ahí.
+AXES_LOCKOUT_PARAMETERS = [["username", "ip_address"]]
+AXES_RESET_ON_SUCCESS = True
+# Que el atacante siga insistiendo durante el bloqueo no debe extender el
+# tiempo de espera indefinidamente y dejar al cliente real sin poder entrar.
+AXES_RESET_COOL_OFF_ON_FAILURE_DURING_LOCKOUT = False
+AXES_LOCKOUT_TEMPLATE = "store/account-locked.html"
 
 LANGUAGE_CODE = "es-co"
 TIME_ZONE = "America/Bogota"
