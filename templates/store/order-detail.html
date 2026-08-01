@@ -40,12 +40,21 @@
           </div>
         </div>
 
+        {% include "store/_payment_result.html" with compact=True %}
         {% include "store/_shipping_tracking.html" %}
-        {% include "store/_order_summary.html" %}
+        {% include "store/_order_summary.html" with show_delivery_map=True %}
 
         <div class="order-confirmation-actions">
-          <a class="btn-theme btn-theme-border" href="account.html?tab=orders">Volver a mis pedidos</a>
-          <a class="btn-theme" href="shop.html">Seguir comprando</a>
+          {% if order.is_paid %}
+          <div class="order-confirmation-actions__primary">
+            <a class="btn-theme" href="{% url 'order_receipt_pdf' order.number %}"><i class="fa fa-file-pdf-o" aria-hidden="true"></i> Descargar comprobante PDF</a>
+          </div>
+          {% endif %}
+          <div class="order-confirmation-actions__links">
+            <a class="order-link" href="account.html?tab=orders">Volver a mis pedidos</a>
+            <span class="order-confirmation-actions__sep" aria-hidden="true">·</span>
+            <a class="order-link" href="shop.html">Seguir comprando</a>
+          </div>
         </div>
       </div>
     </div>

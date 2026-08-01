@@ -23,12 +23,12 @@
       <div class="col-lg-3 col-md-4">
         <nav class="admin-panel-menu myaccount-tab-menu nav nav-tabs" aria-label="Secciones administrativas">
           <a class="nav-link{% if section == 'overview' %} active{% endif %}" href="panel-admin/?section=overview#admin-panel-content"><i class="fa fa-dashboard"></i> Resumen</a>
-          <a class="nav-link{% if section == 'sales' %} active{% endif %}" href="panel-admin/?section=sales#admin-panel-content"><i class="fa fa-shopping-bag"></i> Ventas exitosas</a>
-          <a class="nav-link{% if section == 'clients' %} active{% endif %}" href="panel-admin/?section=clients#admin-panel-content"><i class="fa fa-users"></i> Clientes</a>
-          <a class="nav-link{% if section == 'reports' %} active{% endif %}" href="panel-admin/?section=reports#admin-panel-content"><i class="fa fa-line-chart"></i> Reportes financieros</a>
-          <a class="nav-link{% if section == 'marketing' %} active{% endif %}" href="panel-admin/?section=marketing#admin-panel-content"><i class="fa fa-bullhorn"></i> Marketing{% if marketing_notification_count %}<span class="admin-menu-badge" aria-label="{{ marketing_notification_count }} notificaciones pendientes">{{ marketing_notification_count }}</span>{% endif %}</a>
-          <a class="nav-link{% if section == 'products' %} active{% endif %}" href="panel-admin/?section=products#admin-panel-content"><i class="fa fa-tags"></i> Edicion de productos</a>
-          <a class="nav-link{% if section == 'blog' %} active{% endif %}" href="panel-admin/?section=blog#admin-panel-content"><i class="fa fa-pencil"></i> Blog</a>
+          {% if section_access.sales %}<a class="nav-link{% if section == 'sales' %} active{% endif %}" href="panel-admin/?section=sales#admin-panel-content"><i class="fa fa-shopping-bag"></i> Ventas exitosas</a>{% endif %}
+          {% if section_access.clients %}<a class="nav-link{% if section == 'clients' %} active{% endif %}" href="panel-admin/?section=clients#admin-panel-content"><i class="fa fa-users"></i> Clientes</a>{% endif %}
+          {% if section_access.reports %}<a class="nav-link{% if section == 'reports' %} active{% endif %}" href="panel-admin/?section=reports#admin-panel-content"><i class="fa fa-line-chart"></i> Reportes financieros</a>{% endif %}
+          {% if section_access.marketing %}<a class="nav-link{% if section == 'marketing' %} active{% endif %}" href="panel-admin/?section=marketing#admin-panel-content"><i class="fa fa-bullhorn"></i> Marketing{% if marketing_notification_count %}<span class="admin-menu-badge" aria-label="{{ marketing_notification_count }} notificaciones pendientes">{{ marketing_notification_count }}</span>{% endif %}</a>{% endif %}
+          {% if section_access.products %}<a class="nav-link{% if section == 'products' %} active{% endif %}" href="panel-admin/?section=products#admin-panel-content"><i class="fa fa-tags"></i> Edicion de productos</a>{% endif %}
+          {% if section_access.blog %}<a class="nav-link{% if section == 'blog' %} active{% endif %}" href="panel-admin/?section=blog#admin-panel-content"><i class="fa fa-pencil"></i> Blog</a>{% endif %}
           <form action="{% url 'logout' %}" method="post" target="_self">{% csrf_token %}<button class="nav-link" type="submit"><i class="fa fa-sign-out"></i> Cerrar sesion</button></form>
         </nav>
       </div>
@@ -37,20 +37,22 @@
           {% if section == 'overview' %}
           <div class="admin-section-heading"><div><h3>Resumen operativo</h3><p>Estado actual del negocio.</p></div></div>
           <div class="admin-metrics">
-            <a href="panel-admin/?section=sales#admin-panel-content" class="admin-metric"><span class="admin-metric-icon"><i class="fa fa-check"></i></span><strong>{{ successful_order_count }}</strong><small>Ventas exitosas</small></a>
-            <a href="panel-admin/?section=reports#admin-panel-content" class="admin-metric"><span class="admin-metric-icon"><i class="fa fa-money"></i></span><strong>{{ total_revenue|cop }}</strong><small>Ingresos confirmados</small></a>
-            <a href="panel-admin/?section=clients#admin-panel-content" class="admin-metric"><span class="admin-metric-icon"><i class="fa fa-users"></i></span><strong>{{ client_count }}</strong><small>Clientes registrados</small></a>
-            <a href="panel-admin/?section=products#admin-panel-content" class="admin-metric"><span class="admin-metric-icon"><i class="fa fa-cubes"></i></span><strong>{{ product_count }}</strong><small>Productos</small></a>
+            {% if section_access.sales %}<a href="panel-admin/?section=sales#admin-panel-content" class="admin-metric"><span class="admin-metric-icon"><i class="fa fa-check"></i></span><strong>{{ successful_order_count }}</strong><small>Ventas exitosas</small></a>{% endif %}
+            {% if section_access.reports %}<a href="panel-admin/?section=reports#admin-panel-content" class="admin-metric"><span class="admin-metric-icon"><i class="fa fa-money"></i></span><strong>{{ total_revenue|cop }}</strong><small>Ingresos confirmados</small></a>{% endif %}
+            {% if section_access.clients %}<a href="panel-admin/?section=clients#admin-panel-content" class="admin-metric"><span class="admin-metric-icon"><i class="fa fa-users"></i></span><strong>{{ client_count }}</strong><small>Clientes registrados</small></a>{% endif %}
+            {% if section_access.products %}<a href="panel-admin/?section=products#admin-panel-content" class="admin-metric"><span class="admin-metric-icon"><i class="fa fa-cubes"></i></span><strong>{{ product_count }}</strong><small>Productos</small></a>{% endif %}
           </div>
           <div class="admin-alert-grid">
-            <a href="{% url 'admin:store_order_changelist' %}?status__exact=pending"><i class="fa fa-clock-o"></i><span><strong>{{ pending_order_count }} pedidos pendientes</strong><small>{{ pending_revenue|cop }} por confirmar</small></span></a>
-            <a href="panel-admin/?section=products#admin-panel-content"><i class="fa fa-exclamation-triangle"></i><span><strong>{{ low_stock_count }} productos con stock bajo</strong><small>Revisa las existencias del catalogo</small></span></a>
-            <a href="panel-admin/?section=marketing#admin-panel-content"><i class="fa fa-heart"></i><span><strong>{{ favorite_count }} favoritos guardados</strong><small>Senales de interes de clientes</small></span></a>
+            {% if section_access.sales %}<a href="{% url 'admin:store_order_changelist' %}?status__exact=pending"><i class="fa fa-clock-o"></i><span><strong>{{ pending_order_count }} pedidos pendientes</strong><small>{{ pending_revenue|cop }} por confirmar</small></span></a>{% endif %}
+            {% if section_access.products %}<a href="panel-admin/?section=products#admin-panel-content"><i class="fa fa-exclamation-triangle"></i><span><strong>{{ low_stock_count }} productos con stock bajo</strong><small>Revisa las existencias del catalogo</small></span></a>{% endif %}
+            {% if section_access.marketing %}<a href="panel-admin/?section=marketing#admin-panel-content"><i class="fa fa-heart"></i><span><strong>{{ favorite_count }} favoritos guardados</strong><small>Senales de interes de clientes</small></span></a>{% endif %}
           </div>
+          {% if section_access.products or section_access.blog or section_access.sales %}
           <div class="admin-quick-actions">
             <h4>Acciones rapidas</h4>
-            <div><a href="{% url 'admin:store_product_add' %}"><i class="fa fa-plus"></i> Crear producto</a><a href="{% url 'admin:store_blogpost_add' %}"><i class="fa fa-plus"></i> Crear articulo</a><a href="{% url 'admin:store_order_changelist' %}"><i class="fa fa-list"></i> Gestionar pedidos</a></div>
+            <div>{% if section_access.products %}<a href="{% url 'admin:store_product_add' %}"><i class="fa fa-plus"></i> Crear producto</a>{% endif %}{% if section_access.blog %}<a href="{% url 'admin:store_blogpost_add' %}"><i class="fa fa-plus"></i> Crear articulo</a>{% endif %}{% if section_access.sales %}<a href="{% url 'admin:store_order_changelist' %}"><i class="fa fa-list"></i> Gestionar pedidos</a>{% endif %}</div>
           </div>
+          {% endif %}
 
           {% elif section == 'sales' %}
           <div class="admin-section-heading"><div><h3>Ventas exitosas</h3><p>Pedidos pagados, enviados o entregados y productos vendidos.</p></div><a href="{% url 'admin:store_order_changelist' %}">Administrar pedidos</a></div>
@@ -59,7 +61,7 @@
           <h4 class="admin-subtitle">Pedidos exitosos</h4>
                     <div class="myaccount-table table-responsive">
             <table class="table">
-              <thead><tr><th>Producto</th><th>Pedido</th><th>Cliente</th><th>Estado</th><th>Total</th><th>Fecha</th><th></th></tr></thead>
+              <thead><tr><th>Producto</th><th>Pedido</th><th>Cliente</th><th>Estado</th><th>Total</th><th>Fecha</th><th>Acciones</th></tr></thead>
               <tbody>
                 {% for order in successful_orders %}
                 <tr>
@@ -67,19 +69,79 @@
                     {% with sold_item=order.items.all.0 %}
                     {% if sold_item %}
                     <div class="admin-product-cell">
-                      {% if sold_item.product_image %}<img src="{{ sold_item.product_image }}" alt="{{ sold_item.product_name }}">{% endif %}
+                      {% if sold_item.product_image %}<img src="{{ sold_item.product_image }}" alt="{{ sold_item.product_name }}" onerror="this.style.visibility='hidden'">{% endif %}
                       <span><strong>{{ sold_item.product_name }}</strong><small class="admin-table-note">{{ order.item_count }} unidad{{ order.item_count|pluralize:"es" }}</small></span>
                     </div>
                     {% else %}<span>Sin detalle de producto</span>{% endif %}
                     {% endwith %}
                   </td>
-                  <td>{{ order.number }}</td>
-                  <td>{{ order.recipient_name }}</td>
-                  <td><span class="order-status order-status--{{ order.status }}">{{ order.get_status_display }}</span></td>
+                  <td><strong>{{ order.number }}</strong><small class="admin-table-note">{{ order.get_payment_method_display }}</small></td>
+                  <td><strong>{{ order.user.get_full_name|default:order.recipient_name }}</strong><small class="admin-table-note">{% if order.user %}@{{ order.user.username }}{% else %}Invitado{% endif %}</small></td>
+                  <td><span class="order-status order-status--{{ order.status }}">{{ order.get_status_display }}</span><small class="admin-table-note">{{ order.get_fulfillment_status_display }}</small></td>
                   <td>{{ order.total|cop }}</td>
                   <td>{{ order.created_at|date:"d M Y" }}</td>
-                  <td><a href="{% url 'admin:store_order_change' order.id %}">Ver</a></td>
+                  <td><div class="admin-row-actions"><button type="button" data-detail-toggle="order-info-{{ order.id }}" data-label-hidden="Ver venta" data-label-shown="Ocultar venta" aria-expanded="false">Ver venta</button><a href="{% url 'admin:store_order_change' order.id %}">Editar</a></div></td>
                 </tr>
+                <tr class="admin-client-detail-row" id="order-info-{{ order.id }}" hidden><td colspan="7">
+                  <div class="admin-sale-detail">
+                    <div class="admin-sale-detail__grid">
+                      <section>
+                        <h5>Cliente</h5>
+                        <dl class="admin-client-data admin-client-data--stacked">
+                          <div><dt>Nombre</dt><dd>{{ order.user.get_full_name|default:order.recipient_name }}</dd></div>
+                          <div><dt>Usuario</dt><dd>{% if order.user %}@{{ order.user.username }}{% else %}Compra sin cuenta{% endif %}</dd></div>
+                          <div><dt>Correo</dt><dd>{{ order.user.email|default:"No registrado" }}</dd></div>
+                          <div><dt>Numero de cedula</dt><dd>{{ order.user.customer_profile.document_number|default:"No registrada" }}</dd></div>
+                          <div><dt>Telefono</dt><dd>{{ order.phone|default:order.user.customer_profile.phone|default:"No registrado" }}</dd></div>
+                        </dl>
+                        {% if order.user %}<a class="admin-sale-detail__link" href="{% url 'admin:auth_user_change' order.user.id %}">Ver ficha del cliente</a>{% endif %}
+                      </section>
+                      <section>
+                        <h5>Datos de envio</h5>
+                        <dl class="admin-client-data admin-client-data--stacked">
+                          <div><dt>Tipo de envio</dt><dd>{{ order.get_delivery_method_display }}</dd></div>
+                          <div><dt>Estado del envio</dt><dd><span class="shipping-status shipping-status--{{ order.fulfillment_status }}">{{ order.get_fulfillment_status_display }}</span></dd></div>
+                          <div><dt>Destinatario</dt><dd>{{ order.recipient_name }}</dd></div>
+                          <div><dt>Direccion</dt><dd>{{ order.full_address }}</dd></div>
+                          <div><dt>Telefono de contacto</dt><dd>{{ order.phone|default:"No registrado" }}</dd></div>
+                        </dl>
+                        {% if order.notes %}<p class="admin-sale-detail__notes"><strong>Notas:</strong> {{ order.notes }}</p>{% endif %}
+                      </section>
+                      <section>
+                        <h5>Pago</h5>
+                        <dl class="admin-client-data admin-client-data--stacked">
+                          <div><dt>Metodo</dt><dd>{{ order.get_payment_method_display }}</dd></div>
+                          <div><dt>Estado en la pasarela</dt><dd>{{ order.get_payment_status_display|default:"Sin intentos de pago" }}</dd></div>
+                          <div><dt>Fecha del pago</dt><dd>{% if order.paid_at %}{{ order.paid_at|date:"d M Y, H:i" }}{% else %}Sin registrar{% endif %}</dd></div>
+                          <div><dt>Referencia</dt><dd>{{ order.payment_reference|default:"—" }}</dd></div>
+                          <div><dt>Transaccion</dt><dd>{{ order.payment_transaction_id|default:"—" }}</dd></div>
+                        </dl>
+                      </section>
+                    </div>
+                    <h5 class="admin-sale-detail__items-title">Articulos vendidos</h5>
+                    <div class="admin-sale-items">
+                      {% for item in order.items.all %}
+                      <article class="admin-sale-item">
+                        <div class="admin-sale-item__media">
+                          {% if item.product_image %}<img src="{{ item.product_image }}" alt="{{ item.product_name }}" loading="lazy" onerror="this.style.visibility='hidden'">{% else %}<i class="fa fa-shopping-bag" aria-hidden="true"></i>{% endif %}
+                        </div>
+                        <div class="admin-sale-item__body">
+                          <strong>{{ item.product_name }}</strong>
+                          <small>{% if item.size %}Talla {{ item.size }}{% endif %}{% if item.size and item.color %} · {% endif %}{% if item.color %}Color {{ item.color }}{% endif %}{% if not item.size and not item.color %}Sin variante{% endif %}</small>
+                          <small>{{ item.quantity }} x {{ item.unit_price|cop }}</small>
+                        </div>
+                        <span class="admin-sale-item__total">{{ item.subtotal|cop }}</span>
+                      </article>
+                      {% empty %}<p class="admin-empty-assistance">Esta venta no tiene articulos registrados.</p>{% endfor %}
+                    </div>
+                    <ul class="admin-sale-totals">
+                      <li><span>Subtotal</span><strong>{{ order.subtotal|cop }}</strong></li>
+                      {% if order.discount_amount > 0 %}<li><span>Cupon {{ order.coupon_code }}</span><strong>-{{ order.discount_amount|cop }}</strong></li>{% endif %}
+                      <li><span>Envio</span><strong>{% if order.shipping_cost > 0 %}{{ order.shipping_cost|cop }}{% else %}Gratis{% endif %}</strong></li>
+                      <li class="is-total"><span>Total</span><strong>{{ order.total|cop }}</strong></li>
+                    </ul>
+                  </div>
+                </td></tr>
                 {% empty %}<tr><td colspan="7">No hay pedidos exitosos.</td></tr>{% endfor %}
               </tbody>
             </table>
@@ -107,7 +169,7 @@
                 <tr>
                   <td><strong>{{ client.get_full_name|default:client.username }}</strong><small class="admin-table-note">@{{ client.username }}</small></td>
                   <td>{{ client.email|default:"Sin correo" }}</td><td>{{ client.date_joined|date:"d M Y" }}</td><td>{{ client.successful_order_count }}</td><td>{{ client.total_spent|default_if_none:0|cop }}</td>
-                  <td><div class="admin-row-actions"><button type="button" data-client-toggle="client-info-{{ client.id }}" aria-expanded="false">Ver info</button><a href="{% url 'admin:auth_user_change' client.id %}">Editar</a></div></td>
+                  <td><div class="admin-row-actions"><button type="button" data-detail-toggle="client-info-{{ client.id }}" data-label-hidden="Ver info" data-label-shown="Ocultar info" aria-expanded="false">Ver info</button><a href="{% url 'admin:auth_user_change' client.id %}">Editar</a></div></td>
                 </tr>
                 <tr class="admin-client-detail-row" id="client-info-{{ client.id }}" hidden><td colspan="6">
                   <div class="admin-client-detail">
@@ -214,14 +276,17 @@
   }
 
   document.addEventListener('click', function (event) {
-    var detailButton = event.target.closest('[data-client-toggle]');
+    // Filas desplegables del panel: fichas de cliente y detalle de cada venta.
+    var detailButton = event.target.closest('[data-detail-toggle]');
     if (detailButton) {
-      var detailRow = document.getElementById(detailButton.getAttribute('data-client-toggle'));
+      var detailRow = document.getElementById(detailButton.getAttribute('data-detail-toggle'));
       if (detailRow) {
         var willOpen = detailRow.hidden;
         detailRow.hidden = !willOpen;
         detailButton.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-        detailButton.textContent = willOpen ? 'Ocultar info' : 'Ver info';
+        detailButton.textContent = willOpen
+          ? (detailButton.getAttribute('data-label-shown') || 'Ocultar info')
+          : (detailButton.getAttribute('data-label-hidden') || 'Ver info');
       }
       return;
     }

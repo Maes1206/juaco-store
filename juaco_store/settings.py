@@ -1,8 +1,12 @@
 import os
+import sys
 from pathlib import Path
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+# Las pruebas se ejecutan sin archivo de entorno: se les permiten los valores de
+# desarrollo que un despliegue real tiene prohibidos.
+RUNNING_TESTS = "test" in sys.argv
 
 
 def load_env_file(path):
@@ -26,9 +30,18 @@ def env_bool(name, default=False):
     return os.getenv(name, "1" if default else "0").lower() in {"1", "true", "yes", "on"}
 
 
-DEBUG = env_bool("DJANGO_DEBUG", True)
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-only-change-me")
-if not DEBUG and SECRET_KEY == "dev-only-change-me":
+# Por defecto se asume producción: olvidar DJANGO_DEBUG deja el sitio en modo
+# seguro en vez de publicar trazas, código fuente y el mapa de rutas.
+DEBUG = env_bool("DJANGO_DEBUG", False)
+IS_DEVELOPMENT = DEBUG or RUNNING_TESTS
+
+DEV_SECRET_KEY = "dev-only-change-me"
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "")
+if not SECRET_KEY and IS_DEVELOPMENT:
+    SECRET_KEY = DEV_SECRET_KEY
+# La comprobación ya no depende de DEBUG para dispararse: sin llave propia, un
+# despliegue se detiene en lugar de arrancar con la de ejemplo.
+if not SECRET_KEY or (SECRET_KEY == DEV_SECRET_KEY and not IS_DEVELOPMENT):
     raise RuntimeError("DJANGO_SECRET_KEY debe configurarse en producción.")
 
 ALLOWED_HOSTS = [host.strip() for host in os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if host.strip()]
@@ -149,8 +162,17 @@ STOCKX_TIMEOUT_SECONDS = int(os.getenv("STOCKX_TIMEOUT_SECONDS", "5"))
 # método "Pago con Bold" no se ofrece en el checkout.
 BOLD_IDENTITY_KEY = os.getenv("BOLD_IDENTITY_KEY", "")
 BOLD_SECRET_KEY = os.getenv("BOLD_SECRET_KEY", "")
-# En modo de pruebas Bold firma los webhooks con una llave vacía.
-BOLD_TEST_MODE = env_bool("BOLD_TEST_MODE", True)
+# Solo cambia el aviso visual del checkout; no afecta la validación de webhooks.
+BOLD_TEST_MODE = env_bool("BOLD_TEST_MODE", False)
+# El sandbox de Bold firma los webhooks con una llave vacía. Aceptar esa firma
+# equivale a no validar nada: cualquiera podría marcar un pedido como pagado, así
+# que vive en su propia variable y se rechaza fuera de desarrollo.
+BOLD_ALLOW_UNSIGNED_WEBHOOKS = env_bool("BOLD_ALLOW_UNSIGNED_WEBHOOKS", False)
+if BOLD_ALLOW_UNSIGNED_WEBHOOKS and not IS_DEVELOPMENT:
+    raise RuntimeError(
+        "BOLD_ALLOW_UNSIGNED_WEBHOOKS solo puede activarse con DJANGO_DEBUG=1: "
+        "en producción permitiría falsificar pagos aprobados."
+    )
 BOLD_CURRENCY = os.getenv("BOLD_CURRENCY", "COP")
 BOLD_API_BASE_URL = os.getenv("BOLD_API_BASE_URL", "https://payments.api.bold.co").rstrip("/")
 BOLD_CHECKOUT_SCRIPT_URL = os.getenv("BOLD_CHECKOUT_SCRIPT_URL", "https://checkout.bold.co/library/boldPaymentButton.js")

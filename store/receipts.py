@@ -3,12 +3,33 @@ from io import BytesIO
 from pathlib import Path
 
 from django.conf import settings
+from django.core import signing
+from django.urls import reverse
+from reportlab.graphics.barcode.qr import QrCodeWidget
+from reportlab.graphics.shapes import Drawing
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_RIGHT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.platypus import HRFlowable, Image, KeepTogether, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+
+# Firma el numero de pedido para que la URL del QR no pueda falsificarse ni
+# usarse para adivinar otros numeros de pedido (son secuenciales).
+_TOKEN_SALT = "store.receipt-verification"
+
+
+def receipt_verification_token(order):
+    return signing.Signer(salt=_TOKEN_SALT).sign(order.number)
+
+
+def verify_receipt_token(token):
+    """Numero de pedido si el token es autentico, o None si fue alterado."""
+    try:
+        return signing.Signer(salt=_TOKEN_SALT).unsign(token)
+    except signing.BadSignature:
+        return None
 
 
 # Nombre conservado para compatibilidad interna; ahora representa el dorado de marca.
@@ -55,6 +76,16 @@ def _scaled_image(path, max_width, max_height):
         return Spacer(max_width, max_height)
 
 
+def _qr_drawing(data, size):
+    """Codigo QR vectorial nativo de reportlab; no depende de un paquete externo."""
+    widget = QrCodeWidget(data)
+    x1, y1, x2, y2 = widget.getBounds()
+    width, height = x2 - x1, y2 - y1
+    drawing = Drawing(size, size, transform=[size / width, 0, 0, size / height, 0, 0])
+    drawing.add(widget)
+    return drawing
+
+
 def _footer(canvas, doc):
     canvas.saveState()
     width, _ = A4
@@ -67,7 +98,7 @@ def _footer(canvas, doc):
     canvas.restoreState()
 
 
-def build_order_receipt(order):
+def build_order_receipt(order, request):
     output = BytesIO()
     doc = SimpleDocTemplate(
         output,
@@ -177,8 +208,28 @@ def build_order_receipt(order):
         ("RIGHTPADDING", (0, 0), (0, 0), 8 * mm), ("LEFTPADDING", (1, 0), (1, 0), 5 * mm),
         ("RIGHTPADDING", (1, 0), (1, 0), 0), ("LINEBEFORE", (1, 0), (1, 0), 0.5, LINE),
     ]))
+
+    verify_url = request.build_absolute_uri(reverse("verify_receipt", args=[receipt_verification_token(order)]))
+    verify_text = [
+        Paragraph("VALIDAR ESTE COMPROBANTE", eyebrow),
+        Spacer(1, 1.2 * mm),
+        Paragraph("Escanea este codigo QR con tu celular para confirmar en nuestro sistema que este comprobante es autentico.", body),
+    ]
+    verify_row = Table([[_qr_drawing(verify_url, 20 * mm), verify_text]], colWidths=[26 * mm, 148 * mm])
+    verify_row.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("LEFTPADDING", (0, 0), (0, 0), 0),
+        ("RIGHTPADDING", (0, 0), (0, 0), 6 * mm), ("LEFTPADDING", (1, 0), (1, 0), 0),
+        ("RIGHTPADDING", (1, 0), (1, 0), 0), ("TOPPADDING", (0, 0), (-1, -1), 0),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+    ]))
+
     thanks = ParagraphStyle("Thanks", parent=heading, alignment=TA_CENTER, fontSize=11, textColor=RED)
-    story.extend([KeepTogether(closing), Spacer(1, 9 * mm), Paragraph("Gracias por elegir Nexus Luxury Footwear", thanks), Paragraph("Conserva este comprobante como soporte de tu compra.", center_small)])
+    story.extend([
+        KeepTogether(closing), Spacer(1, 7 * mm), HRFlowable(width="100%", thickness=0.6, color=LINE),
+        Spacer(1, 6 * mm), KeepTogether(verify_row), Spacer(1, 9 * mm),
+        Paragraph("Gracias por elegir Nexus Luxury Footwear", thanks),
+        Paragraph("Conserva este comprobante como soporte de tu compra.", center_small),
+    ])
     doc.build(story, onFirstPage=_footer, onLaterPages=_footer)
     output.seek(0)
     return output

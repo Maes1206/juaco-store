@@ -52,7 +52,8 @@ Configuración:
 | --- | --- |
 | `BOLD_IDENTITY_KEY` | Llave de identidad; viaja al navegador y autentica la consulta de estado. |
 | `BOLD_SECRET_KEY` | Llave secreta; solo firma cobros y valida webhooks. |
-| `BOLD_TEST_MODE` | `1` con llaves de prueba. En pruebas Bold firma los webhooks con llave vacía. |
+| `BOLD_TEST_MODE` | `1` con llaves de prueba. Solo cambia el aviso del checkout; no afecta la validación de firmas. |
+| `BOLD_ALLOW_UNSIGNED_WEBHOOKS` | **Solo desarrollo.** El sandbox de Bold firma con llave vacía; aceptarla equivale a no validar la firma, así que con `1` cualquiera podría marcar un pedido como pagado. El servidor se niega a arrancar si lo activas sin `DJANGO_DEBUG=1`. |
 | `BOLD_PUBLIC_BASE_URL` | Dominio HTTPS público para el retorno y el webhook. |
 
 Bold exige HTTPS en la URL de retorno, así que en `http://localhost` no se envía: la página de pago ofrece «Ya pagué, verificar», que consulta la API y confirma el pedido. Para probar el retorno y el webhook en local, expón el puerto con un túnel HTTPS y pon esa URL en `BOLD_PUBLIC_BASE_URL`; registra `<dominio>/pago/bold/webhook/` en el panel de Bold.
@@ -62,9 +63,15 @@ Tarjetas del [ambiente de pruebas](https://developers.bold.co/pagos-en-linea/bot
 ## Producción
 
 1. Copia `.env.example` a `.env` y reemplaza todas las claves marcadas con `CAMBIA`.
-2. Configura `DJANGO_ALLOWED_HOSTS`, `DJANGO_CSRF_TRUSTED_ORIGINS` y `BOLD_PUBLIC_BASE_URL` con el dominio HTTPS real, y cambia las llaves de Bold por las de producción con `BOLD_TEST_MODE=0`.
+2. Configura `DJANGO_ALLOWED_HOSTS`, `DJANGO_CSRF_TRUSTED_ORIGINS` y `BOLD_PUBLIC_BASE_URL` con el dominio HTTPS real, y cambia las llaves de Bold por las de producción.
 3. Publica el contenedor detrás de un proxy TLS que envíe `X-Forwarded-Proto: https`.
 4. Ejecuta `docker compose -f docker-compose.yml up -d --build`; así se omite el archivo local `docker-compose.override.yml`, se usa Gunicorn y el arranque aplica migraciones y recopila estáticos.
 5. Comprueba el estado con `docker compose ps` y los logs con `docker compose logs -f web`.
+
+Los valores por defecto asumen producción: sin `DJANGO_DEBUG` el sitio arranca en modo seguro, y sin `DJANGO_SECRET_KEY` propia no arranca en absoluto. `.env.local` (usado por `runserver`) nunca entra en la imagen de Docker.
+
+### Permisos del panel `/panel-admin/`
+
+`is_staff` abre el panel, pero cada sección exige su permiso: `store.view_order` para Ventas y Reportes, `auth.view_user` + `store.view_customerprofile` para Clientes, `store.view_contactrequest` para Marketing, `store.view_product` para Productos y `store.view_blogpost` para Blog. Las secciones sin permiso no aparecen en el menú, no se consultan en la base de datos y redirigen al Resumen si se piden por URL. Así una cuenta creada para moderar el blog no accede a cédulas, direcciones ni ventas.
 
 La ruta `/healthz/` está disponible para health checks. La base PostgreSQL usa un volumen persistente; configura además copias de seguridad externas del volumen.

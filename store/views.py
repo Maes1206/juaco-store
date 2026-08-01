@@ -24,7 +24,7 @@ from .forms import AccountDetailsForm, AddressForm, BlogCommentForm, CheckoutFor
 from .models import Address, BlogCategory, BlogComment, BlogPost, Cart, CartItem, ContactRequest, Coupon, CustomerProfile, Favorite, HomeBanner, MarketingPopup, NewsletterSubscription, Order, OrderItem, Product, ProductReview
 from .search import UnifiedSearchService
 from .services import FREE_SHIPPING_THRESHOLD, CouponError, CheckoutError, PaymentError, apply_payment_status, coupon_totals, create_order_from_cart, ensure_payment_reference, ensure_session_key, get_cart, shipping_cost_for, sync_payment_status
-from .receipts import build_order_receipt
+from .receipts import build_order_receipt, verify_receipt_token
 from .shipping import DEPARTMENTS, DESTINATIONS, calculate_shipping
 
 
@@ -280,90 +280,159 @@ def _account_context(request, active_tab, **overrides):
     }
     context.update(overrides)
     return context
-ADMIN_PANEL_SECTIONS = {"overview", "sales", "clients", "reports", "marketing", "products", "blog"}
-SUCCESSFUL_ORDER_STATUSES = (Order.Status.PAID, Order.Status.SHIPPED, Order.Status.DELIVERED)
+# Permiso exigido por sección. `is_staff` por sí solo no basta: sin esto, una
+# cuenta creada para moderar el blog leería cédulas, teléfonos y direcciones de
+# todos los clientes, algo que el admin de Django sí le negaría.
+ADMIN_PANEL_SECTIONS = {
+    "overview": (),
+    "sales": ("store.view_order",),
+    "clients": ("auth.view_user", "store.view_customerprofile"),
+    "reports": ("store.view_order",),
+    "marketing": ("store.view_contactrequest",),
+    "products": ("store.view_product",),
+    "blog": ("store.view_blogpost",),
+}
+SUCCESSFUL_ORDER_STATUSES = Order.SUCCESSFUL_STATUSES
+
+
+def _admin_section_access(user):
+    """Secciones del panel que el usuario puede abrir, en el orden del menú."""
+    return {
+        name: user.has_perms(required)
+        for name, required in ADMIN_PANEL_SECTIONS.items()
+    }
 
 
 @staff_member_required
 @ensure_csrf_cookie
 def admin_dashboard(request):
+    section_access = _admin_section_access(request.user)
     section = request.GET.get("section", "overview")
-    if section not in ADMIN_PANEL_SECTIONS:
+    if section not in ADMIN_PANEL_SECTIONS or not section_access[section]:
         section = "overview"
 
-    successful_orders_qs = Order.objects.filter(status__in=SUCCESSFUL_ORDER_STATUSES).select_related("user").prefetch_related("items")
-    successful_order_count = successful_orders_qs.count()
-    total_revenue = successful_orders_qs.aggregate(total=Sum("total"))["total"] or Decimal("0")
-    average_ticket = total_revenue / successful_order_count if successful_order_count else Decimal("0")
-    successful_orders = list(successful_orders_qs[:100])
-    pending_orders = Order.objects.filter(status=Order.Status.PENDING)
-    pending_revenue = pending_orders.aggregate(total=Sum("total"))["total"] or Decimal("0")
-    configured_financials = Q(purchase_value__isnull=False, sale_value__isnull=False)
-    financial_totals = successful_orders_qs.aggregate(
-        purchase=Sum("purchase_value", filter=configured_financials),
-        sale=Sum("sale_value", filter=configured_financials),
-    )
-    gross_profit_total = (financial_totals["sale"] or Decimal("0")) - (financial_totals["purchase"] or Decimal("0"))
-
-    item_revenue = ExpressionWrapper(F("quantity") * F("unit_price"), output_field=DecimalField(max_digits=14, decimal_places=2))
-    sold_products = (
-        OrderItem.objects.filter(order__status__in=SUCCESSFUL_ORDER_STATUSES)
-        .values("product_name", "product_image")
-        .annotate(units_sold=Sum("quantity"), revenue=Sum(item_revenue))
-        .order_by("-units_sold", "product_name")
-    )
-    monthly_report = (
-        Order.objects.filter(status__in=SUCCESSFUL_ORDER_STATUSES)
-        .annotate(month=TruncMonth("created_at"))
-        .values("month")
-        .annotate(
-            order_count=Count("id"),
-            revenue=Sum("total"),
-            purchase_total=Sum("purchase_value", filter=configured_financials),
-            sale_total=Sum("sale_value", filter=configured_financials),
-            gross_profit=ExpressionWrapper(
-                Sum("sale_value", filter=configured_financials) - Sum("purchase_value", filter=configured_financials),
-                output_field=DecimalField(max_digits=14, decimal_places=2),
-            ),
-        )
-        .order_by("-month")[:12]
-    )
-
     User = get_user_model()
-    client_search = request.GET.get("q", "").strip()
-    clients = (
-        User.objects.filter(is_staff=False)
-        .select_related("customer_profile")
-        .prefetch_related("addresses")
-        .annotate(
-            successful_order_count=Count("orders", filter=Q(orders__status__in=SUCCESSFUL_ORDER_STATUSES), distinct=True),
-            total_spent=Sum("orders__total", filter=Q(orders__status__in=SUCCESSFUL_ORDER_STATUSES)),
+    # Cada bloque se consulta solo si el permiso lo autoriza: lo que no se puede
+    # ver tampoco se carga, así una plantilla no puede filtrarlo por descuido.
+    successful_orders = []
+    successful_order_count = 0
+    total_revenue = Decimal("0")
+    average_ticket = Decimal("0")
+    gross_profit_total = Decimal("0")
+    pending_order_count = 0
+    pending_revenue = Decimal("0")
+    sold_products = ()
+    monthly_report = ()
+    clients = User.objects.none()
+    client_count = 0
+    products = Product.objects.none()
+    product_count = 0
+    low_stock_count = 0
+    blog_posts = BlogPost.objects.none()
+    published_post_count = 0
+    blog_categories = BlogCategory.objects.none()
+    top_favorites = ()
+    active_banner_count = active_popup_count = active_coupon_count = 0
+    pending_contact_count = pending_blog_comment_count = pending_review_count = 0
+    pending_blog_comments = ()
+    pending_reviews = ()
+    recent_contact_requests = ()
+    client_search = ""
+    configured_financials = Q(purchase_value__isnull=False, sale_value__isnull=False)
+
+    if section_access["sales"] or section_access["reports"]:
+        # El detalle desplegable de cada venta muestra cliente, envío y artículos;
+        # el perfil viene en la misma consulta para no golpear la base por fila.
+        successful_orders_qs = (
+            Order.objects.filter(status__in=SUCCESSFUL_ORDER_STATUSES)
+            .select_related("user", "user__customer_profile")
+            .prefetch_related("items")
         )
-        .order_by("-date_joined")
-    )
-    if client_search:
-        clients = clients.filter(
-            Q(first_name__icontains=client_search)
-            | Q(last_name__icontains=client_search)
-            | Q(username__icontains=client_search)
-            | Q(customer_profile__document_number__icontains=client_search)
+        successful_order_count = successful_orders_qs.count()
+        total_revenue = successful_orders_qs.aggregate(total=Sum("total"))["total"] or Decimal("0")
+        average_ticket = total_revenue / successful_order_count if successful_order_count else Decimal("0")
+        successful_orders = list(successful_orders_qs[:100])
+        pending_orders = Order.objects.filter(status=Order.Status.PENDING)
+        pending_order_count = pending_orders.count()
+        pending_revenue = pending_orders.aggregate(total=Sum("total"))["total"] or Decimal("0")
+        financial_totals = successful_orders_qs.aggregate(
+            purchase=Sum("purchase_value", filter=configured_financials),
+            sale=Sum("sale_value", filter=configured_financials),
         )
-    top_favorites = Product.objects.filter(is_active=True).annotate(favorite_count=Count("favorited_by")).order_by("-favorite_count", "name")[:6]
-    products = Product.objects.all().order_by("brand", "name")
-    blog_posts = BlogPost.objects.select_related("category").all()
-    active_banner_count = HomeBanner.objects.filter(is_active=True).count()
-    active_popup_count = MarketingPopup.objects.filter(is_active=True).count()
-    active_coupon_count = Coupon.objects.filter(is_active=True).count()
-    pending_contact_count = ContactRequest.objects.filter(status=ContactRequest.Status.NEW).count()
-    pending_blog_comments = BlogComment.objects.filter(is_approved=False).select_related("post")[:5]
-    pending_reviews = ProductReview.objects.filter(is_approved=False).select_related("product")[:5]
-    pending_blog_comment_count = BlogComment.objects.filter(is_approved=False).count()
-    pending_review_count = ProductReview.objects.filter(is_approved=False).count()
+        gross_profit_total = (financial_totals["sale"] or Decimal("0")) - (financial_totals["purchase"] or Decimal("0"))
+
+        item_revenue = ExpressionWrapper(F("quantity") * F("unit_price"), output_field=DecimalField(max_digits=14, decimal_places=2))
+        sold_products = (
+            OrderItem.objects.filter(order__status__in=SUCCESSFUL_ORDER_STATUSES)
+            .values("product_name", "product_image")
+            .annotate(units_sold=Sum("quantity"), revenue=Sum(item_revenue))
+            .order_by("-units_sold", "product_name")
+        )
+        monthly_report = (
+            Order.objects.filter(status__in=SUCCESSFUL_ORDER_STATUSES)
+            .annotate(month=TruncMonth("created_at"))
+            .values("month")
+            .annotate(
+                order_count=Count("id"),
+                revenue=Sum("total"),
+                purchase_total=Sum("purchase_value", filter=configured_financials),
+                sale_total=Sum("sale_value", filter=configured_financials),
+                gross_profit=ExpressionWrapper(
+                    Sum("sale_value", filter=configured_financials) - Sum("purchase_value", filter=configured_financials),
+                    output_field=DecimalField(max_digits=14, decimal_places=2),
+                ),
+            )
+            .order_by("-month")[:12]
+        )
+
+    if section_access["clients"]:
+        client_search = request.GET.get("q", "").strip()
+        clients = (
+            User.objects.filter(is_staff=False)
+            .select_related("customer_profile")
+            .prefetch_related("addresses")
+            .annotate(
+                successful_order_count=Count("orders", filter=Q(orders__status__in=SUCCESSFUL_ORDER_STATUSES), distinct=True),
+                total_spent=Sum("orders__total", filter=Q(orders__status__in=SUCCESSFUL_ORDER_STATUSES)),
+            )
+            .order_by("-date_joined")
+        )
+        if client_search:
+            clients = clients.filter(
+                Q(first_name__icontains=client_search)
+                | Q(last_name__icontains=client_search)
+                | Q(username__icontains=client_search)
+                | Q(customer_profile__document_number__icontains=client_search)
+            )
+        client_count = clients.count()
+
+    if section_access["products"]:
+        products = Product.objects.all().order_by("brand", "name")
+        product_count = products.count()
+        low_stock_count = products.filter(stock__lte=5).count()
+
+    if section_access["blog"]:
+        blog_posts = BlogPost.objects.select_related("category").all()
+        published_post_count = blog_posts.filter(is_published=True).count()
+        blog_categories = BlogCategory.objects.all()
+
+    if section_access["marketing"]:
+        top_favorites = Product.objects.filter(is_active=True).annotate(favorite_count=Count("favorited_by")).order_by("-favorite_count", "name")[:6]
+        active_banner_count = HomeBanner.objects.filter(is_active=True).count()
+        active_popup_count = MarketingPopup.objects.filter(is_active=True).count()
+        active_coupon_count = Coupon.objects.filter(is_active=True).count()
+        pending_contact_count = ContactRequest.objects.filter(status=ContactRequest.Status.NEW).count()
+        pending_blog_comments = BlogComment.objects.filter(is_approved=False).select_related("post")[:5]
+        pending_reviews = ProductReview.objects.filter(is_approved=False).select_related("product")[:5]
+        pending_blog_comment_count = BlogComment.objects.filter(is_approved=False).count()
+        pending_review_count = ProductReview.objects.filter(is_approved=False).count()
+        recent_contact_requests = ContactRequest.objects.all()[:5]
+
     marketing_notification_count = pending_blog_comment_count + pending_review_count
-    recent_contact_requests = ContactRequest.objects.all()[:5]
 
     return render(request, "store/admin-dashboard.html", {
         "section": section,
+        "section_access": section_access,
         "successful_orders": successful_orders,
         "successful_order_count": successful_order_count,
         "sold_products": sold_products,
@@ -373,18 +442,18 @@ def admin_dashboard(request):
         "total_revenue": total_revenue,
         "average_ticket": average_ticket,
         "gross_profit_total": gross_profit_total,
-        "pending_order_count": pending_orders.count(),
+        "pending_order_count": pending_order_count,
         "pending_revenue": pending_revenue,
-        "client_count": clients.count(),
-        "product_count": products.count(),
-        "low_stock_count": products.filter(stock__lte=5).count(),
+        "client_count": client_count,
+        "product_count": product_count,
+        "low_stock_count": low_stock_count,
         "active_cart_count": Cart.objects.filter(status=Cart.Status.ACTIVE).count(),
         "favorite_count": Favorite.objects.count(),
-        "published_post_count": blog_posts.filter(is_published=True).count(),
+        "published_post_count": published_post_count,
         "top_favorites": top_favorites,
         "products": products,
         "blog_posts": blog_posts,
-        "blog_categories": BlogCategory.objects.all(),
+        "blog_categories": blog_categories,
         "active_banner_count": active_banner_count,
         "active_popup_count": active_popup_count,
         "active_coupon_count": active_coupon_count,
@@ -442,7 +511,7 @@ def account_password_change(request):
 
 @login_required
 def order_detail(request, number):
-    order = get_object_or_404(Order.objects.prefetch_related("items"), number=number, user=request.user)
+    order = get_object_or_404(_order_queryset(), number=number, user=request.user)
     return render(request, "store/order-detail.html", {"order": order})
 
 
@@ -672,14 +741,19 @@ def checkout(request):
     })
 
 
+def _order_queryset():
+    """Pedidos con lo que necesitan la confirmación y el detalle del cliente."""
+    return Order.objects.select_related("user").prefetch_related("items")
+
+
 @login_required
 def order_confirmation(request, number):
-    order = get_object_or_404(Order.objects.prefetch_related("items"), number=number, user=request.user)
+    order = get_object_or_404(_order_queryset(), number=number, user=request.user)
     return render(request, "store/order-confirmation.html", {"order": order})
 
 
 def _user_order(request, number):
-    return get_object_or_404(Order.objects.prefetch_related("items"), number=number, user=request.user)
+    return get_object_or_404(_order_queryset(), number=number, user=request.user)
 
 
 @login_required
@@ -815,11 +889,22 @@ def bold_webhook(request):
 def order_receipt_pdf(request, number):
     order = get_object_or_404(Order.objects.prefetch_related("items"), number=number, user=request.user)
     return FileResponse(
-        build_order_receipt(order),
+        build_order_receipt(order, request),
         as_attachment=True,
         filename=f"comprobante-{order.number}.pdf",
         content_type="application/pdf",
     )
+
+
+def verify_receipt(request, token):
+    """Publica: cualquiera que escanee el QR del comprobante confirma que es autentico.
+
+    Solo se muestran datos no sensibles (numero, fecha, estado y total); nombre,
+    telefono y direccion del cliente no se exponen sin sesion.
+    """
+    number = verify_receipt_token(token)
+    order = Order.objects.filter(number=number).first() if number else None
+    return render(request, "store/receipt-verification.html", {"order": order})
 
 def _cart_payload(cart, request=None):
     cart_items = cart.items.select_related("product").annotate(

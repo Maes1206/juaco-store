@@ -55,6 +55,17 @@
           {{ order.city }}, {{ order.department }}{% if order.postal_code %} · {{ order.postal_code }}{% endif %}<br>
           Tel. {{ order.phone }}
         </p>
+        {% if show_delivery_map and order.delivery_method == 'courier' %}
+        <div class="order-delivery-map">
+          <iframe
+            src="https://www.google.com/maps?q={{ order.map_query|urlencode }}&amp;output=embed"
+            title="Ubicación de entrega: {{ order.full_address }}"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            allowfullscreen
+          ></iframe>
+        </div>
+        {% endif %}
       </div>
       <div class="order-summary-block">
         <h5 class="order-summary-title">Pago</h5>
@@ -77,7 +88,6 @@
             {% else %}
             <p>Completa el pago seguro con Bold para que preparemos tu envío.</p>
             {% endif %}
-            {% if not hide_payment_cta %}<a class="btn-theme order-payment-retry" href="{% url 'order_payment' order.number %}">Pagar con Bold</a>{% endif %}
           </div>
           {% endif %}
         {% elif order.paid_at %}

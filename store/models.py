@@ -485,6 +485,9 @@ class Order(models.Model):
         VOIDED = "VOIDED", "Anulado"
         NO_TRANSACTION_FOUND = "NO_TRANSACTION_FOUND", "Sin intentos de pago"
 
+    # Estados en los que el cobro ya está confirmado y la venta cuenta como exitosa.
+    SUCCESSFUL_STATUSES = (Status.PAID, Status.SHIPPED, Status.DELIVERED)
+
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="orders")
     number = models.CharField("número de pedido", max_length=20, unique=True, editable=False)
     status = models.CharField("estado", max_length=12, choices=Status.choices, default=Status.PENDING, db_index=True)
@@ -551,6 +554,15 @@ class Order(models.Model):
         return " · ".join(parts)
 
     @property
+    def map_query(self):
+        """Dirección en formato apto para geocodificar (Google Maps embed sin API key)."""
+        parts = [self.address_line_1]
+        if self.address_line_2:
+            parts.append(self.address_line_2)
+        parts += [self.city, self.department, "Colombia"]
+        return ", ".join(part for part in parts if part)
+
+    @property
     def gross_profit(self):
         if self.purchase_value is None or self.sale_value is None:
             return None
@@ -567,6 +579,27 @@ class Order(models.Model):
     @property
     def payment_failed(self):
         return self.payment_status in {self.PaymentStatus.REJECTED, self.PaymentStatus.FAILED}
+
+    @property
+    def is_paid(self):
+        return self.status in self.SUCCESSFUL_STATUSES
+
+    @property
+    def payment_state(self):
+        """Resultado del cobro; decide qué confirmación ve el cliente.
+
+        `awaiting` cubre tanto los métodos offline (transferencia, contra entrega)
+        como una compra con pasarela que todavía no registra ningún intento.
+        """
+        if self.is_paid:
+            return "approved"
+        if self.status == self.Status.CANCELLED:
+            return "cancelled"
+        if self.payment_in_progress:
+            return "processing"
+        if self.payment_failed:
+            return "rejected"
+        return "awaiting"
 
     @property
     def fulfillment_steps(self):

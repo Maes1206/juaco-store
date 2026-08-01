@@ -10,12 +10,14 @@ from urllib.error import HTTPError, URLError
 
 from django.contrib import admin
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from . import bold
 from .forms import ProductAdminForm
 from .models import Address, BlogCategory, BlogComment, BlogPost, Cart, CartItem, ContactRequest, Coupon, CouponRedemption, CustomerProfile, Favorite, HomeBanner, MarketingPopup, NewsletterSubscription, Order, OrderItem, Product, ProductReview
+from .receipts import receipt_verification_token
 from .services import apply_payment_status
 from .shipping import DEPARTMENTS, calculate_shipping
 from .stockx import StockXReleaseDate, lookup_release_date
@@ -603,6 +605,31 @@ class StoreFlowTests(TestCase):
         self.client.force_login(owner)
         self.assertEqual(self.client.get(f"/orders/{order.number}/").status_code, 200)
 
+    def test_order_detail_embeds_a_map_for_courier_deliveries_only(self):
+        owner = User.objects.create_user(username="mapa-dueno", password="ClaveSegura123!")
+        courier_order = Order.objects.create(
+            user=owner, number="JS-MAPA-0001", recipient_name="Cliente Mapa", phone="300",
+            address_line_1="Cra 5 # 12-34", address_line_2="Apto 201", department="Huila", city="Neiva",
+            subtotal=1000, total=1000, delivery_method=Order.DeliveryMethod.COURIER,
+        )
+        pickup_order = Order.objects.create(
+            user=owner, number="JS-MAPA-0002", recipient_name="Cliente Mapa", phone="300",
+            address_line_1="Recogida en tienda", department="Huila", city="Neiva",
+            subtotal=1000, total=1000, delivery_method=Order.DeliveryMethod.PICKUP,
+        )
+        self.client.force_login(owner)
+
+        courier_detail = self.client.get(f"/orders/{courier_order.number}/")
+        self.assertContains(courier_detail, "order-delivery-map")
+        self.assertContains(courier_detail, "maps?q=Cra%205%20%23%2012-34%2C%20Apto%20201%2C%20Neiva%2C%20Huila%2C%20Colombia&amp;output=embed")
+
+        pickup_detail = self.client.get(f"/orders/{pickup_order.number}/")
+        self.assertNotContains(pickup_detail, "order-delivery-map")
+
+        # La confirmación no repite el mapa: el detalle del panel es su lugar propio.
+        confirmation = self.client.get(f"/order-confirmation/{courier_order.number}/")
+        self.assertNotContains(confirmation, "order-delivery-map")
+
     def test_order_receipt_pdf_is_downloadable_and_scoped_to_owner(self):
         owner = User.objects.create_user(username="dueno-pdf", password="ClaveSegura123!")
         other = User.objects.create_user(username="ajeno-pdf", password="ClaveSegura123!")
@@ -623,6 +650,60 @@ class StoreFlowTests(TestCase):
         self.assertEqual(response["Content-Type"], "application/pdf")
         self.assertIn(f'filename="comprobante-{order.number}.pdf"', response["Content-Disposition"])
         self.assertTrue(b"".join(response.streaming_content).startswith(b"%PDF"))
+
+    def test_receipt_verification_link_confirms_a_genuine_order(self):
+        owner = User.objects.create_user(username="dueno-qr", password="ClaveSegura123!")
+        order = Order.objects.create(
+            user=owner, number="JS-QR-0001", recipient_name="Cliente QR", phone="300",
+            address_line_1="Calle 1", department="Huila", city="Neiva",
+            subtotal=self.product.price, total=self.product.price, status=Order.Status.PAID,
+        )
+        token = receipt_verification_token(order)
+
+        response = self.client.get(f"/verificar-comprobante/{token}/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Comprobante autentico")
+        self.assertContains(response, order.number)
+        # No se filtran datos personales del cliente en la pagina publica.
+        self.assertNotContains(response, "Cliente QR")
+        self.assertNotContains(response, "Calle 1")
+
+    def test_receipt_verification_rejects_a_tampered_or_unknown_token(self):
+        owner = User.objects.create_user(username="dueno-qr-2", password="ClaveSegura123!")
+        order = Order.objects.create(
+            user=owner, number="JS-QR-0002", recipient_name="Cliente QR 2", phone="300",
+            address_line_1="Calle 1", department="Huila", city="Neiva",
+            subtotal=self.product.price, total=self.product.price,
+        )
+        token = receipt_verification_token(order)
+        tampered = token[:-1] + ("a" if token[-1] != "a" else "b")
+
+        tampered_response = self.client.get(f"/verificar-comprobante/{tampered}/")
+        self.assertContains(tampered_response, "No pudimos validar este comprobante")
+
+        order.delete()
+        deleted_order_response = self.client.get(f"/verificar-comprobante/{token}/")
+        self.assertContains(deleted_order_response, "No pudimos validar este comprobante")
+
+    def test_pdf_receipt_includes_the_verification_qr_code(self):
+        owner = User.objects.create_user(username="dueno-qr-3", password="ClaveSegura123!")
+        order = Order.objects.create(
+            user=owner, number="JS-QR-0003", recipient_name="Cliente QR 3", phone="300",
+            address_line_1="Calle 1", department="Huila", city="Neiva",
+            subtotal=self.product.price, total=self.product.price,
+        )
+        self.client.force_login(owner)
+
+        response = self.client.get(f"/orders/{order.number}/comprobante.pdf")
+
+        self.assertEqual(response.status_code, 200)
+        pdf_bytes = b"".join(response.streaming_content)
+        self.assertTrue(pdf_bytes.startswith(b"%PDF"))
+        # El QR es un grafico vectorial embebido; confirmamos que el PDF creció
+        # respecto a un comprobante sin el bloque de validacion.
+        self.assertGreater(len(pdf_bytes), 3000)
+
     def test_admin_dashboard_requires_staff_and_exposes_management_sections(self):
         regular_user = User.objects.create_user(username="cliente-panel", first_name="Emanuel", last_name="Cantillo", password="ClaveSegura123!")
         CustomerProfile.objects.create(user=regular_user, document_number="1075000000", phone="3001234567")
@@ -680,7 +761,7 @@ class StoreFlowTests(TestCase):
         self.assertContains(clients_response, "cliente-panel")
         self.assertContains(clients_response, "1075000000")
         self.assertContains(clients_response, "Calle 8 # 10-20")
-        self.assertContains(clients_response, "data-client-toggle=")
+        self.assertContains(clients_response, 'data-detail-toggle="client-info-')
         self.assertContains(clients_response, "Nombre, apellido o cedula")
         for query in ("Emanuel", "Cantillo", "1075000000"):
             search_response = self.client.get("/panel-admin/", {"section": "clients", "q": query})
@@ -695,6 +776,48 @@ class StoreFlowTests(TestCase):
         self.assertEqual(client_record.total_spent, self.product.price * 2)
         self.assertRedirects(self.client.get("/account.html"), "/panel-admin/")
         self.assertRedirects(self.client.get("/account-login.html"), "/panel-admin/")
+
+    def test_admin_panel_hides_client_and_sales_data_from_staff_without_permission(self):
+        """Una cuenta staff creada para moderar el blog no debe leer la base de clientes."""
+        client_user = User.objects.create_user(username="cliente-privado", first_name="Ana", last_name="Reyes", password="ClaveSegura123!")
+        CustomerProfile.objects.create(user=client_user, document_number="1075123456", phone="3009998877")
+        Address.objects.create(
+            user=client_user, label="Casa", first_name="Ana", last_name="Reyes",
+            address_line_1="Calle Secreta 42", department="Huila", city="Neiva",
+            phone="3009998877", is_default=True,
+        )
+        sale = Order.objects.create(
+            user=client_user, number="JS-PERM-0001", status=Order.Status.PAID,
+            recipient_name="Ana Reyes", phone="3009998877", address_line_1="Calle Secreta 42",
+            department="Huila", city="Neiva", subtotal=self.product.price, total=self.product.price,
+        )
+
+        editor = User.objects.create_user(username="editor-blog", password="ClaveSegura123!", is_staff=True)
+        editor.user_permissions.add(Permission.objects.get(codename="view_blogpost", content_type__app_label="store"))
+        self.client.force_login(editor)
+
+        overview = self.client.get("/panel-admin/")
+        self.assertEqual(overview.status_code, 200)
+        self.assertTrue(overview.context["section_access"]["blog"])
+        self.assertFalse(overview.context["section_access"]["clients"])
+        self.assertFalse(overview.context["section_access"]["sales"])
+        # El menú no ofrece las secciones vedadas.
+        self.assertNotContains(overview, 'href="panel-admin/?section=clients#admin-panel-content"')
+        self.assertNotContains(overview, 'href="panel-admin/?section=sales#admin-panel-content"')
+
+        # Pedirlas por URL cae al resumen, sin cargar ni filtrar los datos.
+        for blocked in ("clients", "sales", "reports"):
+            response = self.client.get(f"/panel-admin/?section={blocked}")
+            self.assertEqual(response.context["section"], "overview")
+            self.assertNotContains(response, "1075123456")
+            self.assertNotContains(response, "Calle Secreta 42")
+            self.assertNotContains(response, sale.number)
+        self.assertEqual(list(overview.context["clients"]), [])
+        self.assertEqual(list(overview.context["successful_orders"]), [])
+
+        # Su propia sección sigue funcionando.
+        blog_response = self.client.get("/panel-admin/?section=blog")
+        self.assertEqual(blog_response.context["section"], "blog")
 
     def test_account_details_save_assistance_profile(self):
         user = User.objects.create_user(
@@ -1461,8 +1584,8 @@ class BoldPaymentTests(TestCase):
         response = self._webhook_request({"type": "VOID_REJECTED", "data": {"metadata": {"reference": "JS-0000-1"}}})
         self.assertEqual(response.status_code, 200)
 
-    @override_settings(BOLD_TEST_MODE=True)
-    def test_test_mode_accepts_the_empty_key_signature(self):
+    @override_settings(BOLD_ALLOW_UNSIGNED_WEBHOOKS=True)
+    def test_sandbox_flag_accepts_the_empty_key_signature(self):
         _, order = self._place_bold_order()
         self.client.get(f"/pago/{order.number}/")
         order.refresh_from_db()
@@ -1473,6 +1596,25 @@ class BoldPaymentTests(TestCase):
         self.assertEqual(response.status_code, 200)
         order.refresh_from_db()
         self.assertEqual(order.status, Order.Status.PAID)
+
+    @override_settings(BOLD_TEST_MODE=True, BOLD_ALLOW_UNSIGNED_WEBHOOKS=False)
+    def test_test_mode_alone_does_not_accept_an_unsigned_webhook(self):
+        """El aviso de pruebas no debe abrir la puerta a marcar pedidos como pagados."""
+        _, order = self._place_bold_order()
+        self.client.get(f"/pago/{order.number}/")
+        order.refresh_from_db()
+        event = {"type": "SALE_APPROVED", "subject": "TX-FORJADA", "data": {"metadata": {"reference": order.payment_reference}}}
+
+        response = self._webhook_request(event, secret="")
+
+        self.assertEqual(response.status_code, 401)
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.PENDING)
+        self.assertFalse(order.stock_reserved)
+
+    @override_settings(BOLD_SECRET_KEY="", BOLD_ALLOW_UNSIGNED_WEBHOOKS=False)
+    def test_webhook_signature_is_never_valid_without_a_secret(self):
+        self.assertFalse(bold.verify_webhook_signature(b"{}", hmac.new(b"", base64.b64encode(b"{}"), hashlib.sha256).hexdigest()))
 
     @override_settings(BOLD_IDENTITY_KEY="", BOLD_SECRET_KEY="")
     def test_checkout_hides_bold_when_the_gateway_is_not_configured(self):
@@ -1715,4 +1857,96 @@ class BoldPaymentTests(TestCase):
         self.assertEqual(self.product.stock, stock_before - 1)
         self.assertEqual(cart.status, Cart.Status.CONVERTED)
         self.assertEqual(cart.items.count(), 0)
+
+    def test_confirmation_announces_the_successful_payment_with_its_receipt_data(self):
+        _, order = self._place_bold_order()
+        self.client.get(f"/pago/{order.number}/")
+        order.refresh_from_db()
+        apply_payment_status(order, bold.STATUS_APPROVED, transaction_id="TX-EXITO")
+        order.refresh_from_db()
+
+        page = self.client.get(f"/order-confirmation/{order.number}/")
+
+        self.assertEqual(order.payment_state, "approved")
+        self.assertContains(page, "payment-result--approved")
+        self.assertContains(page, "¡Pago exitoso!")
+        self.assertContains(page, "TX-EXITO")
+        self.assertContains(page, order.payment_reference)
+        self.assertContains(page, "Fecha del pago")
+        # Solo una venta pagada ofrece comprobante y enlace al detalle del panel.
+        self.assertContains(page, f"/orders/{order.number}/comprobante.pdf")
+        self.assertContains(page, f'href="/orders/{order.number}/"')
+        self.assertNotContains(page, "Completar el pago")
+
+    def test_confirmation_of_an_unpaid_order_invites_to_finish_the_payment(self):
+        _, order = self._place_bold_order()
+
+        page = self.client.get(f"/order-confirmation/{order.number}/")
+
+        self.assertContains(page, "payment-result--awaiting")
+        self.assertContains(page, "Completar el pago")
+        self.assertContains(page, f'href="/pago/{order.number}/"')
+        self.assertNotContains(page, "¡Pago exitoso!")
+        self.assertNotContains(page, "comprobante.pdf")
+
+    def test_confirmation_of_a_rejected_payment_offers_a_retry(self):
+        _, order = self._place_bold_order()
+        self.client.get(f"/pago/{order.number}/")
+        order.refresh_from_db()
+        apply_payment_status(order, bold.STATUS_REJECTED)
+
+        page = self.client.get(f"/order-confirmation/{order.number}/")
+
+        self.assertContains(page, "payment-result--rejected")
+        self.assertContains(page, "El pago no se completó")
+        self.assertContains(page, "Reintentar el pago")
+
+    def test_account_panel_links_the_paid_order_to_its_detail_view(self):
+        _, order = self._place_bold_order()
+        self.client.get(f"/pago/{order.number}/")
+        order.refresh_from_db()
+        apply_payment_status(order, bold.STATUS_APPROVED, transaction_id="TX-PANEL")
+
+        panel = self.client.get("/account.html?tab=orders")
+        detail = self.client.get(f"/orders/{order.number}/")
+
+        self.assertContains(panel, f'href="/orders/{order.number}/"')
+        self.assertNotContains(panel, "Completar pago")
+        self.assertContains(detail, "payment-result--approved")
+        self.assertContains(detail, "¡Pago exitoso!")
+        self.assertContains(detail, "TX-PANEL")
+        self.assertContains(detail, f"/orders/{order.number}/comprobante.pdf")
+
+    def test_account_panel_offers_to_finish_a_pending_gateway_payment(self):
+        _, order = self._place_bold_order()
+
+        panel = self.client.get("/account.html?tab=orders")
+
+        self.assertContains(panel, f'href="/pago/{order.number}/"')
+        self.assertContains(panel, "Completar pago")
+
+    def test_admin_sales_expose_customer_shipping_and_product_images(self):
+        CustomerProfile.objects.create(user=self.user, document_number="1075998877", phone="3005554433")
+        _, order = self._place_bold_order()
+        self.client.get(f"/pago/{order.number}/")
+        order.refresh_from_db()
+        apply_payment_status(order, bold.STATUS_APPROVED, transaction_id="TX-ADMIN")
+
+        staff = User.objects.create_superuser(username="admin-ventas", email="ventas@example.com", password="ClaveSegura123!")
+        self.client.force_login(staff)
+        sales = self.client.get("/panel-admin/?section=sales")
+
+        self.assertContains(sales, f'data-detail-toggle="order-info-{order.id}"')
+        # Cliente
+        self.assertContains(sales, "pagador@example.com")
+        self.assertContains(sales, "1075998877")
+        # Datos de envio del pedido (no de la libreta de direcciones)
+        self.assertContains(sales, "Cra 5 # 12-34")
+        self.assertContains(sales, "Neiva, Huila")
+        self.assertContains(sales, "300 555 4433")
+        # Imagen y variante de cada articulo vendido, y trazas del cobro
+        self.assertContains(sales, self.product.image)
+        self.assertContains(sales, "Talla 40")
+        self.assertContains(sales, "TX-ADMIN")
+        self.assertContains(sales, order.payment_reference)
 

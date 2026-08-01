@@ -193,19 +193,25 @@ def fetch_payment_status(reference):
 
 
 def _webhook_keys():
-    """En modo de pruebas Bold firma los eventos con una llave vacía."""
-    keys = [settings.BOLD_SECRET_KEY]
-    if settings.BOLD_TEST_MODE:
+    """Llaves aceptadas para firmar un evento entrante.
+
+    El sandbox de Bold firma con una llave vacía, que no autentica nada: solo se
+    admite cuando BOLD_ALLOW_UNSIGNED_WEBHOOKS está encendido, y settings impide
+    encenderla fuera de desarrollo.
+    """
+    keys = [settings.BOLD_SECRET_KEY] if settings.BOLD_SECRET_KEY else []
+    if settings.BOLD_ALLOW_UNSIGNED_WEBHOOKS:
         keys.append("")
     return keys
 
 
 def verify_webhook_signature(raw_body, signature):
     """HMAC-SHA256 de la petición en base64, comparado con la cabecera x-bold-signature."""
-    if not signature:
+    keys = _webhook_keys()
+    if not signature or not keys:
         return False
     encoded_body = base64.b64encode(raw_body)
-    for key in _webhook_keys():
+    for key in keys:
         expected = hmac.new(key.encode("utf-8"), encoded_body, hashlib.sha256).hexdigest()
         if hmac.compare_digest(expected, signature.strip().lower()):
             return True

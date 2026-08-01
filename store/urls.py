@@ -28,6 +28,7 @@ urlpatterns = [
     path("pago/<str:number>/verificar/", views.order_payment_check, name="order_payment_check"),
     path("orders/<str:number>/comprobante.pdf", views.order_receipt_pdf, name="order_receipt_pdf"),
     path("orders/<str:number>/", views.order_detail, name="order_detail"),
+    path("verificar-comprobante/<str:token>/", views.verify_receipt, name="verify_receipt"),
     path("page-not-found.html", views.not_found, name="not_found"),
     path("account-login.html", views.login_view, name="login"),
     path("account-register.html", views.register_view, name="register"),
