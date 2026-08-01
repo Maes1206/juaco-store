@@ -3,10 +3,26 @@ from django import forms
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 
+from . import bold
 from .models import Address, BlogComment, ContactRequest, CustomerProfile, Order, Product, ProductReview
 
 
 User = get_user_model()
+
+
+def default_payment_method():
+    """Se cobra en línea siempre que la pasarela esté disponible."""
+    return Order.PaymentMethod.BOLD if bold.is_configured() else Order.PaymentMethod.BANK_TRANSFER
+
+
+def available_payment_methods():
+    """Métodos ofrecidos en el checkout, con el pago en línea primero."""
+    excluded = {Order.PaymentMethod.CASH_ON_DELIVERY}
+    if not bold.is_configured():
+        excluded.add(Order.PaymentMethod.BOLD)
+    choices = [choice for choice in Order.PaymentMethod.choices if choice[0] not in excluded]
+    default = default_payment_method()
+    return sorted(choices, key=lambda choice: choice[0] != default)
 
 class ProductAdminForm(forms.ModelForm):
     lookup_release_date = forms.BooleanField(
@@ -317,11 +333,7 @@ class CheckoutForm(forms.Form):
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["address"].queryset = user.addresses.all() if user else Address.objects.none()
-        self.fields["payment_method"].choices = [
-            choice
-            for choice in Order.PaymentMethod.choices
-            if choice[0] != Order.PaymentMethod.CASH_ON_DELIVERY
-        ]
+        self.fields["payment_method"].choices = available_payment_methods()
 
     def clean(self):
         cleaned_data = super().clean()

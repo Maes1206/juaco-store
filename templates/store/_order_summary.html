@@ -70,9 +70,20 @@
           </div>
           {% elif order.payment_method == 'bold' %}
           <div class="order-payment-note">
-            <p>Tu pago con Bold quedó registrado como pendiente. Te contactaremos con el enlace de pago seguro.</p>
+            {% if order.payment_in_progress %}
+            <p>Bold está validando tu pago de <strong>{{ order.total|cop }}</strong>. Te confirmamos en cuanto el banco responda.</p>
+            {% elif order.payment_failed %}
+            <p>El pago fue rechazado y el pedido sigue reservado. Puedes reintentarlo con otro medio.</p>
+            {% else %}
+            <p>Completa el pago seguro con Bold para que preparemos tu envío.</p>
+            {% endif %}
+            {% if not hide_payment_cta %}<a class="btn-theme order-payment-retry" href="{% url 'order_payment' order.number %}">Pagar con Bold</a>{% endif %}
           </div>
           {% endif %}
+        {% elif order.paid_at %}
+        <div class="order-payment-note">
+          <p>Pago aprobado el {{ order.paid_at|date:"d M Y, H:i" }}.{% if order.payment_transaction_id %} Transacción <strong>{{ order.payment_transaction_id }}</strong>.{% endif %}</p>
+        </div>
         {% endif %}
       </div>
       {% if order.notes %}

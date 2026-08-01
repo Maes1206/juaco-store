@@ -189,7 +189,7 @@
                     <button class="nav-link{% if active_tab == 'cart' %} active{% endif %}" id="cart-tab" data-bs-toggle="tab" data-bs-target="#cart" type="button" role="tab" aria-controls="cart" aria-selected="false">Mi carrito</button>
                     <button class="nav-link{% if active_tab == 'addresses' %} active{% endif %}" id="addresses-tab" data-bs-toggle="tab" data-bs-target="#addresses" type="button" role="tab" aria-controls="addresses" aria-selected="false">Direcciones</button>
                     <button class="nav-link{% if active_tab == 'account-info' %} active{% endif %}" id="account-info-tab" data-bs-toggle="tab" data-bs-target="#account-info" type="button" role="tab" aria-controls="account-info" aria-selected="false">Datos de la cuenta</button>
-                    <form action="account-logout/" method="post">{% csrf_token %}<button class="nav-link" type="submit">Cerrar sesión</button></form>
+                    <form action="{% url 'logout' %}" method="post" target="_self">{% csrf_token %}<button class="nav-link" type="submit">Cerrar sesión</button></form>
                   </div>
                 </nav>
               </div>

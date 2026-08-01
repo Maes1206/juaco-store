@@ -474,6 +474,17 @@ class Order(models.Model):
         IN_TRANSIT = "in_transit", "En camino"
         DELIVERED = "delivered", "Entregado"
 
+    class PaymentStatus(models.TextChoices):
+        """Estados que reporta Bold para una venta."""
+
+        PROCESSING = "PROCESSING", "En proceso"
+        PENDING = "PENDING", "Pendiente por el banco"
+        APPROVED = "APPROVED", "Aprobado"
+        REJECTED = "REJECTED", "Rechazado"
+        FAILED = "FAILED", "Fallido"
+        VOIDED = "VOIDED", "Anulado"
+        NO_TRANSACTION_FOUND = "NO_TRANSACTION_FOUND", "Sin intentos de pago"
+
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="orders")
     number = models.CharField("número de pedido", max_length=20, unique=True, editable=False)
     status = models.CharField("estado", max_length=12, choices=Status.choices, default=Status.PENDING, db_index=True)
@@ -506,6 +517,17 @@ class Order(models.Model):
     sale_value = models.DecimalField("valor de venta", max_digits=12, decimal_places=2, null=True, blank=True)
     notes = models.TextField("notas del pedido", blank=True)
 
+    # Seguimiento del cobro en la pasarela. La referencia es el identificador que
+    # viaja a Bold e incluye el número de intento para permitir reintentos.
+    payment_reference = models.CharField("referencia de pago", max_length=60, blank=True, db_index=True, editable=False)
+    payment_status = models.CharField("estado del pago", max_length=24, choices=PaymentStatus.choices, blank=True, editable=False)
+    payment_transaction_id = models.CharField("transacción de la pasarela", max_length=80, blank=True, editable=False)
+    payment_attempts = models.PositiveSmallIntegerField("intentos de pago", default=0, editable=False)
+    paid_at = models.DateTimeField("fecha de pago", null=True, blank=True, editable=False)
+    # Los pedidos con pasarela no descuentan inventario ni vacían el carrito hasta
+    # que el pago se aprueba, para no perder la compra si el cliente se devuelve.
+    stock_reserved = models.BooleanField("inventario descontado", default=False, editable=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -533,6 +555,18 @@ class Order(models.Model):
         if self.purchase_value is None or self.sale_value is None:
             return None
         return self.sale_value - self.purchase_value
+
+    @property
+    def awaiting_online_payment(self):
+        return self.payment_method == self.PaymentMethod.BOLD and self.status == self.Status.PENDING
+
+    @property
+    def payment_in_progress(self):
+        return self.payment_status in {self.PaymentStatus.PROCESSING, self.PaymentStatus.PENDING}
+
+    @property
+    def payment_failed(self):
+        return self.payment_status in {self.PaymentStatus.REJECTED, self.PaymentStatus.FAILED}
 
     @property
     def fulfillment_steps(self):

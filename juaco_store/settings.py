@@ -5,6 +5,23 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def load_env_file(path):
+    """Lee un archivo de variables sin sobreescribir las que ya existen en el entorno."""
+    if not path.exists():
+        return
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        name, _, value = line.partition("=")
+        os.environ.setdefault(name.strip(), value.strip().strip("\"'"))
+
+
+# Secretos para `manage.py runserver`. En Docker las variables llegan desde .env
+# vía env_file, por lo que este archivo solo aplica al desarrollo directo.
+load_env_file(BASE_DIR / ".env.local")
+
+
 def env_bool(name, default=False):
     return os.getenv(name, "1" if default else "0").lower() in {"1", "true", "yes", "on"}
 
@@ -127,3 +144,17 @@ STOCKX_CLIENT_SECRET = os.getenv("STOCKX_CLIENT_SECRET", "")
 STOCKX_REFRESH_TOKEN = os.getenv("STOCKX_REFRESH_TOKEN", "")
 STOCKX_ACCESS_TOKEN = os.getenv("STOCKX_ACCESS_TOKEN", "")
 STOCKX_TIMEOUT_SECONDS = int(os.getenv("STOCKX_TIMEOUT_SECONDS", "5"))
+
+# Pasarela de pagos Bold (https://developers.bold.co). Sin llaves configuradas el
+# método "Pago con Bold" no se ofrece en el checkout.
+BOLD_IDENTITY_KEY = os.getenv("BOLD_IDENTITY_KEY", "")
+BOLD_SECRET_KEY = os.getenv("BOLD_SECRET_KEY", "")
+# En modo de pruebas Bold firma los webhooks con una llave vacía.
+BOLD_TEST_MODE = env_bool("BOLD_TEST_MODE", True)
+BOLD_CURRENCY = os.getenv("BOLD_CURRENCY", "COP")
+BOLD_API_BASE_URL = os.getenv("BOLD_API_BASE_URL", "https://payments.api.bold.co").rstrip("/")
+BOLD_CHECKOUT_SCRIPT_URL = os.getenv("BOLD_CHECKOUT_SCRIPT_URL", "https://checkout.bold.co/library/boldPaymentButton.js")
+BOLD_TIMEOUT_SECONDS = int(os.getenv("BOLD_TIMEOUT_SECONDS", "10"))
+# Dominio HTTPS público (túnel o producción) para el retorno y el webhook de Bold.
+BOLD_PUBLIC_BASE_URL = os.getenv("BOLD_PUBLIC_BASE_URL", "").rstrip("/")
+

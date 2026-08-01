@@ -1,14 +1,22 @@
+import base64
+import hashlib
+import hmac
+import io
 import json
 from datetime import date, timedelta
+from decimal import Decimal
 from unittest.mock import MagicMock, patch
+from urllib.error import HTTPError, URLError
 
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.utils import timezone
 
+from . import bold
 from .forms import ProductAdminForm
 from .models import Address, BlogCategory, BlogComment, BlogPost, Cart, CartItem, ContactRequest, Coupon, CouponRedemption, CustomerProfile, Favorite, HomeBanner, MarketingPopup, NewsletterSubscription, Order, OrderItem, Product, ProductReview
+from .services import apply_payment_status
 from .shipping import DEPARTMENTS, calculate_shipping
 from .stockx import StockXReleaseDate, lookup_release_date
 
@@ -1156,3 +1164,555 @@ class StoreFlowTests(TestCase):
         )
         self.assertContains(response, "El peso debe estar entre 0,1 y 30 kg.")
         self.assertNotIn("cart_shipping_quote", self.client.session)
+
+
+@override_settings(
+    BOLD_IDENTITY_KEY="llave-identidad-pruebas",
+    BOLD_SECRET_KEY="llave-secreta-pruebas",
+    BOLD_TEST_MODE=False,
+    BOLD_PUBLIC_BASE_URL="",
+)
+class BoldPaymentTests(TestCase):
+    """Cobro en linea con la pasarela Bold."""
+
+    def setUp(self):
+        self.product = Product.objects.first()
+        self.user = User.objects.create_user(username="pagador", email="pagador@example.com", password="ClaveSegura123!")
+        self.address = Address.objects.create(
+            user=self.user, first_name="Juan", last_name="Correa", address_line_1="Cra 5 # 12-34",
+            department="Huila", city="Neiva", phone="300 555 4433", is_default=True,
+        )
+        self.client.force_login(self.user)
+
+    def _place_bold_order(self, quantity=1):
+        cart = Cart.objects.create(user=self.user, status=Cart.Status.ACTIVE)
+        CartItem.objects.create(cart=cart, product=self.product, quantity=quantity, size="40")
+        response = self.client.post("/shop-checkout.html", {
+            "address": self.address.id,
+            "payment_method": Order.PaymentMethod.BOLD,
+            "accept_terms": "on",
+        })
+        return response, Order.objects.get(user=self.user)
+
+    def _webhook_request(self, event, secret="llave-secreta-pruebas"):
+        body = json.dumps(event).encode("utf-8")
+        signature = hmac.new(secret.encode("utf-8"), base64.b64encode(body), hashlib.sha256).hexdigest()
+        return self.client.post(
+            "/pago/bold/webhook/",
+            data=body,
+            content_type="application/json",
+            headers={"x-bold-signature": signature},
+        )
+
+    def test_integrity_signature_concatenates_reference_amount_currency_and_secret(self):
+        expected = hashlib.sha256(b"inv033439400COPllave-secreta-pruebas").hexdigest()
+        self.assertEqual(bold.integrity_signature("inv0334", 39400, "COP"), expected)
+
+    def test_amount_drops_decimals(self):
+        self.assertEqual(bold.amount_for(Decimal("241000.00")), 241000)
+        self.assertEqual(bold.amount_for(Decimal("1999.60")), 2000)
+
+    def test_checkout_with_bold_sends_the_buyer_to_the_payment_page(self):
+        response, order = self._place_bold_order()
+        self.assertRedirects(response, f"/pago/{order.number}/")
+        self.assertEqual(order.status, Order.Status.PENDING)
+        self.assertEqual(order.payment_method, Order.PaymentMethod.BOLD)
+
+    def test_payment_page_publishes_the_signed_configuration(self):
+        _, order = self._place_bold_order()
+        page = self.client.get(f"/pago/{order.number}/")
+        order.refresh_from_db()
+        amount = bold.amount_for(order.total)
+        self.assertEqual(order.payment_reference, f"{order.number}-1")
+        self.assertContains(page, "llave-identidad-pruebas")
+        self.assertContains(page, bold.integrity_signature(order.payment_reference, amount))
+        self.assertContains(page, "boldPaymentButton.js")
+        # Sin dominio HTTPS publico no se envia retorno automatico a Bold.
+        self.assertNotContains(page, "redirectionUrl")
+        self.assertNotContains(page, "llave-secreta-pruebas")
+
+    def test_payment_page_sends_https_return_url_when_public_domain_is_set(self):
+        _, order = self._place_bold_order()
+        with override_settings(BOLD_PUBLIC_BASE_URL="https://tienda.example.com"):
+            page = self.client.get(f"/pago/{order.number}/")
+        self.assertContains(page, "https://tienda.example.com/pago/bold/retorno/")
+
+    def test_rejected_payment_gets_a_new_reference_on_retry(self):
+        _, order = self._place_bold_order()
+        self.client.get(f"/pago/{order.number}/")
+        order.refresh_from_db()
+        first_reference = order.payment_reference
+
+        apply_payment_status(order, bold.STATUS_REJECTED, transaction_id="TX-1")
+        self.client.get(f"/pago/{order.number}/")
+        order.refresh_from_db()
+
+        self.assertEqual(first_reference, f"{order.number}-1")
+        self.assertEqual(order.payment_reference, f"{order.number}-2")
+        self.assertEqual(order.payment_status, "")
+        self.assertEqual(order.status, Order.Status.PENDING)
+
+    def test_processing_payment_keeps_the_same_reference(self):
+        _, order = self._place_bold_order()
+        self.client.get(f"/pago/{order.number}/")
+        order.refresh_from_db()
+        apply_payment_status(order, bold.STATUS_PROCESSING)
+        self.client.get(f"/pago/{order.number}/")
+        order.refresh_from_db()
+        self.assertEqual(order.payment_reference, f"{order.number}-1")
+
+    def test_manual_check_marks_the_order_as_paid(self):
+        _, order = self._place_bold_order()
+        self.client.get(f"/pago/{order.number}/")
+        order.refresh_from_db()
+
+        voucher = {"payment_status": "APPROVED", "transaction_id": "TX-APROBADA", "reference_id": order.payment_reference}
+        with patch("store.bold.fetch_payment_status", return_value=voucher) as fetch:
+            response = self.client.post(f"/pago/{order.number}/verificar/", follow=True)
+
+        fetch.assert_called_once_with(order.payment_reference)
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.PAID)
+        self.assertEqual(order.payment_status, Order.PaymentStatus.APPROVED)
+        self.assertEqual(order.payment_transaction_id, "TX-APROBADA")
+        self.assertIsNotNone(order.paid_at)
+        self.assertContains(response, "Pago aprobado")
+
+    def test_manual_check_keeps_the_order_pending_when_bold_rejects(self):
+        _, order = self._place_bold_order()
+        self.client.get(f"/pago/{order.number}/")
+        order.refresh_from_db()
+
+        with patch("store.bold.fetch_payment_status", return_value={"payment_status": "REJECTED"}):
+            response = self.client.post(f"/pago/{order.number}/verificar/")
+
+        order.refresh_from_db()
+        self.assertRedirects(response, f"/pago/{order.number}/", fetch_redirect_response=False)
+        self.assertEqual(order.status, Order.Status.PENDING)
+        self.assertEqual(order.payment_status, Order.PaymentStatus.REJECTED)
+
+    def test_manual_check_reports_a_gateway_failure_without_touching_the_order(self):
+        _, order = self._place_bold_order()
+        self.client.get(f"/pago/{order.number}/")
+
+        with patch("store.bold.fetch_payment_status", side_effect=bold.BoldRequestError("Bold no responde.")):
+            response = self.client.post(f"/pago/{order.number}/verificar/", follow=True)
+
+        order.refresh_from_db()
+        self.assertEqual(response.redirect_chain[-1][0], f"/pago/{order.number}/")
+        self.assertEqual(order.status, Order.Status.PENDING)
+        self.assertEqual(order.payment_status, "")
+        self.assertContains(response, "Bold no responde.")
+
+    def test_status_endpoint_reports_approved_and_records_it(self):
+        _, order = self._place_bold_order()
+        self.client.get(f"/pago/{order.number}/")
+        order.refresh_from_db()
+
+        with patch("store.bold.fetch_payment_status", return_value={"payment_status": "APPROVED", "transaction_id": "TX-POLL"}):
+            response = self.client.get(f"/pago/{order.number}/estado/")
+
+        self.assertEqual(response.json(), {"outcome": "resolved", "redirect": f"/order-confirmation/{order.number}/"})
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.PAID)
+
+    def test_status_endpoint_reports_rejected_without_redirecting(self):
+        _, order = self._place_bold_order()
+        self.client.get(f"/pago/{order.number}/")
+
+        with patch("store.bold.fetch_payment_status", return_value={"payment_status": "REJECTED"}):
+            response = self.client.get(f"/pago/{order.number}/estado/")
+
+        self.assertEqual(response.json(), {"outcome": "rejected"})
+
+    def test_status_endpoint_reports_pending_while_bold_has_nothing_yet(self):
+        _, order = self._place_bold_order()
+        self.client.get(f"/pago/{order.number}/")
+
+        with patch("store.bold.fetch_payment_status", return_value={"payment_status": "NO_TRANSACTION_FOUND"}):
+            response = self.client.get(f"/pago/{order.number}/estado/")
+
+        self.assertEqual(response.json(), {"outcome": "pending"})
+
+    def test_status_endpoint_reports_pending_on_gateway_hiccup_instead_of_erroring(self):
+        _, order = self._place_bold_order()
+        self.client.get(f"/pago/{order.number}/")
+
+        with patch("store.bold.fetch_payment_status", side_effect=bold.BoldRequestError("Bold no responde.")):
+            response = self.client.get(f"/pago/{order.number}/estado/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"outcome": "pending"})
+
+    def test_status_endpoint_short_circuits_once_already_resolved(self):
+        _, order = self._place_bold_order()
+        apply_payment_status(order, bold.STATUS_APPROVED, transaction_id="TX-YA-PAGADA")
+
+        with patch("store.bold.fetch_payment_status") as fetch:
+            response = self.client.get(f"/pago/{order.number}/estado/")
+
+        fetch.assert_not_called()
+        self.assertEqual(response.json(), {"outcome": "resolved", "redirect": f"/order-confirmation/{order.number}/"})
+
+    def test_status_endpoint_is_private_to_its_owner(self):
+        _, order = self._place_bold_order()
+        other = User.objects.create_user(username="curioso-estado", password="ClaveSegura123!")
+        self.client.force_login(other)
+        self.assertEqual(self.client.get(f"/pago/{order.number}/estado/").status_code, 404)
+
+    def test_return_url_confirms_the_payment_against_the_api(self):
+        _, order = self._place_bold_order()
+        self.client.get(f"/pago/{order.number}/")
+        order.refresh_from_db()
+
+        voucher = {"payment_status": "APPROVED", "transaction_id": "TX-RETORNO"}
+        with patch("store.bold.fetch_payment_status", return_value=voucher):
+            response = self.client.get("/pago/bold/retorno/", {
+                "bold-order-id": order.payment_reference,
+                "bold-tx-status": "approved",
+            })
+
+        self.assertRedirects(response, f"/order-confirmation/{order.number}/")
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.PAID)
+
+    def test_return_url_ignores_a_status_that_bold_does_not_confirm(self):
+        """La URL de retorno es manipulable: el estado siempre se consulta en la API."""
+        _, order = self._place_bold_order()
+        self.client.get(f"/pago/{order.number}/")
+        order.refresh_from_db()
+
+        with patch("store.bold.fetch_payment_status", return_value={"payment_status": "REJECTED"}):
+            self.client.get("/pago/bold/retorno/", {
+                "bold-order-id": order.payment_reference,
+                "bold-tx-status": "approved",
+            })
+
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.PENDING)
+        self.assertEqual(order.payment_status, Order.PaymentStatus.REJECTED)
+
+    def test_webhook_approves_the_order_and_is_idempotent(self):
+        _, order = self._place_bold_order()
+        self.client.get(f"/pago/{order.number}/")
+        order.refresh_from_db()
+        event = {
+            "id": "b8f0c1e4",
+            "type": "SALE_APPROVED",
+            "subject": "TX-WEBHOOK",
+            "data": {"payment_id": "TX-WEBHOOK", "metadata": {"reference": order.payment_reference}},
+        }
+
+        first = self._webhook_request(event)
+        order.refresh_from_db()
+        paid_at = order.paid_at
+        second = self._webhook_request(event)
+        order.refresh_from_db()
+
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(order.status, Order.Status.PAID)
+        self.assertEqual(order.payment_transaction_id, "TX-WEBHOOK")
+        self.assertEqual(order.paid_at, paid_at)
+
+    def test_webhook_rejects_an_invalid_signature(self):
+        _, order = self._place_bold_order()
+        self.client.get(f"/pago/{order.number}/")
+        order.refresh_from_db()
+        event = {"type": "SALE_APPROVED", "data": {"metadata": {"reference": order.payment_reference}}}
+
+        response = self._webhook_request(event, secret="llave-que-no-es-la-nuestra")
+
+        self.assertEqual(response.status_code, 401)
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.PENDING)
+
+    def test_webhook_void_cancels_the_order_and_returns_the_stock(self):
+        stock_before = self.product.stock
+        _, order = self._place_bold_order(quantity=2)
+        self.client.get(f"/pago/{order.number}/")
+        order.refresh_from_db()
+        self.product.refresh_from_db()
+        # Crear el pedido no toca el inventario: aún no hay pago.
+        self.assertEqual(self.product.stock, stock_before)
+
+        self._webhook_request({
+            "type": "SALE_APPROVED",
+            "subject": "TX-ANULABLE",
+            "data": {"metadata": {"reference": order.payment_reference}},
+        })
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.stock, stock_before - 2)
+
+        self._webhook_request({
+            "type": "VOID_APPROVED",
+            "subject": "TX-ANULABLE",
+            "data": {"metadata": {"reference": order.payment_reference}},
+        })
+
+        order.refresh_from_db()
+        self.product.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.CANCELLED)
+        self.assertEqual(order.payment_status, Order.PaymentStatus.VOIDED)
+        self.assertFalse(order.stock_reserved)
+        self.assertEqual(self.product.stock, stock_before)
+
+    def test_webhook_accepts_events_without_effect(self):
+        response = self._webhook_request({"type": "VOID_REJECTED", "data": {"metadata": {"reference": "JS-0000-1"}}})
+        self.assertEqual(response.status_code, 200)
+
+    @override_settings(BOLD_TEST_MODE=True)
+    def test_test_mode_accepts_the_empty_key_signature(self):
+        _, order = self._place_bold_order()
+        self.client.get(f"/pago/{order.number}/")
+        order.refresh_from_db()
+        event = {"type": "SALE_APPROVED", "subject": "TX-SANDBOX", "data": {"metadata": {"reference": order.payment_reference}}}
+
+        response = self._webhook_request(event, secret="")
+
+        self.assertEqual(response.status_code, 200)
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.PAID)
+
+    @override_settings(BOLD_IDENTITY_KEY="", BOLD_SECRET_KEY="")
+    def test_checkout_hides_bold_when_the_gateway_is_not_configured(self):
+        cart = Cart.objects.create(user=self.user, status=Cart.Status.ACTIVE)
+        CartItem.objects.create(cart=cart, product=self.product, quantity=1, size="40")
+        page = self.client.get("/shop-checkout.html")
+        self.assertNotContains(page, 'value="bold"')
+        self.assertContains(page, 'value="bank_transfer"')
+
+    def test_paid_order_cannot_be_paid_again(self):
+        _, order = self._place_bold_order()
+        apply_payment_status(order, bold.STATUS_APPROVED, transaction_id="TX-YA-PAGADA")
+        response = self.client.get(f"/pago/{order.number}/", follow=True)
+        self.assertRedirects(response, f"/order-confirmation/{order.number}/")
+        self.assertContains(response, "ya no est")
+
+    def test_payment_page_is_private_to_its_owner(self):
+        _, order = self._place_bold_order()
+        other = User.objects.create_user(username="curioso", password="ClaveSegura123!")
+        self.client.force_login(other)
+        self.assertEqual(self.client.get(f"/pago/{order.number}/").status_code, 404)
+
+
+    def _urlopen_response(self, body):
+        response = MagicMock()
+        response.read.return_value = json.dumps(body).encode("utf-8")
+        response.__enter__ = lambda self_: self_
+        response.__exit__ = lambda *args: False
+        return response
+
+    def _http_error(self, code, body):
+        return HTTPError("https://payments.api.bold.co", code, "error", {}, io.BytesIO(body.encode("utf-8")))
+
+    def test_voucher_query_unwraps_the_payload_envelope(self):
+        body = {"payload": {"payment_status": "APPROVED", "transaction_id": "TX-9", "total": 235000}, "errors": []}
+        with patch("store.bold.urlopen", return_value=self._urlopen_response(body)) as opener:
+            voucher = bold.fetch_payment_status("JS-1-1")
+
+        sent = opener.call_args.args[0]
+        self.assertEqual(sent.full_url, "https://payments.api.bold.co/v2/payment-voucher/JS-1-1")
+        self.assertEqual(sent.get_header("Authorization"), "x-api-key llave-identidad-pruebas")
+        self.assertEqual(voucher["payment_status"], "APPROVED")
+        self.assertEqual(voucher["transaction_id"], "TX-9")
+
+    def test_voucher_query_reports_no_transaction_when_bold_has_no_payment_yet(self):
+        # Bold responde 400 con un error de validaciÃ³n mientras nadie ha pagado.
+        error = self._http_error(400, '{"payload": {}, "errors": [{"message": "1 validation error"}]}')
+        with patch("store.bold.urlopen", side_effect=error):
+            voucher = bold.fetch_payment_status("JS-1-1")
+        self.assertEqual(voucher["payment_status"], bold.STATUS_NO_TRANSACTION)
+
+    def test_voucher_query_raises_when_bold_rejects_the_key(self):
+        with patch("store.bold.urlopen", side_effect=self._http_error(401, '{"errors": ["unauthorized"]}')):
+            with self.assertRaises(bold.BoldRequestError):
+                bold.fetch_payment_status("JS-1-1")
+
+    def test_voucher_query_raises_on_network_failure(self):
+        with patch("store.bold.urlopen", side_effect=URLError("timeout")):
+            with self.assertRaises(bold.BoldRequestError):
+                bold.fetch_payment_status("JS-1-1")
+
+
+    def test_bold_is_the_preselected_payment_method(self):
+        cart = Cart.objects.create(user=self.user, status=Cart.Status.ACTIVE)
+        CartItem.objects.create(cart=cart, product=self.product, quantity=1, size="40")
+        page = self.client.get("/shop-checkout.html")
+        self.assertContains(page, '<input type="radio" name="payment_method" value="bold" checked>', html=False)
+        self.assertNotContains(page, '<input type="radio" name="payment_method" value="bank_transfer" checked>')
+
+    @override_settings(BOLD_IDENTITY_KEY="", BOLD_SECRET_KEY="")
+    def test_bank_transfer_is_preselected_without_the_gateway(self):
+        cart = Cart.objects.create(user=self.user, status=Cart.Status.ACTIVE)
+        CartItem.objects.create(cart=cart, product=self.product, quantity=1, size="40")
+        page = self.client.get("/shop-checkout.html")
+        self.assertContains(page, '<input type="radio" name="payment_method" value="bank_transfer" checked>')
+
+    def test_checkout_keeps_the_chosen_method_when_the_form_has_errors(self):
+        cart = Cart.objects.create(user=self.user, status=Cart.Status.ACTIVE)
+        CartItem.objects.create(cart=cart, product=self.product, quantity=1, size="40")
+        # Sin aceptar los tÃ©rminos el formulario se vuelve a mostrar.
+        page = self.client.post("/shop-checkout.html", {
+            "address": self.address.id,
+            "payment_method": Order.PaymentMethod.BANK_TRANSFER,
+        })
+        self.assertContains(page, '<input type="radio" name="payment_method" value="bank_transfer" checked>')
+        self.assertFalse(Order.objects.filter(user=self.user).exists())
+
+    def test_pickup_order_also_goes_through_the_gateway(self):
+        cart = Cart.objects.create(user=self.user, status=Cart.Status.ACTIVE)
+        CartItem.objects.create(cart=cart, product=self.product, quantity=1, size="40")
+        response = self.client.post("/shop-checkout.html", {
+            "delivery_method": "pickup",
+            "payment_method": Order.PaymentMethod.BOLD,
+            "accept_terms": "on",
+        })
+        order = Order.objects.get(user=self.user)
+        self.assertRedirects(response, f"/pago/{order.number}/", fetch_redirect_response=False)
+        self.assertEqual(order.delivery_method, Order.DeliveryMethod.PICKUP)
+        self.assertEqual(order.shipping_cost, Decimal("0"))
+        self.assertEqual(order.total, self.product.price)
+
+
+    def test_cart_survives_an_unpaid_bold_order(self):
+        """Si el cliente se devuelve sin pagar, su carrito sigue completo."""
+        stock_before = self.product.stock
+        _, order = self._place_bold_order(quantity=2)
+
+        cart = Cart.objects.get(user=self.user, status=Cart.Status.ACTIVE)
+        self.product.refresh_from_db()
+        self.assertEqual(cart.items.count(), 1)
+        self.assertEqual(cart.item_count, 2)
+        self.assertEqual(self.product.stock, stock_before)
+        self.assertFalse(order.stock_reserved)
+
+        # El resumen del carrito que ve el cliente sigue mostrando el producto.
+        payload = self.client.get("/api/cart/").json()
+        self.assertEqual(payload["count"], 2)
+
+    def test_approved_payment_consumes_the_cart_and_the_stock(self):
+        stock_before = self.product.stock
+        _, order = self._place_bold_order(quantity=2)
+        self.client.get(f"/pago/{order.number}/")
+        order.refresh_from_db()
+
+        with patch("store.bold.fetch_payment_status", return_value={"payment_status": "APPROVED", "transaction_id": "TX-OK"}):
+            self.client.post(f"/pago/{order.number}/verificar/")
+
+        order.refresh_from_db()
+        self.product.refresh_from_db()
+        cart = Cart.objects.get(user=self.user)
+        self.assertEqual(order.status, Order.Status.PAID)
+        self.assertTrue(order.stock_reserved)
+        self.assertEqual(self.product.stock, stock_before - 2)
+        self.assertEqual(cart.status, Cart.Status.CONVERTED)
+        self.assertEqual(cart.items.count(), 0)
+
+    def test_coupon_is_only_redeemed_once_the_payment_is_approved(self):
+        coupon = Coupon.objects.create(
+            code="BOLD15", discount_type=Coupon.DiscountType.PERCENTAGE, value=15,
+            minimum_purchase=1000, starts_at=timezone.now() - timedelta(days=1),
+            expires_at=timezone.now() + timedelta(days=1), once_per_user=True,
+        )
+        cart = Cart.objects.create(user=self.user, status=Cart.Status.ACTIVE)
+        CartItem.objects.create(cart=cart, product=self.product, quantity=1, size="40")
+        self.client.post("/cart-coupon/apply/", {"code": "BOLD15"})
+        self.client.post("/shop-checkout.html", {
+            "address": self.address.id,
+            "payment_method": Order.PaymentMethod.BOLD,
+            "accept_terms": "on",
+        })
+        order = Order.objects.get(user=self.user)
+
+        coupon.refresh_from_db()
+        self.assertEqual(coupon.times_used, 0)
+        self.assertFalse(CouponRedemption.objects.filter(order=order).exists())
+
+        self.client.get(f"/pago/{order.number}/")
+        order.refresh_from_db()
+        with patch("store.bold.fetch_payment_status", return_value={"payment_status": "APPROVED"}):
+            self.client.post(f"/pago/{order.number}/verificar/")
+
+        coupon.refresh_from_db()
+        self.assertEqual(coupon.times_used, 1)
+        self.assertTrue(CouponRedemption.objects.filter(order=order).exists())
+
+    def test_confirming_the_same_cart_twice_reuses_the_pending_order(self):
+        _, first = self._place_bold_order()
+        response = self.client.post("/shop-checkout.html", {
+            "address": self.address.id,
+            "payment_method": Order.PaymentMethod.BOLD,
+            "accept_terms": "on",
+        })
+
+        self.assertEqual(Order.objects.filter(user=self.user).count(), 1)
+        self.assertRedirects(response, f"/pago/{first.number}/", fetch_redirect_response=False)
+
+    def test_a_different_cart_creates_its_own_pending_order(self):
+        _, first = self._place_bold_order()
+        other = Product.objects.exclude(pk=self.product.pk).filter(is_active=True, stock__gt=0).first()
+        cart = Cart.objects.get(user=self.user, status=Cart.Status.ACTIVE)
+        CartItem.objects.create(cart=cart, product=other, quantity=1, size="41")
+
+        self.client.post("/shop-checkout.html", {
+            "address": self.address.id,
+            "payment_method": Order.PaymentMethod.BOLD,
+            "accept_terms": "on",
+        })
+
+        self.assertEqual(Order.objects.filter(user=self.user).count(), 2)
+
+    def test_payment_page_opens_the_gateway_on_a_fresh_arrival_only(self):
+        _, order = self._place_bold_order()
+        page = self.client.get(f"/pago/{order.number}/")
+        body = page.content.decode()
+        # La apertura automática se condiciona al tipo de navegación para que
+        # volver atrás desde Bold no reabra la pasarela en bucle.
+        self.assertIn("checkout.open();", body)
+        self.assertIn("entries[0].type === 'navigate'", body)
+        self.assertIn("if (!isFreshArrival())", body)
+
+    def test_payment_page_is_a_redirect_screen_without_the_order_summary(self):
+        """El resumen ya se vio en el checkout: aquí solo se anuncia la redirección."""
+        _, order = self._place_bold_order()
+        page = self.client.get(f"/pago/{order.number}/")
+
+        self.assertContains(page, "payment-redirect__spinner")
+        self.assertContains(page, "Te estamos llevando a Bold")
+        self.assertContains(page, f"Pedido {order.number}")
+        # Sin tabla de artículos ni bloque de envío duplicados.
+        self.assertNotContains(page, "Artículos del pedido")
+        self.assertNotContains(page, "order-summary-card")
+
+    def test_payment_page_keeps_a_way_out_if_the_redirect_never_happens(self):
+        """Recarga, bloqueo del navegador o caída de Bold: siempre queda un botón."""
+        _, order = self._place_bold_order()
+        body = self.client.get(f"/pago/{order.number}/").content.decode()
+
+        self.assertIn("Tu pedido espera el pago", body)
+        self.assertIn("La pasarela no se abrió sola", body)
+        self.assertIn("Bold no está disponible", body)
+        self.assertIn("data-redirect-actions hidden", body)
+        self.assertIn(f'action="/pago/{order.number}/verificar/"', body)
+
+    def test_offline_payment_still_consumes_the_cart_immediately(self):
+        """La transferencia no pasa por pasarela: se confirma al instante como antes."""
+        stock_before = self.product.stock
+        cart = Cart.objects.create(user=self.user, status=Cart.Status.ACTIVE)
+        CartItem.objects.create(cart=cart, product=self.product, quantity=1, size="40")
+
+        self.client.post("/shop-checkout.html", {
+            "address": self.address.id,
+            "payment_method": Order.PaymentMethod.BANK_TRANSFER,
+            "accept_terms": "on",
+        })
+
+        order = Order.objects.get(user=self.user)
+        cart.refresh_from_db()
+        self.product.refresh_from_db()
+        self.assertTrue(order.stock_reserved)
+        self.assertEqual(self.product.stock, stock_before - 1)
+        self.assertEqual(cart.status, Cart.Status.CONVERTED)
+        self.assertEqual(cart.items.count(), 0)
+

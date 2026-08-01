@@ -1,5 +1,5 @@
 {% extends "store/base.html" %}
-{% load store_extras %}
+{% load l10n store_extras %}
 
 {% block title %}Finalizar compra - Nexus Luxury Footwear{% endblock %}
 
@@ -87,9 +87,9 @@
             <h3 class="checkout-block-title">Método de pago</h3>
             <div class="checkout-payment-list">
               {% for value, label in payment_methods %}
-              <label class="checkout-payment-option{% if forloop.first %} is-selected{% endif %}">
-                <input type="radio" name="payment_method" value="{{ value }}" {% if forloop.first %}checked{% endif %}>
-                <span class="checkout-payment-label">{{ label }}</span>
+              <label class="checkout-payment-option{% if value == selected_payment_method %} is-selected{% endif %}">
+                <input type="radio" name="payment_method" value="{{ value }}" {% if value == selected_payment_method %}checked{% endif %}>
+                <span class="checkout-payment-label">{{ label }}{% if value == 'bold' %} <small>Tarjeta, PSE, Nequi o Bancolombia</small>{% endif %}</span>
               </label>
               {% endfor %}
             </div>
@@ -119,9 +119,9 @@
 {% if coupon %}<div class="row-line checkout-discount"><span>Cupon {{ coupon.code }}</span><span>-{{ discount|cop }}</span></div>{% endif %}
               <div class="row-line">
                 <span data-delivery-summary-label>{% if form.delivery_method.value == 'pickup' %}Recogida en Neiva, Huila{% else %}Envío{% endif %}</span>
-                <span data-checkout-shipping data-courier-cost="{{ shipping_cost }}">{% if form.delivery_method.value == 'pickup' %}Gratis{% elif shipping_cost > 0 %}{{ shipping_cost|cop }}{% else %}Gratis{% endif %}</span>
+                <span data-checkout-shipping data-courier-cost="{{ shipping_cost|unlocalize }}">{% if form.delivery_method.value == 'pickup' %}Gratis{% elif shipping_cost > 0 %}{{ shipping_cost|cop }}{% else %}Gratis{% endif %}</span>
               </div>
-              <div class="row-line row-total"><span>Total</span><span data-checkout-total data-courier-total="{{ total }}" data-subtotal="{{ subtotal }}" data-discount="{{ discount }}">{{ total|cop }}</span></div>
+              <div class="row-line row-total"><span>Total</span><span data-checkout-total data-courier-total="{{ total|unlocalize }}" data-subtotal="{{ subtotal|unlocalize }}" data-discount="{{ discount|unlocalize }}">{{ total|cop }}</span></div>
             </div>
             {% if shipping_cost > 0 %}
             <p class="checkout-shipping-hint" data-shipping-hint{% if form.delivery_method.value == 'pickup' %} hidden{% endif %}>Envío gratis en compras superiores a {{ free_shipping_threshold|cop }}.</p>

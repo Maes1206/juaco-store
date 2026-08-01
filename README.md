@@ -14,6 +14,8 @@ python manage.py runserver
 
 La aplicación queda disponible en `http://127.0.0.1:8000/`.
 
+Los secretos del entorno local van en `.env.local` (ignorado por git); Docker sigue leyendo `.env`.
+
 ## Docker
 
 ```powershell
@@ -32,10 +34,35 @@ Docker inicia PostgreSQL, ejecuta las migraciones y deja la aplicación en `http
 - Catálogo inicial administrable desde Django Admin.
 - Favoritos persistentes por usuario, con movimiento al carrito.
 
+## Pagos con Bold
+
+El checkout cobra en línea con el [botón de pagos de Bold](https://developers.bold.co/pagos-en-linea/boton-de-pagos). Si `BOLD_IDENTITY_KEY` o `BOLD_SECRET_KEY` están vacías, el método «Pago con Bold» no se ofrece y el resto del checkout sigue igual.
+
+Flujo:
+
+1. El comprador elige «Pago con Bold» y el pedido se crea en estado *Pendiente de pago* (el inventario queda reservado).
+2. `/pago/<numero>/` firma el cobro en el servidor (SHA256 de `referencia + monto + moneda + llave secreta`) y abre la pasarela. La llave secreta nunca llega al navegador.
+3. Bold devuelve al comprador a `/pago/bold/retorno/`. El estado de la URL solo sirve de pista: el pedido se actualiza consultando `GET /v2/payment-voucher/<referencia>`.
+4. `/pago/bold/webhook/` recibe `SALE_APPROVED`, `SALE_REJECTED` y `VOID_APPROVED`, valida la cabecera `x-bold-signature` (HMAC-SHA256 del cuerpo en base64) y es idempotente ante reintentos. Una anulación cancela el pedido y devuelve el inventario.
+5. Cada intento usa una referencia propia (`JS-20260801-0001-1`, `-2`, …): tras un rechazo el comprador puede reintentar.
+
+Configuración:
+
+| Variable | Uso |
+| --- | --- |
+| `BOLD_IDENTITY_KEY` | Llave de identidad; viaja al navegador y autentica la consulta de estado. |
+| `BOLD_SECRET_KEY` | Llave secreta; solo firma cobros y valida webhooks. |
+| `BOLD_TEST_MODE` | `1` con llaves de prueba. En pruebas Bold firma los webhooks con llave vacía. |
+| `BOLD_PUBLIC_BASE_URL` | Dominio HTTPS público para el retorno y el webhook. |
+
+Bold exige HTTPS en la URL de retorno, así que en `http://localhost` no se envía: la página de pago ofrece «Ya pagué, verificar», que consulta la API y confirma el pedido. Para probar el retorno y el webhook en local, expón el puerto con un túnel HTTPS y pon esa URL en `BOLD_PUBLIC_BASE_URL`; registra `<dominio>/pago/bold/webhook/` en el panel de Bold.
+
+Tarjetas del [ambiente de pruebas](https://developers.bold.co/pagos-en-linea/boton-de-pagos/ambiente-pruebas): `4111111111111111` aprueba, `4970110000000062` rechaza y `5204730000008404` falla. Las referencias de prueba expiran a las 12 horas.
+
 ## Producción
 
 1. Copia `.env.example` a `.env` y reemplaza todas las claves marcadas con `CAMBIA`.
-2. Configura `DJANGO_ALLOWED_HOSTS` y `DJANGO_CSRF_TRUSTED_ORIGINS` con el dominio HTTPS real.
+2. Configura `DJANGO_ALLOWED_HOSTS`, `DJANGO_CSRF_TRUSTED_ORIGINS` y `BOLD_PUBLIC_BASE_URL` con el dominio HTTPS real, y cambia las llaves de Bold por las de producción con `BOLD_TEST_MODE=0`.
 3. Publica el contenedor detrás de un proxy TLS que envíe `X-Forwarded-Proto: https`.
 4. Ejecuta `docker compose -f docker-compose.yml up -d --build`; así se omite el archivo local `docker-compose.override.yml`, se usa Gunicorn y el arranque aplica migraciones y recopila estáticos.
 5. Comprueba el estado con `docker compose ps` y los logs con `docker compose logs -f web`.

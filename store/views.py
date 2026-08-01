@@ -1,7 +1,9 @@
 import json
+import logging
 from types import SimpleNamespace
 from decimal import Decimal
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
@@ -10,19 +12,23 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.http import FileResponse, Http404, JsonResponse
 from django.db.models import Avg, Count, DecimalField, ExpressionWrapper, F, Prefetch, Q, Sum
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.db.models.functions import TruncMonth
 from django.views.decorators.http import require_http_methods, require_POST
-from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 
-from .forms import AccountDetailsForm, AddressForm, BlogCommentForm, CheckoutForm, ContactRequestForm, EmailOrUsernameAuthenticationForm, NewsletterSubscriptionForm, ProductReviewForm, RegisterForm
+from . import bold
+from .forms import AccountDetailsForm, AddressForm, BlogCommentForm, CheckoutForm, ContactRequestForm, EmailOrUsernameAuthenticationForm, NewsletterSubscriptionForm, ProductReviewForm, RegisterForm, available_payment_methods, default_payment_method
 from .models import Address, BlogCategory, BlogComment, BlogPost, Cart, CartItem, ContactRequest, Coupon, CustomerProfile, Favorite, HomeBanner, MarketingPopup, NewsletterSubscription, Order, OrderItem, Product, ProductReview
 from .search import UnifiedSearchService
-from .services import FREE_SHIPPING_THRESHOLD, CouponError, CheckoutError, coupon_totals, create_order_from_cart, ensure_session_key, get_cart, shipping_cost_for
+from .services import FREE_SHIPPING_THRESHOLD, CouponError, CheckoutError, PaymentError, apply_payment_status, coupon_totals, create_order_from_cart, ensure_payment_reference, ensure_session_key, get_cart, shipping_cost_for, sync_payment_status
 from .receipts import build_order_receipt
 from .shipping import DEPARTMENTS, DESTINATIONS, calculate_shipping
 
+
+logger = logging.getLogger(__name__)
 
 PUBLIC_TEMPLATES = {
     "home": "index.html",
@@ -638,11 +644,13 @@ def checkout(request):
                 return redirect("checkout")
             request.session.pop(COUPON_SESSION_KEY, None)
             request.session.pop(SHIPPING_QUOTE_SESSION_KEY, None)
+            if order.awaiting_online_payment and bold.is_configured():
+                return redirect("order_payment", number=order.number)
             return redirect("order_confirmation", number=order.number)
     else:
         initial_delivery = "pickup" if shipping_quote and shipping_quote.get("method") == "pickup" else "courier"
         form = CheckoutForm(user=request.user, initial={
-            "payment_method": Order.PaymentMethod.BANK_TRANSFER,
+            "payment_method": default_payment_method(),
             "delivery_method": initial_delivery,
         })
 
@@ -652,11 +660,8 @@ def checkout(request):
         "addresses": addresses,
         "default_address": addresses.filter(is_default=True).first() or addresses.first(),
         "form": form,
-        "payment_methods": [
-            choice
-            for choice in Order.PaymentMethod.choices
-            if choice[0] != Order.PaymentMethod.CASH_ON_DELIVERY
-        ],
+        "payment_methods": available_payment_methods(),
+        "selected_payment_method": form["payment_method"].value() or default_payment_method(),
         "subtotal": subtotal,
         "shipping_cost": shipping,
         "shipping_quote": shipping_quote,
@@ -671,6 +676,139 @@ def checkout(request):
 def order_confirmation(request, number):
     order = get_object_or_404(Order.objects.prefetch_related("items"), number=number, user=request.user)
     return render(request, "store/order-confirmation.html", {"order": order})
+
+
+def _user_order(request, number):
+    return get_object_or_404(Order.objects.prefetch_related("items"), number=number, user=request.user)
+
+
+@login_required
+def order_payment(request, number):
+    """Página que abre la pasarela de Bold para un pedido pendiente."""
+    order = _user_order(request, number)
+    if order.payment_method != Order.PaymentMethod.BOLD:
+        return redirect("order_confirmation", number=order.number)
+    if order.status != Order.Status.PENDING:
+        messages.info(request, "Este pedido ya no está pendiente de pago.")
+        return redirect("order_confirmation", number=order.number)
+    if not bold.is_configured():
+        messages.error(request, "El pago en línea no está disponible en este momento. Te contactaremos para completarlo.")
+        return redirect("order_confirmation", number=order.number)
+
+    ensure_payment_reference(order)
+    try:
+        checkout_config = bold.checkout_config(order, request)
+    except bold.BoldNotConfigured as exc:
+        messages.error(request, str(exc))
+        return redirect("order_confirmation", number=order.number)
+
+    return render(request, "store/order-payment.html", {
+        "order": order,
+        "bold_config": checkout_config,
+        "bold_script_url": settings.BOLD_CHECKOUT_SCRIPT_URL,
+        "bold_test_mode": settings.BOLD_TEST_MODE,
+    })
+
+
+@login_required
+def order_payment_status(request, number):
+    """Estado del pago en JSON, para que la página lo consulte sola en segundo plano."""
+    order = _user_order(request, number)
+    if order.payment_method != Order.PaymentMethod.BOLD:
+        return JsonResponse({"outcome": "not_applicable"})
+    if order.status != Order.Status.PENDING:
+        return JsonResponse({"outcome": "resolved", "redirect": reverse("order_confirmation", args=[order.number])})
+    try:
+        status = sync_payment_status(order)
+    except PaymentError:
+        # Fallo pasajero de red: la próxima consulta automática lo reintenta.
+        return JsonResponse({"outcome": "pending"})
+    if status == bold.STATUS_APPROVED:
+        messages.success(request, f"¡Pago aprobado! Ya estamos preparando el pedido {order.number}.")
+        return JsonResponse({"outcome": "resolved", "redirect": reverse("order_confirmation", args=[order.number])})
+    if status == bold.STATUS_VOIDED:
+        messages.warning(request, "El pago fue anulado y el pedido quedó cancelado.")
+        return JsonResponse({"outcome": "resolved", "redirect": reverse("order_confirmation", args=[order.number])})
+    if status in bold.RETRYABLE_STATUSES:
+        return JsonResponse({"outcome": "rejected"})
+    return JsonResponse({"outcome": "pending"})
+
+
+@login_required
+@require_POST
+def order_payment_check(request, number):
+    """Confirma el pago consultando la API de Bold (útil cuando no hay retorno automático)."""
+    order = _user_order(request, number)
+    if order.payment_method != Order.PaymentMethod.BOLD:
+        return redirect("order_confirmation", number=order.number)
+    try:
+        status = sync_payment_status(order)
+    except PaymentError as exc:
+        messages.error(request, str(exc))
+        return redirect("order_payment", number=order.number)
+    return _redirect_after_payment(request, order, status)
+
+
+def _redirect_after_payment(request, order, status):
+    if status == bold.STATUS_APPROVED:
+        messages.success(request, f"¡Pago aprobado! Ya estamos preparando el pedido {order.number}.")
+        return redirect("order_confirmation", number=order.number)
+    if status in bold.IN_PROGRESS_STATUSES:
+        messages.info(request, "Bold está validando tu pago. Te avisaremos en cuanto se confirme.")
+        return redirect("order_confirmation", number=order.number)
+    if status == bold.STATUS_VOIDED:
+        messages.warning(request, "El pago fue anulado y el pedido quedó cancelado.")
+        return redirect("order_confirmation", number=order.number)
+    if status in bold.RETRYABLE_STATUSES:
+        messages.error(request, "El pago no se completó. Puedes intentarlo de nuevo con otro medio.")
+    else:
+        messages.info(request, "Todavía no registramos un pago para este pedido.")
+    return redirect("order_payment", number=order.number)
+
+
+@login_required
+def bold_return(request):
+    """URL de retorno de Bold: confirma el estado real antes de mostrar el resultado."""
+    reference = request.GET.get("bold-order-id", "")
+    order = Order.objects.filter(payment_reference=reference, user=request.user).first() if reference else None
+    if order is None:
+        messages.error(request, "No encontramos el pedido asociado a este pago.")
+        return redirect("account")
+    try:
+        status = sync_payment_status(order)
+    except PaymentError:
+        # El estado informado en la URL solo sirve de referencia; no cambia el pedido.
+        messages.info(request, "Recibimos tu pago y lo estamos confirmando con Bold.")
+        return redirect("order_confirmation", number=order.number)
+    return _redirect_after_payment(request, order, status)
+
+
+@csrf_exempt
+@require_POST
+def bold_webhook(request):
+    """Recibe los eventos de Bold (SALE_APPROVED, SALE_REJECTED, VOID_APPROVED)."""
+    if not bold.is_configured():
+        return JsonResponse({"detail": "Pasarela no configurada."}, status=503)
+    if not bold.verify_webhook_signature(request.body, request.headers.get("x-bold-signature", "")):
+        return JsonResponse({"detail": "Firma inválida."}, status=401)
+    try:
+        event = json.loads(request.body.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return JsonResponse({"detail": "Cuerpo inválido."}, status=400)
+
+    status = bold.WEBHOOK_EVENT_STATUSES.get(event.get("type", ""))
+    reference = bold.webhook_reference(event)
+    if not status or not reference:
+        # Eventos sin efecto (por ejemplo VOID_REJECTED) se aceptan sin cambios.
+        return JsonResponse({"detail": "Evento ignorado."}, status=200)
+
+    order = Order.objects.filter(payment_reference=reference).first()
+    if order is None:
+        logger.warning("Webhook de Bold sin pedido para la referencia %s", reference)
+        return JsonResponse({"detail": "Pedido no encontrado."}, status=200)
+
+    apply_payment_status(order, status, transaction_id=bold.webhook_transaction_id(event))
+    return JsonResponse({"detail": "Evento procesado."}, status=200)
 
 
 @login_required

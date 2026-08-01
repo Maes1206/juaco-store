@@ -29,7 +29,7 @@
           <a class="nav-link{% if section == 'marketing' %} active{% endif %}" href="panel-admin/?section=marketing#admin-panel-content"><i class="fa fa-bullhorn"></i> Marketing{% if marketing_notification_count %}<span class="admin-menu-badge" aria-label="{{ marketing_notification_count }} notificaciones pendientes">{{ marketing_notification_count }}</span>{% endif %}</a>
           <a class="nav-link{% if section == 'products' %} active{% endif %}" href="panel-admin/?section=products#admin-panel-content"><i class="fa fa-tags"></i> Edicion de productos</a>
           <a class="nav-link{% if section == 'blog' %} active{% endif %}" href="panel-admin/?section=blog#admin-panel-content"><i class="fa fa-pencil"></i> Blog</a>
-          <form action="account-logout/" method="post">{% csrf_token %}<button class="nav-link" type="submit"><i class="fa fa-sign-out"></i> Cerrar sesion</button></form>
+          <form action="{% url 'logout' %}" method="post" target="_self">{% csrf_token %}<button class="nav-link" type="submit"><i class="fa fa-sign-out"></i> Cerrar sesion</button></form>
         </nav>
       </div>
       <div class="col-lg-9 col-md-8">

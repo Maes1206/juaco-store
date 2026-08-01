@@ -1,0 +1,159 @@
+{% extends "store/base.html" %}
+{% load store_extras %}
+
+{% block title %}Redirigiendo al pago - Nexus Luxury Footwear{% endblock %}
+
+{% block extra_head %}
+<script src="{{ bold_script_url }}"></script>
+{% endblock %}
+
+{% block content %}
+<section class="payment-redirect-area">
+  <div class="container">
+    {% for message in messages %}
+    <div class="checkout-alert">{{ message }}</div>
+    {% endfor %}
+
+    <div class="payment-redirect" data-payment-redirect>
+      <span class="payment-redirect__spinner" data-redirect-spinner aria-hidden="true"></span>
+      <h2 class="payment-redirect__title" data-redirect-title>Te estamos llevando a Bold…</h2>
+      <p class="payment-redirect__amount">{{ order.total|cop }}<span>Pedido {{ order.number }}</span></p>
+      <p class="payment-redirect__note" data-redirect-note aria-live="polite">No cierres esta pestaña. Tu carrito se conserva hasta que el pago se apruebe.</p>
+      {% if bold_test_mode %}<p class="payment-redirect__testing">Modo de pruebas: ningún cobro real se realiza.</p>{% endif %}
+
+      <div class="payment-redirect__actions" data-redirect-actions hidden>
+        <button type="button" class="btn-theme" data-bold-open disabled>Pagar con Bold</button>
+        <form method="post" action="{% url 'order_payment_check' order.number %}" class="payment-redirect__check">
+          {% csrf_token %}
+          <button type="submit" class="btn-theme btn-theme-border">Ya pagué, verificar</button>
+        </form>
+      </div>
+      <a class="order-link payment-redirect__link" data-redirect-link href="{% url 'order_confirmation' order.number %}" hidden>Ver el detalle del pedido</a>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+{{ bold_config|json_script:"bold-checkout-config" }}
+<script>
+(function () {
+  var root = document.querySelector('[data-payment-redirect]');
+  if (!root) return;
+  var spinner = root.querySelector('[data-redirect-spinner]');
+  var title = root.querySelector('[data-redirect-title]');
+  var note = root.querySelector('[data-redirect-note]');
+  var actions = root.querySelector('[data-redirect-actions]');
+  var detailLink = root.querySelector('[data-redirect-link]');
+  var button = root.querySelector('[data-bold-open]');
+  var fallbackTimer = null;
+
+  // Cambia el estado de "redirigiendo" al de espera con acciones a la vista.
+  function reveal(titleText, noteText) {
+    if (fallbackTimer) clearTimeout(fallbackTimer);
+    if (spinner) spinner.hidden = true;
+    if (title) title.textContent = titleText;
+    if (note) note.textContent = noteText;
+    if (actions) actions.hidden = false;
+    if (detailLink) detailLink.hidden = false;
+  }
+
+  // Solo una llegada nueva abre la pasarela: al volver atrás desde Bold,
+  // reabrirla dejaría al cliente en un bucle sin salida.
+  function isFreshArrival() {
+    try {
+      var entries = performance.getEntriesByType('navigation');
+      if (entries && entries.length) return entries[0].type === 'navigate';
+      if (performance.navigation) return performance.navigation.type === 0;
+    } catch (error) { /* sin API de navegación: se abre igual */ }
+    return true;
+  }
+
+  function start() {
+    if (typeof window.BoldCheckout !== 'function') {
+      reveal('No pudimos abrir la pasarela', 'Revisa tu conexión y recarga la página para reintentar.');
+      return;
+    }
+    var config;
+    try {
+      config = JSON.parse(document.getElementById('bold-checkout-config').textContent);
+    } catch (error) {
+      reveal('No pudimos preparar el pago', 'Recarga la página e intenta de nuevo.');
+      return;
+    }
+    var checkout = new window.BoldCheckout(config);
+    button.disabled = false;
+    button.addEventListener('click', function () { checkout.open(); });
+
+    if (!isFreshArrival()) {
+      reveal('Tu pedido espera el pago', 'Continúa en Bold para completarlo. Tu carrito sigue intacto.');
+      return;
+    }
+
+    // Si el navegador bloquea la redirección, se ofrece el botón como salida.
+    fallbackTimer = setTimeout(function () {
+      reveal('Continúa tu pago', 'La pasarela no se abrió sola. Usa el botón para ir a Bold.');
+    }, 6000);
+    checkout.open();
+  }
+
+  if (typeof window.BoldCheckout === 'function') {
+    start();
+  } else {
+    window.addEventListener('boldCheckoutLoaded', start);
+    window.addEventListener('boldCheckoutLoadFailed', function () {
+      reveal('Bold no está disponible', 'Intenta más tarde o escríbenos para completar tu compra.');
+    });
+  }
+})();
+
+(function () {
+  // Confirma el pago solo: sondea el estado para que el cliente no dependa de
+  // volver aquí y pulsar un botón. El botón manual sigue como atajo.
+  var statusUrl = '{% url "order_payment_status" order.number %}';
+  var pollIntervalMs = 4000;
+  var maxDurationMs = 10 * 60 * 1000;
+  var startedAt = Date.now();
+  var timer = null;
+  var stopped = false;
+
+  function stop() {
+    stopped = true;
+    if (timer) clearTimeout(timer);
+  }
+
+  function scheduleNext() {
+    if (stopped || Date.now() - startedAt > maxDurationMs) return;
+    timer = setTimeout(poll, pollIntervalMs);
+  }
+
+  function poll() {
+    if (document.hidden || stopped) { scheduleNext(); return; }
+    fetch(statusUrl, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+      .then(function (response) { return response.ok ? response.json() : null; })
+      .then(function (data) {
+        if (!data) { scheduleNext(); return; }
+        if (data.outcome === 'resolved' && data.redirect) {
+          stop();
+          window.location.href = data.redirect;
+          return;
+        }
+        if (data.outcome === 'rejected') {
+          stop();
+          window.location.reload();
+          return;
+        }
+        if (data.outcome === 'not_applicable') { stop(); return; }
+        scheduleNext();
+      })
+      .catch(scheduleNext);
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden && !stopped) poll();
+  });
+
+  poll();
+})();
+</script>
+{% endblock %}

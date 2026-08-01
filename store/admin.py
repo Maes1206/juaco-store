@@ -122,15 +122,16 @@ class OrderItemInline(admin.TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ("number", "user", "recipient_name", "purchase_value", "sale_value", "discount_amount", "gross_profit_display", "status", "payment_method", "delivery_method", "fulfillment_status", "created_at")
-    list_filter = ("status", "payment_method", "delivery_method", "fulfillment_status", "created_at")
+    list_display = ("number", "user", "recipient_name", "purchase_value", "sale_value", "discount_amount", "gross_profit_display", "status", "payment_method", "payment_status", "delivery_method", "fulfillment_status", "created_at")
+    list_filter = ("status", "payment_method", "payment_status", "delivery_method", "fulfillment_status", "created_at")
     list_editable = ("purchase_value", "sale_value", "status", "fulfillment_status")
-    search_fields = ("number", "recipient_name", "user__username", "user__email", "city")
+    search_fields = ("number", "recipient_name", "user__username", "user__email", "city", "payment_reference", "payment_transaction_id")
     date_hierarchy = "created_at"
     inlines = [OrderItemInline]
     readonly_fields = (
         "number", "user", "recipient_name", "phone", "address_line_1", "address_line_2",
         "department", "city", "postal_code", "subtotal", "shipping_cost", "coupon", "coupon_code", "discount_amount", "total", "notes",
+        "payment_reference", "payment_status", "payment_transaction_id", "payment_attempts", "paid_at",
         "created_at", "updated_at",
     )
 

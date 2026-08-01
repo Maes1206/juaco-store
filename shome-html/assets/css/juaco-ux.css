@@ -243,6 +243,10 @@ body {
   border-color: var(--color-primary-hover) !important;
   color: var(--color-on-primary) !important;
 }
+/* El carrito lateral usa fondo oscuro (no dorado) en sus botones: texto oscuro ahi quedaria ilegible. */
+.aside-cart-wrapper .btn-theme {
+  color: #fff !important;
+}
 .order-total-cell strong { color: var(--juaco-ink); font-size: 14px; font-weight: 600; white-space: nowrap; }
 .orders-table .order-detail-link { margin-top: 10px; color: var(--juaco-red); font-size: 12px; font-weight: 600; white-space: nowrap; }
 .orders-table .order-detail-link i { margin-left: 3px; font-size: 10px; }
@@ -1104,3 +1108,25 @@ body.comparison-modal-open { overflow: hidden; }
   .shipping-tracking__step:first-child::before { display: none; }
   .account-recent-order-total { margin-left: 0; }
 }
+.order-payment-retry { margin-top: 12px; }
+/* Pantalla de espera mientras el navegador viaja hacia la pasarela de Bold. */
+.payment-redirect-area { padding: 96px 0 116px; }
+.payment-redirect { margin: 0 auto; max-width: 560px; border: 1px solid #e8e8e8; border-radius: 12px; background: #fff; padding: 46px 34px; text-align: center; }
+.payment-redirect__spinner { display: inline-block; width: 42px; height: 42px; margin-bottom: 24px; border: 3px solid var(--color-primary-soft); border-top-color: var(--juaco-red); border-radius: 50%; animation: payment-redirect-spin .9s linear infinite; }
+@keyframes payment-redirect-spin { to { transform: rotate(360deg); } }
+.payment-redirect__title { margin: 0 0 12px; color: #1f2226; font-size: 21px; }
+.payment-redirect__amount { margin: 0 0 16px; color: #1f2226; font-size: 27px; font-weight: 700; line-height: 1.2; }
+.payment-redirect__amount span { display: block; margin-top: 7px; color: #8b8e93; font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+.payment-redirect__note { margin: 0 auto; max-width: 420px; color: #6d7075; font-size: 13px; }
+.payment-redirect__testing { display: inline-block; margin: 20px 0 0; border-radius: 40px; background: #fff6d8; padding: 6px 16px; color: #8a6d1f; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.payment-redirect__actions { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+.payment-redirect__check { margin: 0; }
+.payment-redirect__link { display: inline-block; margin-top: 18px; }
+@media only screen and (max-width: 767px) {
+  .payment-redirect-area { padding: 60px 0 80px; }
+  .payment-redirect { padding: 34px 20px; }
+  .payment-redirect__amount { font-size: 23px; }
+  .payment-redirect__actions { flex-direction: column; align-items: stretch; }
+  .payment-redirect__check .btn-theme { width: 100%; }
+}
+.checkout-payment-option:not(.checkout-delivery-option) .checkout-payment-label small { display: block; margin-top: 3px; color: #8b8e93; font-size: 11px; font-weight: 500; }
