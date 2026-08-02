@@ -64,7 +64,7 @@ class SearchResults:
 class UnifiedSearchService:
     """Busca y ordena productos y art\u00edculos con las mismas reglas de relevancia."""
 
-    PRODUCT_FIELDS = ("name", "brand", "slug", "description", "tags")
+    PRODUCT_FIELDS = ("name", "brand__title", "slug", "description", "tags")
     POST_FIELDS = ("title", "slug", "summary", "content", "tags", "category__name", "category__slug")
     RESULT_LIMIT = 12
 
@@ -79,7 +79,7 @@ class UnifiedSearchService:
         )
 
     def _search_products(self, query: SearchQuery) -> list[SearchHit]:
-        products = Product.objects.filter(is_active=True)
+        products = Product.objects.filter(is_active=True).select_related("brand")
         candidates = self._database_candidates(products, self.PRODUCT_FIELDS, query)
         hits = self._rank(candidates, query, self._product_searchable_values)
         if not hits:
@@ -150,7 +150,7 @@ class UnifiedSearchService:
         tags = list(product.tags or [])
         return [
             (16, product.name),
-            (12, product.brand),
+            (12, product.brand.title),
             (10, " ".join(tags)),
             (8, product.slug),
             (4, product.description),

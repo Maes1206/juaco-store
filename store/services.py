@@ -1,17 +1,21 @@
 from datetime import datetime, timezone
 from decimal import Decimal
+import logging
 
+from django.conf import settings
 from django.db import transaction
 from django.db.models import F, Value
 from django.db.models.functions import Greatest
+from django.urls import reverse
 from django.utils import timezone as django_timezone
 
 from . import bold
-from .models import Cart, CartItem, Coupon, CouponRedemption, Order, OrderItem, Product
+from .models import Cart, CartItem, Coupon, CouponRedemption, Order, OrderItem, OrderStatusHistory, Product, ProductVariant
 
 
 FREE_SHIPPING_THRESHOLD = Decimal("400000")
 FLAT_SHIPPING_RATE = Decimal("15000")
+logger = logging.getLogger(__name__)
 
 
 def shipping_cost_for(subtotal, quoted_cost=None):
@@ -68,8 +72,12 @@ class CheckoutError(Exception):
     """Se lanza cuando el carrito no puede convertirse en pedido."""
 
 
+class OrderTransitionError(Exception):
+    """Se lanza cuando un cambio de estado rompe el flujo operativo."""
+
+
 def _variant_signature(entries):
-    return sorted((entry.product_id, entry.quantity, entry.size, entry.color) for entry in entries)
+    return sorted((entry.product_id, entry.variant_id, entry.quantity, entry.size, entry.color) for entry in entries)
 
 
 def _equivalent_pending_order(user, items, address, delivery_method, total):
@@ -99,15 +107,16 @@ def _equivalent_pending_order(user, items, address, delivery_method, total):
 
 @transaction.atomic
 def create_order_from_cart(user, cart, address, payment_method, notes="", coupon_code="", shipping_cost=None, delivery_method=Order.DeliveryMethod.COURIER):
-    items = list(cart.items.select_related("product"))
+    items = list(cart.items.select_related("product", "variant"))
     if not items:
         raise CheckoutError("Tu carrito está vacío.")
 
     for item in items:
         if not item.product.is_active:
             raise CheckoutError(f"El producto «{item.product.name}» ya no está disponible.")
-        if item.quantity > item.product.stock:
-            raise CheckoutError(f"No hay stock suficiente de «{item.product.name}» (disponibles: {item.product.stock}).")
+        available_stock = item.available_stock
+        if item.quantity > available_stock:
+            raise CheckoutError(f"No hay stock suficiente de «{item.product.name}» (disponibles: {available_stock}).")
 
     subtotal = sum((item.subtotal for item in items), Decimal("0"))
     shipping = shipping_cost_for(subtotal, quoted_cost=shipping_cost)
@@ -146,11 +155,20 @@ def create_order_from_cart(user, cart, address, payment_method, notes="", coupon
         total=total,
         notes=notes,
     )
+    OrderStatusHistory.objects.create(
+        order=order,
+        from_status="",
+        to_status=Order.Status.PENDING,
+        source=OrderStatusHistory.Source.SYSTEM,
+        note="Pedido creado correctamente.",
+    )
 
     for item in items:
         OrderItem.objects.create(
             order=order,
             product=item.product,
+            variant=item.variant,
+            variant_sku=item.variant.sku if item.variant_id and item.variant.sku else "",
             product_name=item.product.name,
             product_image=item.product.image,
             unit_price=item.product.price,
@@ -179,7 +197,16 @@ def commit_order(order, cart=None):
         return order
 
     for item in order.items.all():
-        if item.product_id:
+        if item.variant_id:
+            variant = ProductVariant.objects.select_for_update().get(pk=item.variant_id)
+            if item.quantity > variant.stock:
+                raise CheckoutError(
+                    f"No hay stock suficiente de «{item.product_name}» en {variant.label} "
+                    f"(disponibles: {variant.stock})."
+                )
+            variant.stock -= item.quantity
+            variant.save(update_fields=("stock", "updated_at"))
+        elif item.product_id:
             Product.objects.filter(pk=item.product_id).update(
                 stock=Greatest(F("stock") - item.quantity, Value(0))
             )
@@ -243,45 +270,208 @@ def ensure_payment_reference(order):
 
 def _restore_stock(order):
     for item in order.items.all():
-        if item.product_id:
+        if item.variant_id:
+            variant = ProductVariant.objects.select_for_update().get(pk=item.variant_id)
+            variant.stock += item.quantity
+            variant.save(update_fields=("stock", "updated_at"))
+        elif item.product_id:
             Product.objects.filter(pk=item.product_id).update(stock=F("stock") + item.quantity)
 
 
+FULFILLMENT_STATUS_BY_ORDER_STATUS = {
+    Order.Status.PENDING: Order.FulfillmentStatus.PENDING_SHIPMENT,
+    Order.Status.PAID: Order.FulfillmentStatus.PENDING_SHIPMENT,
+    Order.Status.PREPARING: Order.FulfillmentStatus.PACKING,
+    Order.Status.SHIPPED: Order.FulfillmentStatus.IN_TRANSIT,
+    Order.Status.DELIVERED: Order.FulfillmentStatus.DELIVERED,
+}
+NOTIFIABLE_ORDER_STATUSES = {
+    Order.Status.PAID,
+    Order.Status.PREPARING,
+    Order.Status.SHIPPED,
+    Order.Status.DELIVERED,
+    Order.Status.CANCELLED,
+    Order.Status.REFUNDED,
+}
+
+
+def _public_order_url(order):
+    base_url = (
+        getattr(settings, "PUBLIC_SITE_URL", "")
+        or getattr(settings, "BOLD_PUBLIC_BASE_URL", "")
+        or "http://127.0.0.1:8000"
+    ).rstrip("/")
+    return f"{base_url}{reverse('order_detail', args=[order.number])}"
+
+
+def _send_status_notification(history_id, order_url):
+    from .emails import send_order_status_email
+
+    try:
+        send_order_status_email(history_id, order_url=order_url)
+    except Exception:
+        logger.exception("No se pudo enviar la notificación del cambio de estado %s.", history_id)
+
+
+def _transition_locked_order(
+    order,
+    target_status,
+    *,
+    actor=None,
+    note="",
+    source=OrderStatusHistory.Source.SYSTEM,
+    order_url="",
+    notify=True,
+):
+    """Aplica una transición sobre un pedido bloqueado por la transacción actual."""
+    target_status = str(target_status)
+    if target_status == order.status:
+        return None
+    if target_status not in order.available_transition_values:
+        labels = dict(Order.Status.choices)
+        raise OrderTransitionError(
+            f"No se puede pasar de «{order.get_status_display()}» a "
+            f"«{labels.get(target_status, target_status)}»."
+        )
+
+    if target_status == Order.Status.SHIPPED and order.delivery_method == Order.DeliveryMethod.COURIER:
+        if not order.carrier.strip() or not order.tracking_number.strip():
+            raise OrderTransitionError("Indica la transportadora y el número de guía antes de marcar el pedido como enviado.")
+
+    previous_status = order.status
+    fields = {"status", "fulfillment_status", "updated_at"}
+    now = django_timezone.now()
+
+    if target_status == Order.Status.PAID:
+        if not order.stock_reserved:
+            commit_order(order)
+        if order.paid_at is None:
+            order.paid_at = now
+            fields.add("paid_at")
+    elif target_status in {Order.Status.CANCELLED, Order.Status.REFUNDED}:
+        if order.stock_reserved:
+            _restore_stock(order)
+            order.stock_reserved = False
+            fields.add("stock_reserved")
+
+    order.status = target_status
+    if target_status in FULFILLMENT_STATUS_BY_ORDER_STATUS:
+        order.fulfillment_status = FULFILLMENT_STATUS_BY_ORDER_STATUS[target_status]
+    if target_status == Order.Status.SHIPPED and order.shipped_at is None:
+        order.shipped_at = now
+        fields.add("shipped_at")
+    if target_status == Order.Status.DELIVERED and order.delivered_at is None:
+        order.delivered_at = now
+        fields.add("delivered_at")
+    order.save(update_fields=sorted(fields))
+
+    history = OrderStatusHistory.objects.create(
+        order=order,
+        from_status=previous_status,
+        to_status=target_status,
+        source=source,
+        note=(note or "").strip()[:300],
+        changed_by=actor if getattr(actor, "is_authenticated", False) else None,
+    )
+    if notify and target_status in NOTIFIABLE_ORDER_STATUSES and order.user_id and order.user.email:
+        destination = order_url or _public_order_url(order)
+        transaction.on_commit(lambda: _send_status_notification(history.pk, destination))
+    return history
+
+
 @transaction.atomic
-def apply_payment_status(order, status, transaction_id=""):
+def transition_order(
+    order,
+    target_status,
+    *,
+    actor=None,
+    note="",
+    source=OrderStatusHistory.Source.SYSTEM,
+    order_url="",
+    notify=True,
+):
+    """Cambia el estado con bloqueo, auditoría, inventario y notificación idempotentes."""
+    locked = Order.objects.select_for_update().select_related("user").get(pk=order.pk)
+    history = _transition_locked_order(
+        locked,
+        target_status,
+        actor=actor,
+        note=note,
+        source=source,
+        order_url=order_url,
+        notify=notify,
+    )
+    for field in (
+        "status", "fulfillment_status", "stock_reserved", "paid_at", "shipped_at", "delivered_at",
+    ):
+        setattr(order, field, getattr(locked, field))
+    return locked, history
+
+
+@transaction.atomic
+def apply_payment_status(
+    order,
+    status,
+    transaction_id="",
+    *,
+    source=OrderStatusHistory.Source.PAYMENT,
+    order_url="",
+):
     """Registra el estado informado por Bold. Es idempotente: los webhooks se reintentan."""
-    locked = Order.objects.select_for_update().get(pk=order.pk)
+    locked = Order.objects.select_for_update().select_related("user").get(pk=order.pk)
     fields = set()
 
-    if transaction_id and locked.payment_transaction_id != transaction_id:
+    accepts_reported_status = not (
+        (locked.is_closed and status != bold.STATUS_VOIDED)
+        or (locked.is_paid and status not in {bold.STATUS_APPROVED, bold.STATUS_VOIDED})
+        or (locked.payment_status == bold.STATUS_VOIDED and status != bold.STATUS_VOIDED)
+    )
+
+    if transaction_id and accepts_reported_status and locked.payment_transaction_id != transaction_id:
         locked.payment_transaction_id = transaction_id
         fields.add("payment_transaction_id")
 
-    if status and locked.payment_status != status:
+    if status and accepts_reported_status and locked.payment_status != status:
         locked.payment_status = status
         fields.add("payment_status")
 
     if status == bold.STATUS_APPROVED and locked.status == Order.Status.PENDING:
-        locked.status = Order.Status.PAID
-        locked.paid_at = django_timezone.now()
-        fields.update({"status", "paid_at"})
+        if fields:
+            fields.add("updated_at")
+            locked.save(update_fields=sorted(fields))
+            fields.clear()
         # Recién aquí se descuenta el inventario, se canjea el cupón y se vacía
         # el carrito: hasta ahora la compra seguía disponible para el cliente.
-        commit_order(locked)
-    elif status == bold.STATUS_VOIDED and locked.status != Order.Status.CANCELLED:
-        if locked.stock_reserved:
+        _transition_locked_order(
+            locked,
+            Order.Status.PAID,
+            source=source,
+            note="Pago confirmado por la pasarela.",
+            order_url=order_url,
+        )
+    elif status == bold.STATUS_VOIDED and not locked.is_closed:
+        if fields:
+            fields.add("updated_at")
+            locked.save(update_fields=sorted(fields))
+            fields.clear()
+        target_status = Order.Status.CANCELLED if locked.status == Order.Status.PENDING else Order.Status.REFUNDED
+        _transition_locked_order(
+            locked,
+            target_status,
+            source=source,
+            note="Anulación confirmada por la pasarela.",
+            order_url=order_url,
+        )
             # Una anulación libera el inventario que se descontó al aprobarse.
-            _restore_stock(locked)
-            locked.stock_reserved = False
-            fields.add("stock_reserved")
-        locked.status = Order.Status.CANCELLED
-        fields.add("status")
 
     if fields:
         fields.add("updated_at")
         locked.save(update_fields=sorted(fields))
 
-    for field in ("status", "payment_status", "payment_transaction_id", "paid_at"):
+    for field in (
+        "status", "fulfillment_status", "stock_reserved", "payment_status", "payment_transaction_id",
+        "paid_at", "shipped_at", "delivered_at",
+    ):
         setattr(order, field, getattr(locked, field))
     return locked
 
@@ -312,16 +502,17 @@ def get_cart(request):
         cart, _ = Cart.objects.get_or_create(user=request.user, status=Cart.Status.ACTIVE, defaults={"session_key": session_key})
         session_cart = Cart.objects.filter(user__isnull=True, session_key=session_key, status=Cart.Status.ACTIVE).exclude(pk=cart.pk).first()
         if session_cart:
-            for item in session_cart.items.select_related("product"):
+            for item in session_cart.items.select_related("product", "variant"):
                 target, created = CartItem.objects.get_or_create(
                     cart=cart,
                     product=item.product,
+                    variant=item.variant,
                     size=item.size,
                     color=item.color,
                     defaults={"quantity": item.quantity},
                 )
                 if not created:
-                    target.quantity = min(target.quantity + item.quantity, item.product.stock)
+                    target.quantity = min(target.quantity + item.quantity, item.available_stock)
                     target.save(update_fields=["quantity", "updated_at"])
             session_cart.delete()
         if cart.session_key != session_key:

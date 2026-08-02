@@ -16,6 +16,8 @@ La aplicación queda disponible en `http://127.0.0.1:8000/`.
 
 Los secretos del entorno local van en `.env.local` (ignorado por git); Docker sigue leyendo `.env`.
 
+En desarrollo, los correos de recuperación se imprimen en la consola del servidor. En producción configura `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` y `DEFAULT_FROM_EMAIL` con tu proveedor SMTP.
+
 ## Docker
 
 ```powershell
@@ -40,10 +42,10 @@ El checkout cobra en línea con el [botón de pagos de Bold](https://developers.
 
 Flujo:
 
-1. El comprador elige «Pago con Bold» y el pedido se crea en estado *Pendiente de pago* (el inventario queda reservado).
+1. El comprador elige «Pago con Bold» y el pedido se crea en estado *Pendiente de pago*. El inventario se descuenta únicamente cuando Bold confirma el pago.
 2. `/pago/<numero>/` firma el cobro en el servidor (SHA256 de `referencia + monto + moneda + llave secreta`) y abre la pasarela. La llave secreta nunca llega al navegador.
 3. Bold devuelve al comprador a `/pago/bold/retorno/`. El estado de la URL solo sirve de pista: el pedido se actualiza consultando `GET /v2/payment-voucher/<referencia>`.
-4. `/pago/bold/webhook/` recibe `SALE_APPROVED`, `SALE_REJECTED` y `VOID_APPROVED`, valida la cabecera `x-bold-signature` (HMAC-SHA256 del cuerpo en base64) y es idempotente ante reintentos. Una anulación cancela el pedido y devuelve el inventario.
+4. `/pago/bold/webhook/` recibe `SALE_APPROVED`, `SALE_REJECTED` y `VOID_APPROVED`, valida la cabecera `x-bold-signature` (HMAC-SHA256 del cuerpo en base64) y es idempotente ante reintentos. Una anulación cancela o reembolsa el pedido y restaura una sola vez el inventario de la variante exacta.
 5. Cada intento usa una referencia propia (`JS-20260801-0001-1`, `-2`, …): tras un rechazo el comprador puede reintentar.
 
 Configuración:
@@ -55,10 +57,17 @@ Configuración:
 | `BOLD_TEST_MODE` | `1` con llaves de prueba. Solo cambia el aviso del checkout; no afecta la validación de firmas. |
 | `BOLD_ALLOW_UNSIGNED_WEBHOOKS` | **Solo desarrollo.** El sandbox de Bold firma con llave vacía; aceptarla equivale a no validar la firma, así que con `1` cualquiera podría marcar un pedido como pagado. El servidor se niega a arrancar si lo activas sin `DJANGO_DEBUG=1`. |
 | `BOLD_PUBLIC_BASE_URL` | Dominio HTTPS público para el retorno y el webhook. |
+| `PUBLIC_SITE_URL` | Dominio público usado en los enlaces de seguimiento enviados por correo. |
 
 Bold exige HTTPS en la URL de retorno, así que en `http://localhost` no se envía: la página de pago ofrece «Ya pagué, verificar», que consulta la API y confirma el pedido. Para probar el retorno y el webhook en local, expón el puerto con un túnel HTTPS y pon esa URL en `BOLD_PUBLIC_BASE_URL`; registra `<dominio>/pago/bold/webhook/` en el panel de Bold.
 
 Tarjetas del [ambiente de pruebas](https://developers.bold.co/pagos-en-linea/boton-de-pagos/ambiente-pruebas): `4111111111111111` aprueba, `4970110000000062` rechaza y `5204730000008404` falla. Las referencias de prueba expiran a las 12 horas.
+
+## Operación de pedidos
+
+Los pedidos avanzan mediante transiciones controladas: **Pendiente → Pagado → Preparando → Enviado → Entregado**. Una compra pendiente se cancela; una compra ya pagada se reembolsa. Los cambios se realizan desde las acciones del listado de pedidos en Django Admin y quedan registrados con fecha, origen y administrador responsable.
+
+Antes de marcar un domicilio como enviado, guarda la transportadora y el número de guía en la ficha del pedido. También puedes adjuntar un comprobante de despacho en PDF, JPG, PNG o WebP de hasta 5 MB; es opcional y no reemplaza la guía escrita. El cliente verá el estado, el historial, la guía y un enlace protegido al comprobante desde el detalle de su pedido.
 
 ## Producción
 

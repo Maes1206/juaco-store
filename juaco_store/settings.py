@@ -92,6 +92,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "store.context_processors.cart_summary",
+                "store.context_processors.store_navigation",
             ],
         },
     }
@@ -149,12 +150,36 @@ STATICFILES_DIRS = [BASE_DIR / "shome-html" / "assets"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
-STORAGES = {"staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"}}
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = "/account-login.html"
 LOGIN_REDIRECT_URL = "/account.html"
 LOGOUT_REDIRECT_URL = "/"
+
+# Recuperación de contraseña. En desarrollo el enlace se imprime en la consola;
+# los despliegues usan SMTP y toman las credenciales exclusivamente del entorno.
+if RUNNING_TESTS:
+    EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+else:
+    EMAIL_BACKEND = os.getenv(
+        "DJANGO_EMAIL_BACKEND",
+        "django.core.mail.backends.console.EmailBackend" if IS_DEVELOPMENT else "django.core.mail.backends.smtp.EmailBackend",
+    )
+EMAIL_HOST = os.getenv("EMAIL_HOST", "")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
+EMAIL_USE_SSL = env_bool("EMAIL_USE_SSL", False)
+EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "10"))
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "Nexus Luxury Footwear <no-reply@localhost>")
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+PASSWORD_RESET_TIMEOUT = int(os.getenv("PASSWORD_RESET_TIMEOUT_SECONDS", "3600"))
+
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SAMESITE = "Lax"
@@ -207,4 +232,4 @@ BOLD_CHECKOUT_SCRIPT_URL = os.getenv("BOLD_CHECKOUT_SCRIPT_URL", "https://checko
 BOLD_TIMEOUT_SECONDS = int(os.getenv("BOLD_TIMEOUT_SECONDS", "10"))
 # Dominio HTTPS público (túnel o producción) para el retorno y el webhook de Bold.
 BOLD_PUBLIC_BASE_URL = os.getenv("BOLD_PUBLIC_BASE_URL", "").rstrip("/")
-
+PUBLIC_SITE_URL = os.getenv("PUBLIC_SITE_URL", BOLD_PUBLIC_BASE_URL).rstrip("/")

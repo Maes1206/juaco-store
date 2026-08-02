@@ -1,4 +1,5 @@
 {% extends "store/base.html" %}
+{% load store_extras %}
 
 {% block title %}{{ catalog_section.title }} | Nexus Luxury Footwear{% endblock %}
 
@@ -13,6 +14,54 @@
     </div>
   </div>
 </section>
+{% if is_dynamic_section %}
+{% if products %}
+<section class="catalog-offers" aria-labelledby="catalog-offers-title">
+  <div class="container">
+    <header class="catalog-offers__heading">
+      <div>
+        <span>{{ catalog_section.selection_label }}</span>
+        <h2 id="catalog-offers-title">{{ catalog_section.products_title }}</h2>
+      </div>
+      <p>{{ catalog_section.products_copy }}</p>
+    </header>
+    <div class="catalog-offers__grid">
+      {% for product in products %}
+      <article class="offer-product-card">
+        <a class="offer-product-card__media" href="single-product.html?producto={{ product.slug }}">
+          <img src="{{ product.image }}" alt="{{ product.main_image_alt }}" loading="lazy">
+          <span>{% if is_offer_section and product.has_discount %}-{{ product.discount_percent }}%{% else %}{{ catalog_section.card_label }}{% endif %}</span>
+        </a>
+        <div class="offer-product-card__content">
+          <p>{{ product.brand }}</p>
+          <h3><a href="single-product.html?producto={{ product.slug }}">{{ product.name }}</a></h3>
+          <div class="offer-product-card__prices">
+            {% if product.has_discount %}<del>{{ product.compare_at_price|cop }}</del>{% endif %}
+            <strong>{{ product.price|cop }}</strong>
+          </div>
+          <a class="offer-product-card__link" href="single-product.html?producto={{ product.slug }}">Ver producto <i class="fa fa-long-arrow-right" aria-hidden="true"></i></a>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% else %}
+<section class="catalog-section-blank" aria-labelledby="catalog-dynamic-empty-title">
+  <div class="container catalog-section-empty">
+    <figure class="catalog-section-editorial">
+      <img src="{{ catalog_section.editorial_image }}" alt="{{ catalog_section.editorial_alt }}">
+    </figure>
+    <div class="catalog-section-empty__notice">
+      <span>{{ catalog_section.selection_label }}</span>
+      <h2 id="catalog-dynamic-empty-title">{{ catalog_section.empty_title }}</h2>
+      <p>{{ catalog_section.empty_copy }}</p>
+      <a class="btn-theme" href="shop.html">Explorar toda la tienda</a>
+    </div>
+  </div>
+</section>
+{% endif %}
+{% else %}
 <section class="catalog-section-blank" aria-labelledby="catalog-empty-title">
   <div class="container catalog-section-empty">
     <figure class="catalog-section-editorial">
@@ -26,4 +75,5 @@
     </div>
   </div>
 </section>
+{% endif %}
 {% endblock %}

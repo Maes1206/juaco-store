@@ -1,0 +1,95 @@
+{% load store_extras %}<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
+  <title>Confirmación de pedido {{ order.number }}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+    :root { color-scheme: light dark; supported-color-schemes: light dark; }
+    body, table, td, a { font-family:Poppins, Arial, sans-serif; }
+    .email-logo-cell, [data-ogsc] .email-logo-cell { background:#17191c !important; background-color:#17191c !important; }
+    @media (prefers-color-scheme: dark) { .email-logo-cell { background:#17191c !important; background-color:#17191c !important; } }
+    @media only screen and (max-width:620px) {
+      .email-shell { width:100% !important; }
+      .email-pad { padding-right:22px !important; padding-left:22px !important; }
+      .email-title { font-size:27px !important; }
+      .product-image { width:72px !important; height:72px !important; }
+      .email-button { display:block !important; text-align:center !important; }
+    }
+  </style>
+</head>
+<body style="margin:0; padding:0; background:#f3f0ea; color:#303136;">
+  <div style="display:none; max-height:0; overflow:hidden; opacity:0;">Pedido {{ order.number }} recibido por Nexus Luxury Footwear.</div>
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%; background:#f3f0ea;">
+    <tr>
+      <td align="center" style="padding:32px 12px;">
+        <table role="presentation" class="email-shell" width="600" cellspacing="0" cellpadding="0" border="0" style="width:600px; max-width:600px; background:#ffffff; border-collapse:collapse;">
+          <tr>
+            <td class="email-logo-cell" align="center" style="padding:28px 24px 22px; border-top:4px solid #c7a26a; background:#17191c; background-color:#17191c;">
+              <img src="cid:{{ logo_cid }}" width="250" alt="Nexus Luxury Footwear" style="display:block; width:250px; max-width:84%; height:auto; border:0;">
+            </td>
+          </tr>
+          <tr>
+            <td class="email-pad" style="padding:42px 48px 38px; background:#1f2226; color:#ffffff;">
+              <p style="margin:0 0 10px; color:#c7a26a; font-size:12px; font-weight:600; letter-spacing:2px; text-transform:uppercase;">Pedido recibido</p>
+              <h1 class="email-title" style="margin:0 0 14px; color:#ffffff; font-size:32px; font-weight:600; line-height:1.25;">Gracias por tu compra, {{ display_name }}</h1>
+              <p style="margin:0; color:#d8d9da; font-size:14px; line-height:1.7;">Estamos preparando los detalles de tu pedido. Aquí tienes el resumen completo.</p>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%; margin-top:26px; border-collapse:collapse;">
+                <tr><td style="padding:13px 16px; border:1px solid #3a3d42; color:#aeb0b3; font-size:11px; text-transform:uppercase;">Pedido</td><td align="right" style="padding:13px 16px; border:1px solid #3a3d42; color:#ffffff; font-size:13px; font-weight:600;">{{ order.number }}</td></tr>
+                <tr><td style="padding:13px 16px; border:1px solid #3a3d42; color:#aeb0b3; font-size:11px; text-transform:uppercase;">Estado</td><td align="right" style="padding:13px 16px; border:1px solid #3a3d42; color:#c7a26a; font-size:13px; font-weight:600;">{{ status_label }}</td></tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td class="email-pad" style="padding:38px 48px 16px; background:#ffffff;">
+              <h2 style="margin:0 0 20px; color:#1f2226; font-size:20px; font-weight:600;">Tu selección</h2>
+              {% for entry in email_items %}
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%; border-top:1px solid #ece8e1; border-collapse:collapse;">
+                <tr>
+                  <td width="92" valign="middle" style="width:92px; padding:18px 14px 18px 0;">
+                    {% if entry.image_source %}<img class="product-image" src="{{ entry.image_source }}" width="82" height="82" alt="{{ entry.item.product_name }}" style="display:block; width:82px; height:82px; object-fit:contain; background:#f7f7f7; border:0;">{% else %}<div class="product-image" style="width:82px; height:82px; background:#f1eee8; color:#9b753e; font-size:10px; line-height:82px; text-align:center;">NEXUS</div>{% endif %}
+                  </td>
+                  <td valign="middle" style="padding:18px 8px 18px 0;">
+                    <p style="margin:0 0 6px; color:#1f2226; font-size:14px; font-weight:600; line-height:1.45;">{{ entry.item.product_name }}</p>
+                    <p style="margin:0; color:#77797d; font-size:12px; line-height:1.6;">{% if entry.item.size %}Talla {{ entry.item.size }} · {% endif %}{% if entry.item.color %}{{ entry.item.color }} · {% endif %}Cantidad {{ entry.item.quantity }}</p>
+                  </td>
+                  <td width="98" align="right" valign="middle" style="width:98px; padding:18px 0; color:#1f2226; font-size:13px; font-weight:600; white-space:nowrap;">{{ entry.item.subtotal|cop }}</td>
+                </tr>
+              </table>
+              {% endfor %}
+            </td>
+          </tr>
+          <tr>
+            <td class="email-pad" style="padding:16px 48px 38px; background:#ffffff;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%; border-top:1px solid #dcd8d1; border-collapse:collapse;">
+                <tr><td style="padding:18px 0 7px; color:#77797d; font-size:13px;">Subtotal</td><td align="right" style="padding:18px 0 7px; color:#303136; font-size:13px;">{{ order.subtotal|cop }}</td></tr>
+                {% if order.discount_amount %}<tr><td style="padding:7px 0; color:#77797d; font-size:13px;">Descuento{% if order.coupon_code %} · {{ order.coupon_code }}{% endif %}</td><td align="right" style="padding:7px 0; color:#28733a; font-size:13px;">-{{ order.discount_amount|cop }}</td></tr>{% endif %}
+                <tr><td style="padding:7px 0; color:#77797d; font-size:13px;">Envío</td><td align="right" style="padding:7px 0; color:#303136; font-size:13px;">{% if order.shipping_cost %}{{ order.shipping_cost|cop }}{% else %}<span style="color:#28733a; font-weight:600;">Gratis</span>{% endif %}</td></tr>
+                <tr><td style="padding:17px 0 0; border-top:1px solid #ece8e1; color:#1f2226; font-size:16px; font-weight:700;">Total</td><td align="right" style="padding:17px 0 0; border-top:1px solid #ece8e1; color:#1f2226; font-size:18px; font-weight:700;">{{ order.total|cop }}</td></tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td class="email-pad" style="padding:34px 48px; background:#f7f5f1; border-top:1px solid #ece8e1;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%; border-collapse:collapse;">
+                <tr><td valign="top" style="padding:0 14px 18px 0; color:#77797d; font-size:11px; text-transform:uppercase;">Pago<br><strong style="display:inline-block; margin-top:5px; color:#1f2226; font-size:13px; font-weight:600; text-transform:none;">{{ payment_label }}</strong></td><td valign="top" style="padding:0 0 18px 14px; color:#77797d; font-size:11px; text-transform:uppercase;">Entrega<br><strong style="display:inline-block; margin-top:5px; color:#1f2226; font-size:13px; font-weight:600; text-transform:none;">{{ delivery_label }}</strong></td></tr>
+              </table>
+              <p style="margin:0 0 26px; padding-top:20px; border-top:1px solid #e2ded7; color:#77797d; font-size:11px; line-height:1.7; text-transform:uppercase;">Dirección de entrega<br><strong style="display:inline-block; margin-top:5px; color:#303136; font-size:13px; font-weight:500; text-transform:none;">{{ order.recipient_name }} · {{ order.full_address }}</strong></p>
+              <a class="email-button" href="{{ action_url }}" style="display:inline-block; background:#c7a26a; color:#1f2226; padding:14px 26px; font-size:13px; font-weight:700; letter-spacing:.5px; text-decoration:none; text-transform:uppercase;">{{ action_label }}</a>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:25px 30px; background:#303238; color:#bfc0c3;">
+              <p style="margin:0 0 7px; color:#ffffff; font-size:13px; font-weight:500;">Nexus Luxury Footwear</p>
+              <p style="margin:0; color:#bfc0c3; font-size:11px; line-height:1.6;">Gracias por elegirnos para elevar tu estilo.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

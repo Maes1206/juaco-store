@@ -51,6 +51,81 @@
     return active ? (active.dataset.color || active.getAttribute('aria-label') || '').trim() : '';
   }
 
+  var variantInventory = [];
+  var variantInventoryNode = document.getElementById('product-variant-inventory');
+  if (variantInventoryNode) {
+    try { variantInventory = JSON.parse(variantInventoryNode.textContent || '[]'); }
+    catch (error) { variantInventory = []; }
+  }
+
+  function selectedVariant(trigger) {
+    if (!variantInventory.length) return null;
+    var size = selectedSize(trigger);
+    var color = selectedColor(trigger);
+    return variantInventory.find(function (variant) {
+      return variant.active && variant.size === size && variant.color === color;
+    }) || null;
+  }
+
+  function activateVariantOption(option) {
+    if (!option || !option.parentElement) return;
+    option.parentElement.querySelectorAll('li').forEach(function (item) {
+      var active = item === option;
+      item.classList.toggle('active', active);
+      item.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+  }
+
+  function reconcileVariantSelection(detail, changedOption) {
+    if (!detail || !variantInventory.length) return;
+    var current = selectedVariant(detail);
+    if (current && current.active && Number(current.stock || 0) > 0) return;
+
+    var candidates = variantInventory.filter(function (entry) {
+      if (!entry.active || Number(entry.stock || 0) < 1) return false;
+      if (changedOption && changedOption.dataset.size) return entry.size === changedOption.dataset.size;
+      if (changedOption && changedOption.dataset.color) return entry.color === changedOption.dataset.color;
+      return true;
+    });
+    var replacement = candidates[0];
+    if (!replacement) return;
+    activateVariantOption(detail.querySelector('.size-list li[data-size="' + CSS.escape(replacement.size) + '"]'));
+    activateVariantOption(detail.querySelector('.color-list li[data-color="' + CSS.escape(replacement.color) + '"]'));
+  }
+
+  function updateVariantAvailability(detail) {
+    if (!detail || !variantInventory.length) return;
+    var variant = selectedVariant(detail);
+    var stock = variant ? Number(variant.stock || 0) : 0;
+    var status = detail.querySelector('.product-stock-status');
+    var addButton = detail.querySelector('[data-add-to-cart]');
+    if (status) {
+      status.classList.toggle('is-out', stock < 1);
+      status.innerHTML = stock > 0
+        ? '<i class="fa fa-check-circle"></i> Disponible · ' + stock + (stock === 1 ? ' unidad' : ' unidades')
+        : '<i class="fa fa-times-circle"></i> Combinación agotada';
+    }
+    if (addButton) {
+      addButton.setAttribute('aria-disabled', stock > 0 ? 'false' : 'true');
+      addButton.classList.toggle('is-disabled', stock < 1);
+    }
+
+    detail.querySelectorAll('.size-list li[data-size]').forEach(function (option) {
+      var available = variantInventory.some(function (entry) {
+        return entry.active && entry.stock > 0 && entry.size === option.dataset.size;
+      });
+      option.classList.toggle('is-unavailable', !available);
+      option.setAttribute('aria-disabled', available ? 'false' : 'true');
+    });
+    detail.querySelectorAll('.color-list li[data-color]').forEach(function (option) {
+      var available = variantInventory.some(function (entry) {
+        return entry.active && entry.stock > 0 && entry.color === option.dataset.color;
+      });
+      option.classList.toggle('is-unavailable', !available);
+      option.setAttribute('aria-disabled', available ? 'false' : 'true');
+    });
+  }
+
   function updateBadges(cart) {
     document.querySelectorAll('.shop-count').forEach(function (badge) {
       badge.textContent = String(cart.count);
@@ -175,6 +250,13 @@
   }
 
   document.addEventListener('click', function (event) {
+    var variantOption = event.target.closest('.product-size .size-list li, .product-color .color-list li');
+    if (variantOption && variantOption.getAttribute('aria-disabled') === 'true') {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      notify('Esta combinación está agotada.', true);
+      return;
+    }
     var favoriteTrigger = event.target.closest('[data-favorite-product], .btn-product-wishlist, .product-wishlist-compare a[href="shop-wishlist.html"]');
     if (favoriteTrigger) {
       var favoriteProductId = productIdFrom(favoriteTrigger);
@@ -224,6 +306,11 @@
       if (!productId) return;
       event.preventDefault();
       event.stopImmediatePropagation();
+      var chosenVariant = selectedVariant(add);
+      if (variantInventory.length && (!chosenVariant || Number(chosenVariant.stock || 0) < 1)) {
+        notify('Selecciona una combinación disponible.', true);
+        return;
+      }
       request('/api/cart/items/', {
         method: 'POST',
         body: JSON.stringify({ product_id: productId, quantity: 1, size: selectedSize(add), color: selectedColor(add) })
@@ -255,6 +342,31 @@
       })).then(function () { return request('/api/cart/'); }).then(renderCart);
     }
   }, true);
+
+  document.addEventListener('click', function (event) {
+    var variantOption = event.target.closest('.product-size .size-list li, .product-color .color-list li');
+    if (!variantOption) return;
+    window.setTimeout(function () {
+      var detail = variantOption.closest('.product-single-item');
+      reconcileVariantSelection(detail, variantOption);
+      updateVariantAvailability(detail);
+    }, 0);
+  });
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    var variantOption = event.target.closest('.product-size .size-list li, .product-color .color-list li');
+    if (!variantOption || variantOption.getAttribute('aria-disabled') === 'true') return;
+    window.setTimeout(function () {
+      var detail = variantOption.closest('.product-single-item');
+      reconcileVariantSelection(detail, variantOption);
+      updateVariantAvailability(detail);
+    }, 0);
+  });
+
+  var productDetail = document.querySelector('.product-single-item');
+  reconcileVariantSelection(productDetail);
+  updateVariantAvailability(productDetail);
 
   document.addEventListener('change', function (event) {
     var quantity = event.target.closest('[data-cart-quantity]');

@@ -1,31 +1,84 @@
 from django.contrib import admin, messages
+from django.db.models import Count
+from django.urls import reverse
 from django.utils import timezone
 
 from .forms import ProductAdminForm
-from .models import Address, BlogCategory, BlogComment, BlogPost, Cart, CartItem, ContactRequest, Coupon, CouponRedemption, CustomerProfile, Favorite, HomeBanner, MarketingPopup, NewsletterSubscription, Order, OrderItem, Product, ProductReview
+from .models import Address, BlogCategory, BlogComment, BlogPost, Cart, CartItem, ContactRequest, Coupon, CouponRedemption, CustomerProfile, Favorite, HomeBanner, MarketingPopup, NewsletterSubscription, Order, OrderItem, OrderStatusHistory, Product, ProductReview, ProductVariant, StoreSection
+from .services import OrderTransitionError, transition_order
 from .stockx import StockXLookupError, StockXNotConfigured, lookup_release_date
+
+
+@admin.register(StoreSection)
+class StoreSectionAdmin(admin.ModelAdmin):
+    list_display = ("title", "section_type", "slug", "product_count", "position", "is_active", "updated_at")
+    list_filter = ("section_type", "is_active")
+    list_editable = ("position", "is_active")
+    search_fields = ("title", "slug", "description", "empty_title", "empty_description")
+    prepopulated_fields = {"slug": ("title",)}
+    readonly_fields = ("created_at", "updated_at")
+    ordering = ("position", "title")
+    fieldsets = (
+        ("Identidad y navegación", {"fields": ("section_type", "title", "slug", "description", "position", "is_active")}),
+        ("Banner de la sección", {"fields": ("banner_image_file", "banner_image_url", "banner_image_alt")}),
+        ("Estado vacío", {"fields": ("empty_image_file", "empty_image_url", "empty_image_alt", "empty_title", "empty_description")}),
+        ("Auditoría", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
+    )
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(
+            _product_count=(
+                Count("products", distinct=True)
+                + Count("brand_products", distinct=True)
+            ),
+        )
+
+    @admin.display(description="productos", ordering="_product_count")
+    def product_count(self, obj):
+        return obj._product_count
+
+
+class ProductVariantInline(admin.TabularInline):
+    model = ProductVariant
+    extra = 1
+    min_num = 1
+    validate_min = True
+    fields = ("sku", "size", "color_name", "color_hex", "stock", "is_active", "updated_at")
+    readonly_fields = ("updated_at",)
 
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     form = ProductAdminForm
     prepopulated_fields = {"slug": ("name",)}
-    list_display = ("name", "sku", "brand", "release_date", "audience", "collection", "product_type", "price", "stock", "is_active")
-    list_filter = ("audience", "collection", "product_type", "brand", "is_active")
-    search_fields = ("name", "brand", "sku", "slug", "description", "tags")
-    readonly_fields = ("release_date_source", "stockx_product_id", "release_date_checked_at", "created_at")
+    list_display = ("name", "sku", "brand", "release_date", "audience", "collection", "product_type", "section_names", "price", "stock", "is_on_sale", "is_active")
+    list_filter = ("audience", "collection", "product_type", "brand", "store_sections", "is_on_sale", "is_active")
+    search_fields = ("name", "brand__title", "sku", "slug", "description", "tags", "store_sections__title")
+    filter_horizontal = ("store_sections",)
+    readonly_fields = ("stock", "release_date_source", "stockx_product_id", "release_date_checked_at", "created_at")
+    inlines = (ProductVariantInline,)
     fieldsets = (
-        ("Identidad y publicacion", {"fields": ("name", "slug", "sku", "brand", "audience", "collection", "product_type", "is_active")}),
+        ("Identidad y publicacion", {"fields": ("name", "slug", "sku", "brand", "audience", "collection", "product_type", "is_on_sale", "is_active")}),
         ("Lanzamiento", {
             "fields": ("release_date", "lookup_release_date", "release_date_source", "stockx_product_id", "release_date_checked_at"),
             "description": "Puedes escribir la fecha manualmente o dejarla vacía y consultar StockX usando la referencia.",
         }),
         ("Contenido de la ficha", {"fields": ("description", "additional_information", "detailed_description")}),
-        ("Precio e inventario", {"fields": ("price", "compare_at_price", "stock", "weight_kg")}),
+        ("Precio e inventario", {
+            "fields": ("price", "compare_at_price", "stock", "weight_kg"),
+            "description": "El inventario total se calcula automáticamente desde las variantes de talla y color.",
+        }),
         ("Imagenes", {"fields": ("image", "image_alt", "gallery")}),
-        ("Variaciones y clasificacion", {"fields": ("sizes", "colors", "tags")}),
+        ("Variaciones y clasificacion", {"fields": ("sizes", "colors", "tags", "store_sections")}),
         ("Auditoria", {"fields": ("created_at",), "classes": ("collapse",)}),
     )
+
+    @admin.display(description="secciones")
+    def section_names(self, obj):
+        return ", ".join(obj.store_sections.values_list("title", flat=True)) or "—"
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("brand").prefetch_related("store_sections")
 
     def save_model(self, request, obj, form, change):
         manual_date_changed = "release_date" in form.changed_data
@@ -68,9 +121,20 @@ class ProductAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
+@admin.register(ProductVariant)
+class ProductVariantAdmin(admin.ModelAdmin):
+    list_display = ("product", "sku", "size", "color_name", "stock", "is_active", "updated_at")
+    list_filter = ("is_active", "product__brand", "size", "color_name")
+    list_editable = ("stock", "is_active")
+    search_fields = ("sku", "product__name", "product__sku", "size", "color_name")
+    autocomplete_fields = ("product",)
+    readonly_fields = ("created_at", "updated_at")
+
+
 class CartItemInline(admin.TabularInline):
     model = CartItem
     extra = 0
+    autocomplete_fields = ("product", "variant")
 
 
 @admin.register(Cart)
@@ -116,28 +180,132 @@ class AddressAdmin(admin.ModelAdmin):
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
-    readonly_fields = ("product", "product_name", "product_image", "unit_price", "quantity", "size")
+    readonly_fields = ("product", "variant", "variant_sku", "product_name", "product_image", "unit_price", "quantity", "size", "color")
     can_delete = False
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+class OrderStatusHistoryInline(admin.TabularInline):
+    model = OrderStatusHistory
+    extra = 0
+    fields = ("created_at", "from_status", "to_status", "source", "changed_by", "note", "notification_sent_at")
+    readonly_fields = fields
+    can_delete = False
+    verbose_name_plural = "Historial y auditoría de estados"
+
+    def has_add_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ("number", "user", "recipient_name", "purchase_value", "sale_value", "discount_amount", "gross_profit_display", "status", "payment_method", "payment_status", "delivery_method", "fulfillment_status", "created_at")
-    list_filter = ("status", "payment_method", "payment_status", "delivery_method", "fulfillment_status", "created_at")
-    list_editable = ("purchase_value", "sale_value", "status", "fulfillment_status")
-    search_fields = ("number", "recipient_name", "user__username", "user__email", "city", "payment_reference", "payment_transaction_id")
+    list_display = ("number", "recipient_name", "status", "payment_method", "payment_status", "delivery_method", "carrier", "tracking_number", "total", "created_at")
+    list_filter = ("status", "fulfillment_status", "payment_method", "payment_status", "delivery_method", "created_at")
+    search_fields = ("number", "recipient_name", "user__username", "user__email", "city", "carrier", "tracking_number", "payment_reference", "payment_transaction_id")
     date_hierarchy = "created_at"
-    inlines = [OrderItemInline]
+    list_select_related = ("user",)
+    inlines = [OrderItemInline, OrderStatusHistoryInline]
+    actions = ("mark_paid", "mark_preparing", "mark_shipped", "mark_delivered", "cancel_or_refund")
     readonly_fields = (
-        "number", "user", "recipient_name", "phone", "address_line_1", "address_line_2",
+        "number", "user", "status", "fulfillment_status", "payment_method", "delivery_method", "recipient_name", "phone", "address_line_1", "address_line_2",
         "department", "city", "postal_code", "subtotal", "shipping_cost", "coupon", "coupon_code", "discount_amount", "total", "notes",
         "payment_reference", "payment_status", "payment_transaction_id", "payment_attempts", "paid_at",
-        "created_at", "updated_at",
+        "stock_reserved", "shipped_at", "delivered_at", "confirmation_email_sent_at", "created_at", "updated_at",
     )
+    fieldsets = (
+        ("Estado operativo", {
+            "fields": ("status", "fulfillment_status", "payment_method", "payment_status"),
+            "description": "Usa las acciones del listado para avanzar el pedido. Las transiciones quedan registradas en el historial.",
+        }),
+        ("Despacho", {
+            "fields": ("delivery_method", "carrier", "tracking_number", "dispatch_receipt", "shipped_at", "delivered_at"),
+            "description": "La transportadora y la guía son obligatorias para despachos a domicilio. El comprobante PDF o imagen es opcional.",
+        }),
+        ("Cliente y entrega", {"fields": ("number", "user", "recipient_name", "phone", "address_line_1", "address_line_2", "department", "city", "postal_code", "notes")}),
+        ("Valores históricos", {"fields": ("subtotal", "shipping_cost", "coupon", "coupon_code", "discount_amount", "total", "purchase_value", "sale_value")}),
+        ("Pago e integridad", {"fields": ("payment_reference", "payment_transaction_id", "payment_attempts", "paid_at", "stock_reserved", "confirmation_email_sent_at"), "classes": ("collapse",)}),
+        ("Auditoría", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
+    )
+
+    def get_readonly_fields(self, request, obj=None):
+        fields = list(self.readonly_fields)
+        if obj and obj.status != Order.Status.PENDING:
+            fields.extend(("purchase_value", "sale_value"))
+        return tuple(fields)
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def _transition_queryset(self, request, queryset, target_status, label):
+        completed = 0
+        for order in queryset.select_related("user"):
+            destination = target_status(order) if callable(target_status) else target_status
+            try:
+                _, history = transition_order(
+                    order,
+                    destination,
+                    actor=request.user,
+                    source=OrderStatusHistory.Source.ADMIN,
+                    note=f"Cambio realizado desde el panel: {label}.",
+                    order_url=request.build_absolute_uri(reverse("order_detail", args=[order.number])),
+                )
+            except OrderTransitionError as exc:
+                self.message_user(request, f"{order.number}: {exc}", level=messages.ERROR)
+            else:
+                if history is None:
+                    continue
+                completed += 1
+        if completed:
+            self.message_user(request, f"{completed} pedido(s) actualizado(s): {label}.", level=messages.SUCCESS)
+
+    @admin.action(description="Confirmar pago de pedidos seleccionados")
+    def mark_paid(self, request, queryset):
+        self._transition_queryset(request, queryset, Order.Status.PAID, "pago confirmado")
+
+    @admin.action(description="Pasar pedidos seleccionados a preparación")
+    def mark_preparing(self, request, queryset):
+        self._transition_queryset(request, queryset, Order.Status.PREPARING, "preparando")
+
+    @admin.action(description="Marcar pedidos seleccionados como enviados")
+    def mark_shipped(self, request, queryset):
+        self._transition_queryset(request, queryset, Order.Status.SHIPPED, "enviado")
+
+    @admin.action(description="Marcar pedidos seleccionados como entregados")
+    def mark_delivered(self, request, queryset):
+        self._transition_queryset(request, queryset, Order.Status.DELIVERED, "entregado")
+
+    @admin.action(description="Cancelar o reembolsar pedidos seleccionados")
+    def cancel_or_refund(self, request, queryset):
+        self._transition_queryset(
+            request,
+            queryset,
+            lambda order: Order.Status.CANCELLED if order.status == Order.Status.PENDING else Order.Status.REFUNDED,
+            "cancelado o reembolsado",
+        )
 
     @admin.display(description="utilidad bruta")
     def gross_profit_display(self, obj):
         return obj.gross_profit
+
+
+@admin.register(OrderStatusHistory)
+class OrderStatusHistoryAdmin(admin.ModelAdmin):
+    list_display = ("order", "from_status", "to_status", "source", "changed_by", "created_at", "notification_sent_at")
+    list_filter = ("to_status", "source", "created_at")
+    search_fields = ("order__number", "changed_by__username", "note")
+    readonly_fields = ("order", "from_status", "to_status", "source", "note", "changed_by", "notification_sent_at", "created_at")
+    date_hierarchy = "created_at"
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return request.method in {"GET", "HEAD", "OPTIONS"}
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 @admin.register(Coupon)
 class CouponAdmin(admin.ModelAdmin):

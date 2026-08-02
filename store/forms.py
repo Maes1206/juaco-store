@@ -4,7 +4,7 @@ from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 
 from . import bold
-from .models import Address, BlogComment, ContactRequest, CustomerProfile, Order, Product, ProductReview
+from .models import Address, BlogComment, ContactRequest, CustomerProfile, Order, Product, ProductReview, StoreSection
 
 
 User = get_user_model()
@@ -62,6 +62,22 @@ class ProductAdminForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["sizes"].disabled = True
+        self.fields["sizes"].help_text = "Resumen automático de las tallas configuradas en Variantes de producto."
+        self.fields["colors"].disabled = True
+        self.fields["colors"].help_text = "Resumen automático de los colores configurados en Variantes de producto."
+        self.fields["brand"].queryset = StoreSection.objects.filter(
+            section_type=StoreSection.SectionType.BRAND
+        ).order_by("position", "title")
+        self.fields["brand"].help_text = (
+            "La lista se actualiza automáticamente desde el CRUD de marcas y secciones de Tienda."
+        )
+        self.fields["store_sections"].queryset = StoreSection.objects.filter(
+            section_type=StoreSection.SectionType.CUSTOM
+        ).order_by("position", "title")
+        self.fields["store_sections"].help_text = (
+            "Selecciona las colecciones o secciones adicionales donde debe aparecer este producto."
+        )
         if self.instance and self.instance.pk:
             self.fields["lookup_release_date"].initial = False
             self.initial["sizes"] = ", ".join(str(size) for size in (self.instance.sizes or []))

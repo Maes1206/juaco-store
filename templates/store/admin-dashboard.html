@@ -23,7 +23,7 @@
       <div class="col-lg-3 col-md-4">
         <nav class="admin-panel-menu myaccount-tab-menu nav nav-tabs" aria-label="Secciones administrativas">
           <a class="nav-link{% if section == 'overview' %} active{% endif %}" href="panel-admin/?section=overview#admin-panel-content"><i class="fa fa-dashboard"></i> Resumen</a>
-          {% if section_access.sales %}<a class="nav-link{% if section == 'sales' %} active{% endif %}" href="panel-admin/?section=sales#admin-panel-content"><i class="fa fa-shopping-bag"></i> Ventas exitosas</a>{% endif %}
+          {% if section_access.sales %}<a class="nav-link{% if section == 'sales' %} active{% endif %}" href="panel-admin/?section=sales#admin-panel-content"><i class="fa fa-shopping-bag"></i> Pedidos y ventas</a>{% endif %}
           {% if section_access.clients %}<a class="nav-link{% if section == 'clients' %} active{% endif %}" href="panel-admin/?section=clients#admin-panel-content"><i class="fa fa-users"></i> Clientes</a>{% endif %}
           {% if section_access.reports %}<a class="nav-link{% if section == 'reports' %} active{% endif %}" href="panel-admin/?section=reports#admin-panel-content"><i class="fa fa-line-chart"></i> Reportes financieros</a>{% endif %}
           {% if section_access.marketing %}<a class="nav-link{% if section == 'marketing' %} active{% endif %}" href="panel-admin/?section=marketing#admin-panel-content"><i class="fa fa-bullhorn"></i> Marketing{% if marketing_notification_count %}<span class="admin-menu-badge" aria-label="{{ marketing_notification_count }} notificaciones pendientes">{{ marketing_notification_count }}</span>{% endif %}</a>{% endif %}
@@ -55,15 +55,15 @@
           {% endif %}
 
           {% elif section == 'sales' %}
-          <div class="admin-section-heading"><div><h3>Ventas exitosas</h3><p>Pedidos pagados, enviados o entregados y productos vendidos.</p></div><a href="{% url 'admin:store_order_changelist' %}">Administrar pedidos</a></div>
+          <div class="admin-section-heading"><div><h3>Pedidos y ventas</h3><p>Control operativo desde el pago hasta la entrega, con guÃ­a, comprobante e historial.</p></div><a href="{% url 'admin:store_order_changelist' %}">Administrar pedidos</a></div>
           <h4 class="admin-subtitle">Productos vendidos</h4>
           <div class="myaccount-table table-responsive"><table class="table"><thead><tr><th>Producto</th><th>Unidades</th><th>Ingresos</th></tr></thead><tbody>{% for item in sold_products %}<tr><td><div class="admin-product-cell">{% if item.product_image %}<img src="{{ item.product_image }}" alt="">{% endif %}<strong>{{ item.product_name }}</strong></div></td><td>{{ item.units_sold }}</td><td>{{ item.revenue|cop }}</td></tr>{% empty %}<tr><td colspan="3">Aun no hay ventas confirmadas.</td></tr>{% endfor %}</tbody></table></div>
-          <h4 class="admin-subtitle">Pedidos exitosos</h4>
+          <h4 class="admin-subtitle">Pedidos recientes</h4>
                     <div class="myaccount-table table-responsive">
             <table class="table">
               <thead><tr><th>Producto</th><th>Pedido</th><th>Cliente</th><th>Estado</th><th>Total</th><th>Fecha</th><th>Acciones</th></tr></thead>
               <tbody>
-                {% for order in successful_orders %}
+                {% for order in operational_orders %}
                 <tr>
                   <td>
                     {% with sold_item=order.items.all.0 %}
@@ -77,7 +77,7 @@
                   </td>
                   <td><strong>{{ order.number }}</strong><small class="admin-table-note">{{ order.get_payment_method_display }}</small></td>
                   <td><strong>{{ order.user.get_full_name|default:order.recipient_name }}</strong><small class="admin-table-note">{% if order.user %}@{{ order.user.username }}{% else %}Invitado{% endif %}</small></td>
-                  <td><span class="order-status order-status--{{ order.status }}">{{ order.get_status_display }}</span><small class="admin-table-note">{{ order.get_fulfillment_status_display }}</small></td>
+                  <td><span class="order-status order-status--{{ order.status }}">{{ order.get_status_display }}</span><small class="admin-table-note">{{ order.get_fulfillment_status_display }}{% if order.tracking_number %} Â· GuÃ­a {{ order.tracking_number }}{% endif %}</small></td>
                   <td>{{ order.total|cop }}</td>
                   <td>{{ order.created_at|date:"d M Y" }}</td>
                   <td><div class="admin-row-actions"><button type="button" data-detail-toggle="order-info-{{ order.id }}" data-label-hidden="Ver venta" data-label-shown="Ocultar venta" aria-expanded="false">Ver venta</button><a href="{% url 'admin:store_order_change' order.id %}">Editar</a></div></td>
@@ -101,6 +101,11 @@
                         <dl class="admin-client-data admin-client-data--stacked">
                           <div><dt>Tipo de envio</dt><dd>{{ order.get_delivery_method_display }}</dd></div>
                           <div><dt>Estado del envio</dt><dd><span class="shipping-status shipping-status--{{ order.fulfillment_status }}">{{ order.get_fulfillment_status_display }}</span></dd></div>
+                          <div><dt>Transportadora</dt><dd>{{ order.carrier|default:"Sin asignar" }}</dd></div>
+                          <div><dt>Numero de guia</dt><dd>{{ order.tracking_number|default:"Sin asignar" }}</dd></div>
+                          <div><dt>Comprobante de despacho</dt><dd>{% if order.dispatch_receipt %}Adjunto en la ficha administrativa{% else %}No adjunto (opcional){% endif %}</dd></div>
+                          <div><dt>Fecha de despacho</dt><dd>{% if order.shipped_at %}{{ order.shipped_at|date:"d M Y, H:i" }}{% else %}Sin registrar{% endif %}</dd></div>
+                          <div><dt>Fecha de entrega</dt><dd>{% if order.delivered_at %}{{ order.delivered_at|date:"d M Y, H:i" }}{% else %}Sin registrar{% endif %}</dd></div>
                           <div><dt>Destinatario</dt><dd>{{ order.recipient_name }}</dd></div>
                           <div><dt>Direccion</dt><dd>{{ order.full_address }}</dd></div>
                           <div><dt>Telefono de contacto</dt><dd>{{ order.phone|default:"No registrado" }}</dd></div>
@@ -223,9 +228,12 @@
           <h4 class="admin-subtitle">Solicitudes recientes</h4>
           <div class="myaccount-table table-responsive"><table class="table"><thead><tr><th>Cliente</th><th>Asunto</th><th>Estado</th><th>Fecha</th><th></th></tr></thead><tbody>{% for contact in recent_contact_requests %}<tr><td><strong>{{ contact.name }}</strong><small class="admin-table-note">{{ contact.email }}</small></td><td>{{ contact.subject|default:"Consulta general" }}</td><td><span class="admin-state{% if contact.status == 'resolved' %} is-active{% endif %}">{{ contact.get_status_display }}</span></td><td>{{ contact.created_at|date:"d M Y, H:i" }}</td><td><a href="{% url 'admin:store_contactrequest_change' contact.id %}">Atender</a></td></tr>{% empty %}<tr><td colspan="5">Aun no hay solicitudes recibidas.</td></tr>{% endfor %}</tbody></table></div>
           {% elif section == 'products' %}
-          <div class="admin-section-heading"><div><h3>Edicion de productos</h3><p>CRUD del catalogo: crear, consultar, editar y eliminar.</p></div><a class="admin-primary-action" href="{% url 'admin:store_product_add' %}"><i class="fa fa-plus"></i> Nuevo producto</a></div>
-          <div class="admin-product-sections"><strong>Tienda y productos</strong><span>Gestionar por seccion:</span><a href="{% url 'admin:store_product_changelist' %}?audience__exact=men">Hombre</a><a href="{% url 'admin:store_product_changelist' %}?audience__exact=women">Mujer</a><a href="{% url 'admin:store_product_changelist' %}">Marcas</a><a href="{% url 'admin:store_product_changelist' %}?product_type__exact=accessory">Accesorios</a></div>
-          <div class="myaccount-table table-responsive"><table class="table"><thead><tr><th>Producto</th><th>Marca</th><th>Precio</th><th>Stock</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{% for product in products %}<tr><td><div class="admin-product-cell"><img src="{{ product.image }}" alt=""><strong>{{ product.name }}</strong></div></td><td>{{ product.brand }}</td><td>{{ product.price|cop }}</td><td>{{ product.stock }}</td><td>{% if product.is_active %}<span class="admin-state is-active">Activo</span>{% else %}<span class="admin-state">Inactivo</span>{% endif %}</td><td><div class="admin-row-actions"><a href="{% url 'admin:store_product_change' product.id %}">Editar</a><a class="is-danger" href="{% url 'admin:store_product_delete' product.id %}">Eliminar</a></div></td></tr>{% empty %}<tr><td colspan="6">No hay productos.</td></tr>{% endfor %}</tbody></table></div>
+          <div class="admin-section-heading"><div><h3>Edicion de productos</h3><p>CRUD del catalogo: crear, consultar, editar y eliminar.</p></div><div class="admin-heading-actions"><a href="{% url 'admin:store_productvariant_changelist' %}">Inventario por variantes</a><a href="{% url 'admin:store_storesection_changelist' %}">Marcas y secciones</a><a class="admin-primary-action" href="{% url 'admin:store_product_add' %}"><i class="fa fa-plus"></i> Nuevo producto</a></div></div>
+          <div class="admin-marketing-hub admin-store-section-hub">
+            <article><i class="fa fa-folder-open"></i><div><h4>Marcas y secciones dinámicas</h4><p>Crea marcas o categorías con banner, descripción e imagen de estado vacío.</p><nav><a href="{% url 'admin:store_storesection_changelist' %}">Administrar</a><a href="{% url 'admin:store_storesection_add' %}?section_type=brand">Nueva marca</a><a href="{% url 'admin:store_storesection_add' %}?section_type=custom">Nueva sección</a></nav></div></article>
+          </div>
+          <div class="admin-product-sections"><strong>Tienda y productos</strong><span>Gestionar por sección:</span><a href="{% url 'admin:store_product_changelist' %}?audience__exact=men">Hombre</a><a href="{% url 'admin:store_product_changelist' %}?audience__exact=women">Mujer</a><a href="{% url 'admin:store_product_changelist' %}?is_on_sale__exact=1">Ofertas</a><a href="{% url 'admin:store_product_changelist' %}?product_type__exact=accessory">Accesorios</a>{% for store_section in store_sections %}<a href="{% url 'admin:store_product_changelist' %}?{% if store_section.section_type == 'brand' %}brand__id__exact{% else %}store_sections__id__exact{% endif %}={{ store_section.id }}">{{ store_section.title }} <small>({{ store_section.product_count }})</small></a>{% endfor %}<a href="{% url 'admin:store_storesection_add' %}?section_type=brand"><i class="fa fa-plus"></i> Nueva marca</a></div>
+          <div class="myaccount-table table-responsive"><table class="table"><thead><tr><th>Producto</th><th>Marca</th><th>Secciones</th><th>Precio</th><th>Stock</th><th>Estado</th><th>Ofertas</th><th>Acciones</th></tr></thead><tbody>{% for product in products %}<tr><td><div class="admin-product-cell"><img src="{{ product.image }}" alt=""><strong>{{ product.name }}</strong></div></td><td>{{ product.brand }}</td><td>{% for store_section in product.store_sections.all %}<span class="admin-state is-active">{{ store_section.title }}</span>{% empty %}<span class="admin-table-note">Sin sección dinámica</span>{% endfor %}</td><td>{{ product.price|cop }}</td><td>{{ product.stock }}</td><td>{% if product.is_active %}<span class="admin-state is-active">Activo</span>{% else %}<span class="admin-state">Inactivo</span>{% endif %}</td><td>{% if product.is_on_sale %}<span class="admin-state is-active">Publicado</span>{% else %}<span class="admin-state">No</span>{% endif %}</td><td><div class="admin-row-actions"><a href="{% url 'admin:store_product_change' product.id %}">Editar</a><a class="is-danger" href="{% url 'admin:store_product_delete' product.id %}">Eliminar</a></div></td></tr>{% empty %}<tr><td colspan="8">No hay productos.</td></tr>{% endfor %}</tbody></table></div>
 
           {% elif section == 'blog' %}
           <div class="admin-section-heading"><div><h3>Blog</h3><p>CRUD de articulos y categorias editoriales.</p></div><div class="admin-heading-actions"><a href="{% url 'admin:store_blogcategory_changelist' %}">Categorias</a><a class="admin-primary-action" href="{% url 'admin:store_blogpost_add' %}"><i class="fa fa-plus"></i> Nuevo articulo</a></div></div>

@@ -4,7 +4,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.db import models
 from django.core.exceptions import ValidationError
-from django.core.validators import FileExtensionValidator, MaxValueValidator, MinValueValidator
+from django.core.validators import FileExtensionValidator, MaxValueValidator, MinValueValidator, RegexValidator
 from PIL import Image, UnidentifiedImageError
 
 
@@ -16,6 +16,7 @@ _VIDEO_SIGNATURE_CHECKS = {
     "webm": lambda header: header.startswith(b"\x1a\x45\xdf\xa3"),
 }
 _IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
+RESERVED_STORE_SECTION_SLUGS = {"hombre", "mujer", "clasicas", "ofertas", "accesorios"}
 
 
 def validate_uploaded_media(file):
@@ -43,13 +44,128 @@ def validate_uploaded_media(file):
         file.seek(0)
 
 
-class Product(models.Model):
-    class Brand(models.TextChoices):
-        JORDAN = "Jordan", "Jordan"
-        ADIDAS = "Adidas", "Adidas"
-        PUMA = "Puma", "Puma"
-        NIKE = "Nike", "Nike"
+def validate_dispatch_receipt(file):
+    """Acepta comprobantes PDF o imagen, con contenido real y hasta 5 MB."""
+    if file.size > 5 * 1024 * 1024:
+        raise ValidationError("El comprobante de despacho no puede superar 5 MB.")
+    extension = os.path.splitext(file.name)[1].lstrip(".").lower()
+    file.seek(0)
+    try:
+        if extension == "pdf":
+            if not file.read(5).startswith(b"%PDF-"):
+                raise ValidationError("El archivo no es un PDF válido.")
+        elif extension in _IMAGE_EXTENSIONS:
+            with Image.open(file) as image:
+                image.verify()
+        else:
+            raise ValidationError("Adjunta un PDF o una imagen JPG, PNG o WebP.")
+    except (UnidentifiedImageError, OSError) as exc:
+        raise ValidationError("El comprobante no contiene una imagen válida.") from exc
+    finally:
+        file.seek(0)
 
+
+class StoreSection(models.Model):
+    class SectionType(models.TextChoices):
+        BRAND = "brand", "Marca"
+        CUSTOM = "custom", "Sección personalizada"
+
+    section_type = models.CharField(
+        "tipo de sección",
+        max_length=12,
+        choices=SectionType.choices,
+        default=SectionType.CUSTOM,
+        db_index=True,
+        help_text="Las marcas aparecen automáticamente en el selector de productos.",
+    )
+    title = models.CharField("título", max_length=120, unique=True)
+    slug = models.SlugField("identificador URL", max_length=130, unique=True)
+    description = models.TextField("descripción", max_length=320)
+    banner_image_file = models.FileField(
+        "archivo del banner",
+        upload_to="store/sections/banners/",
+        blank=True,
+        validators=(FileExtensionValidator(("jpg", "jpeg", "png", "webp")), validate_uploaded_media),
+        help_text="Sube una imagen JPG, PNG o WebP. También puedes usar una URL en el campo siguiente.",
+    )
+    banner_image_url = models.CharField(
+        "URL del banner",
+        max_length=500,
+        blank=True,
+        help_text="Alternativa al archivo: pega una URL o ruta existente.",
+    )
+    banner_image_alt = models.CharField("texto alternativo del banner", max_length=180, blank=True)
+    empty_image_file = models.FileField(
+        "archivo de estado vacío",
+        upload_to="store/sections/empty/",
+        blank=True,
+        validators=(FileExtensionValidator(("jpg", "jpeg", "png", "webp")), validate_uploaded_media),
+        help_text="Imagen editorial que se muestra cuando la sección no tiene productos.",
+    )
+    empty_image_url = models.CharField(
+        "URL de estado vacío",
+        max_length=500,
+        blank=True,
+        help_text="Alternativa al archivo: pega una URL o ruta existente.",
+    )
+    empty_image_alt = models.CharField("texto alternativo de estado vacío", max_length=180, blank=True)
+    empty_title = models.CharField(
+        "título de estado vacío",
+        max_length=180,
+        blank=True,
+        help_text="Si lo dejas vacío se generará automáticamente con el nombre de la sección.",
+    )
+    empty_description = models.TextField(
+        "descripción de estado vacío",
+        max_length=320,
+        blank=True,
+        help_text="Mensaje opcional que acompaña la imagen cuando todavía no hay productos.",
+    )
+    position = models.PositiveSmallIntegerField("orden en Tienda", default=0)
+    is_active = models.BooleanField("visible en la tienda", default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "sección de la tienda"
+        verbose_name_plural = "secciones de la tienda"
+        ordering = ("position", "title", "id")
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        if self.slug in RESERVED_STORE_SECTION_SLUGS:
+            errors["slug"] = "Este identificador está reservado por una sección principal de la tienda."
+        if not self.banner_image_file and not self.banner_image_url:
+            errors["banner_image_file"] = "Sube un banner o indica una URL para el banner."
+        if not self.empty_image_file and not self.empty_image_url:
+            errors["empty_image_file"] = "Sube una imagen de estado vacío o indica una URL."
+        if self.pk and self.section_type != self.SectionType.BRAND and self.brand_products.exists():
+            errors["section_type"] = "No puedes cambiar esta marca mientras tenga productos asignados."
+        if errors:
+            raise ValidationError(errors)
+
+    @property
+    def banner_source(self):
+        return self.banner_image_file.url if self.banner_image_file else self.banner_image_url
+
+    @property
+    def empty_image_source(self):
+        return self.empty_image_file.url if self.empty_image_file else self.empty_image_url
+
+    @property
+    def resolved_empty_title(self):
+        return self.empty_title or f"Aún no hemos agregado productos en {self.title}"
+
+    @property
+    def resolved_empty_description(self):
+        return self.empty_description or "Cuando el equipo asigne productos a esta sección desde el panel administrativo, aparecerán automáticamente aquí."
+
+    def __str__(self):
+        return self.title
+
+
+class Product(models.Model):
     class Audience(models.TextChoices):
         MEN = "men", "Hombre"
         WOMEN = "women", "Mujer"
@@ -83,7 +199,14 @@ class Product(models.Model):
     )
     stockx_product_id = models.CharField("ID de producto en StockX", max_length=80, blank=True, editable=False)
     release_date_checked_at = models.DateTimeField("última consulta de lanzamiento", null=True, blank=True, editable=False)
-    brand = models.CharField("marca", max_length=40, choices=Brand.choices)
+    legacy_brand = models.CharField("marca anterior", max_length=40, blank=True, default="", editable=False)
+    brand = models.ForeignKey(
+        StoreSection,
+        on_delete=models.PROTECT,
+        related_name="brand_products",
+        limit_choices_to={"section_type": StoreSection.SectionType.BRAND},
+        verbose_name="marca",
+    )
     name = models.CharField("nombre", max_length=180)
     audience = models.CharField("seccion", max_length=12, choices=Audience.choices, default=Audience.UNISEX, db_index=True)
     product_type = models.CharField("tipo", max_length=12, choices=ProductType.choices, default=ProductType.FOOTWEAR, db_index=True)
@@ -99,18 +222,48 @@ class Product(models.Model):
     tags = models.JSONField("etiquetas", default=list, blank=True)
     sizes = models.JSONField("tallas", default=list, blank=True)
     colors = models.JSONField("colores", default=list, blank=True)
+    store_sections = models.ManyToManyField(
+        StoreSection,
+        verbose_name="secciones personalizadas de Tienda",
+        related_name="products",
+        blank=True,
+        help_text="Selecciona una o varias secciones dinámicas en las que debe aparecer el producto.",
+    )
     weight_kg = models.DecimalField("peso en kg", max_digits=6, decimal_places=2, default=Decimal("1.00"), validators=(MinValueValidator(Decimal("0.01")), MaxValueValidator(Decimal("30"))))
-    stock = models.PositiveIntegerField("inventario", default=20)
+    stock = models.PositiveIntegerField("inventario", default=0)
+    is_on_sale = models.BooleanField(
+        "mostrar en Ofertas",
+        default=False,
+        db_index=True,
+        help_text="Activa esta opcion para publicar el producto en la seccion Ofertas.",
+    )
     is_active = models.BooleanField("activo", default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["brand", "name"]
+        ordering = ["brand__title", "name"]
 
     def clean(self):
         super().clean()
+        if self.brand_id and self.brand.section_type != StoreSection.SectionType.BRAND:
+            raise ValidationError({"brand": "Selecciona una sección configurada como marca."})
         if self.compare_at_price is not None and self.compare_at_price <= self.price:
             raise ValidationError({"compare_at_price": "El precio anterior debe ser mayor al precio de venta."})
+
+    def save(self, *args, **kwargs):
+        update_fields = kwargs.get("update_fields")
+        if self.brand_id:
+            self.legacy_brand = self.brand.title
+            if update_fields and "brand" in update_fields:
+                kwargs["update_fields"] = tuple(set(update_fields) | {"legacy_brand"})
+        super().save(*args, **kwargs)
+        if update_fields and "stock" in update_fields:
+            active_variants = list(self.variants.filter(is_active=True).order_by("id"))
+            if active_variants:
+                base_stock, remainder = divmod(self.stock, len(active_variants))
+                for index, variant in enumerate(active_variants):
+                    variant.stock = base_stock + (1 if index < remainder else 0)
+                ProductVariant.objects.bulk_update(active_variants, ("stock",))
 
     @property
     def reference(self):
@@ -146,6 +299,87 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class ProductVariant(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="variants", verbose_name="producto")
+    sku = models.CharField("referencia de variante", max_length=100, unique=True, null=True, blank=True)
+    size = models.CharField("talla", max_length=12, blank=True)
+    color_name = models.CharField("color", max_length=60, blank=True)
+    color_hex = models.CharField(
+        "código de color",
+        max_length=7,
+        blank=True,
+        validators=(RegexValidator(r"^#[0-9A-Fa-f]{6}$", "Usa un color hexadecimal como #505050."),),
+    )
+    stock = models.PositiveIntegerField("existencias", default=0)
+    is_active = models.BooleanField("disponible", default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "variante de producto"
+        verbose_name_plural = "variantes de producto"
+        ordering = ("product", "size", "color_name", "id")
+        constraints = (
+            models.UniqueConstraint(
+                fields=("product", "size", "color_name"),
+                name="unique_product_size_color_variant",
+            ),
+        )
+
+    def clean(self):
+        super().clean()
+        self.size = self.size.strip()
+        self.color_name = self.color_name.strip()
+        self.color_hex = self.color_hex.strip().upper()
+        if self.color_name and not self.color_hex:
+            raise ValidationError({"color_hex": "Indica el código hexadecimal de este color."})
+        if self.color_hex and not self.color_name:
+            raise ValidationError({"color_name": "Indica el nombre de este color."})
+
+    @classmethod
+    def sync_product_summary(cls, product_id):
+        variants = list(cls.objects.filter(product_id=product_id, is_active=True).order_by("id"))
+        sizes = []
+        colors = []
+        for variant in variants:
+            if variant.size and variant.size not in sizes:
+                sizes.append(variant.size)
+            if variant.color_name and not any(
+                item["name"].casefold() == variant.color_name.casefold() for item in colors
+            ):
+                colors.append({"name": variant.color_name, "hex": variant.color_hex or "#505050"})
+        Product.objects.filter(pk=product_id).update(
+            sizes=sizes,
+            colors=colors,
+            stock=sum(variant.stock for variant in variants),
+        )
+
+    def save(self, *args, **kwargs):
+        previous_product_id = None
+        if self.pk:
+            previous_product_id = type(self).objects.filter(pk=self.pk).values_list("product_id", flat=True).first()
+        self.full_clean()
+        super().save(*args, **kwargs)
+        self.sync_product_summary(self.product_id)
+        if previous_product_id and previous_product_id != self.product_id:
+            self.sync_product_summary(previous_product_id)
+        self.cart_items.update(product_id=self.product_id, size=self.size, color=self.color_name)
+
+    def delete(self, *args, **kwargs):
+        product_id = self.product_id
+        result = super().delete(*args, **kwargs)
+        self.sync_product_summary(product_id)
+        return result
+
+    @property
+    def label(self):
+        details = " / ".join(value for value in (self.size, self.color_name) if value)
+        return details or "Única"
+
+    def __str__(self):
+        return f"{self.product.name} · {self.label}"
 
 
 class BlogCategory(models.Model):
@@ -471,6 +705,14 @@ class Cart(models.Model):
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items")
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="cart_items")
+    variant = models.ForeignKey(
+        ProductVariant,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="cart_items",
+        verbose_name="variante",
+    )
     quantity = models.PositiveIntegerField(default=1)
     size = models.CharField(max_length=12, blank=True)
     color = models.CharField(max_length=60, blank=True)
@@ -484,6 +726,26 @@ class CartItem(models.Model):
     def subtotal(self):
         return self.product.price * self.quantity
 
+    @property
+    def available_stock(self):
+        if self.variant_id:
+            return self.variant.stock if self.variant.is_active else 0
+        return self.product.stock
+
+    def save(self, *args, **kwargs):
+        if not self.variant_id and self.product_id:
+            candidates = ProductVariant.objects.filter(product_id=self.product_id, is_active=True)
+            if self.size:
+                candidates = candidates.filter(size=self.size)
+            if self.color:
+                candidates = candidates.filter(color_name=self.color)
+            self.variant = candidates.filter(stock__gt=0).first() or candidates.first()
+        if self.variant_id:
+            self.product_id = self.variant.product_id
+            self.size = self.variant.size
+            self.color = self.variant.color_name
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.product.name} x {self.quantity}"
 
@@ -492,9 +754,11 @@ class Order(models.Model):
     class Status(models.TextChoices):
         PENDING = "pending", "Pendiente de pago"
         PAID = "paid", "Pagado"
+        PREPARING = "preparing", "Preparando"
         SHIPPED = "shipped", "Enviado"
         DELIVERED = "delivered", "Entregado"
         CANCELLED = "cancelled", "Cancelado"
+        REFUNDED = "refunded", "Reembolsado"
 
     class PaymentMethod(models.TextChoices):
         BANK_TRANSFER = "bank_transfer", "Transferencia bancaria"
@@ -523,7 +787,7 @@ class Order(models.Model):
         NO_TRANSACTION_FOUND = "NO_TRANSACTION_FOUND", "Sin intentos de pago"
 
     # Estados en los que el cobro ya está confirmado y la venta cuenta como exitosa.
-    SUCCESSFUL_STATUSES = (Status.PAID, Status.SHIPPED, Status.DELIVERED)
+    SUCCESSFUL_STATUSES = (Status.PAID, Status.PREPARING, Status.SHIPPED, Status.DELIVERED)
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="orders")
     number = models.CharField("número de pedido", max_length=20, unique=True, editable=False)
@@ -557,6 +821,23 @@ class Order(models.Model):
     sale_value = models.DecimalField("valor de venta", max_digits=12, decimal_places=2, null=True, blank=True)
     notes = models.TextField("notas del pedido", blank=True)
 
+    # Datos logísticos controlados desde el panel. Las fechas se asignan al
+    # realizar una transición, no se escriben manualmente.
+    carrier = models.CharField("transportadora", max_length=100, blank=True)
+    tracking_number = models.CharField("número de guía", max_length=120, blank=True, db_index=True)
+    dispatch_receipt = models.FileField(
+        "comprobante de despacho",
+        upload_to="orders/dispatch/%Y/%m/",
+        blank=True,
+        validators=(
+            FileExtensionValidator(("pdf", "jpg", "jpeg", "png", "webp")),
+            validate_dispatch_receipt,
+        ),
+        help_text="Opcional. PDF o imagen de hasta 5 MB; la guía en texto sigue siendo la referencia principal.",
+    )
+    shipped_at = models.DateTimeField("fecha de despacho", null=True, blank=True, editable=False)
+    delivered_at = models.DateTimeField("fecha de entrega", null=True, blank=True, editable=False)
+
     # Seguimiento del cobro en la pasarela. La referencia es el identificador que
     # viaja a Bold e incluye el número de intento para permitir reintentos.
     payment_reference = models.CharField("referencia de pago", max_length=60, blank=True, db_index=True, editable=False)
@@ -567,6 +848,7 @@ class Order(models.Model):
     # Los pedidos con pasarela no descuentan inventario ni vacían el carrito hasta
     # que el pago se aprueba, para no perder la compra si el cliente se devuelve.
     stock_reserved = models.BooleanField("inventario descontado", default=False, editable=False)
+    confirmation_email_sent_at = models.DateTimeField("confirmación enviada", null=True, blank=True, editable=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -622,6 +904,33 @@ class Order(models.Model):
         return self.status in self.SUCCESSFUL_STATUSES
 
     @property
+    def is_closed(self):
+        return self.status in {self.Status.CANCELLED, self.Status.REFUNDED}
+
+    @property
+    def available_transition_values(self):
+        """Estados siguientes permitidos por el flujo operativo."""
+        transitions = {
+            self.Status.PENDING: (self.Status.PAID, self.Status.CANCELLED),
+            self.Status.PAID: (self.Status.PREPARING, self.Status.REFUNDED),
+            self.Status.PREPARING: (
+                (self.Status.DELIVERED, self.Status.REFUNDED)
+                if self.delivery_method == self.DeliveryMethod.PICKUP
+                else (self.Status.SHIPPED, self.Status.REFUNDED)
+            ),
+            self.Status.SHIPPED: (self.Status.DELIVERED, self.Status.REFUNDED),
+            self.Status.DELIVERED: (self.Status.REFUNDED,),
+            self.Status.CANCELLED: (),
+            self.Status.REFUNDED: (),
+        }
+        return transitions.get(self.status, ())
+
+    @property
+    def available_transitions(self):
+        labels = dict(self.Status.choices)
+        return tuple({"value": value, "label": labels[value]} for value in self.available_transition_values)
+
+    @property
     def payment_state(self):
         """Resultado del cobro; decide qué confirmación ve el cliente.
 
@@ -630,7 +939,7 @@ class Order(models.Model):
         """
         if self.is_paid:
             return "approved"
-        if self.status == self.Status.CANCELLED:
+        if self.is_closed:
             return "cancelled"
         if self.payment_in_progress:
             return "processing"
@@ -659,6 +968,15 @@ class Order(models.Model):
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True, related_name="order_items")
+    variant = models.ForeignKey(
+        ProductVariant,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="order_items",
+        verbose_name="variante",
+    )
+    variant_sku = models.CharField("referencia de variante", max_length=100, blank=True)
     product_name = models.CharField("producto", max_length=180)
     product_image = models.CharField("imagen", max_length=255, blank=True)
     unit_price = models.DecimalField("precio unitario", max_digits=12, decimal_places=2)
@@ -676,6 +994,39 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.product_name} x {self.quantity}"
+
+
+class OrderStatusHistory(models.Model):
+    class Source(models.TextChoices):
+        ADMIN = "admin", "Panel administrativo"
+        PAYMENT = "payment", "Confirmación de pago"
+        WEBHOOK = "webhook", "Webhook"
+        SYSTEM = "system", "Sistema"
+        MIGRATION = "migration", "Migración"
+
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="status_history", verbose_name="pedido")
+    from_status = models.CharField("estado anterior", max_length=12, choices=Order.Status.choices, blank=True)
+    to_status = models.CharField("nuevo estado", max_length=12, choices=Order.Status.choices)
+    source = models.CharField("origen", max_length=12, choices=Source.choices, default=Source.SYSTEM)
+    note = models.CharField("nota", max_length=300, blank=True)
+    changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="order_status_changes",
+        verbose_name="responsable",
+    )
+    notification_sent_at = models.DateTimeField("notificación enviada", null=True, blank=True, editable=False)
+    created_at = models.DateTimeField("fecha", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "cambio de estado del pedido"
+        verbose_name_plural = "historial de estados del pedido"
+        ordering = ("-created_at", "-id")
+
+    def __str__(self):
+        return f"{self.order.number}: {self.get_to_status_display()}"
 
 class CouponRedemption(models.Model):
     coupon = models.ForeignKey(Coupon, on_delete=models.PROTECT, related_name="redemptions")

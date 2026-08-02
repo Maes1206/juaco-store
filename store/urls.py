@@ -1,4 +1,5 @@
-from django.urls import path
+from django.contrib.auth import views as auth_views
+from django.urls import path, reverse_lazy
 
 from . import views
 
@@ -27,10 +28,39 @@ urlpatterns = [
     path("pago/<str:number>/estado/", views.order_payment_status, name="order_payment_status"),
     path("pago/<str:number>/verificar/", views.order_payment_check, name="order_payment_check"),
     path("orders/<str:number>/comprobante.pdf", views.order_receipt_pdf, name="order_receipt_pdf"),
+    path("orders/<str:number>/comprobante-despacho/", views.order_dispatch_receipt, name="order_dispatch_receipt"),
     path("orders/<str:number>/", views.order_detail, name="order_detail"),
     path("verificar-comprobante/<str:token>/", views.verify_receipt, name="verify_receipt"),
     path("page-not-found.html", views.not_found, name="not_found"),
     path("account-login.html", views.login_view, name="login"),
+    path(
+        "recuperar-contrasena/",
+        auth_views.PasswordResetView.as_view(
+            template_name="store/password-reset-form.html",
+            email_template_name="store/emails/password-reset-email.txt",
+            subject_template_name="store/emails/password-reset-subject.txt",
+            success_url=reverse_lazy("password_reset_done"),
+        ),
+        name="password_reset",
+    ),
+    path(
+        "recuperar-contrasena/enviado/",
+        auth_views.PasswordResetDoneView.as_view(template_name="store/password-reset-done.html"),
+        name="password_reset_done",
+    ),
+    path(
+        "restablecer/<uidb64>/<token>/",
+        auth_views.PasswordResetConfirmView.as_view(
+            template_name="store/password-reset-confirm.html",
+            success_url=reverse_lazy("password_reset_complete"),
+        ),
+        name="password_reset_confirm",
+    ),
+    path(
+        "restablecer/completado/",
+        auth_views.PasswordResetCompleteView.as_view(template_name="store/password-reset-complete.html"),
+        name="password_reset_complete",
+    ),
     path("account-register.html", views.register_view, name="register"),
     path("account-logout/", views.logout_view, name="logout"),
     path("account.html", views.account, name="account"),

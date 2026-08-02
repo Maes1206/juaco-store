@@ -1,0 +1,22 @@
+{% load store_extras %}Hola {{ display_name }},
+
+Recibimos tu pedido {{ order.number }} en Nexus Luxury Footwear.
+
+PRODUCTOS
+{% for entry in email_items %}- {{ entry.item.product_name }}{% if entry.item.size %} | Talla {{ entry.item.size }}{% endif %}{% if entry.item.color %} | {{ entry.item.color }}{% endif %} | Cantidad {{ entry.item.quantity }} | {{ entry.item.subtotal|cop }}
+{% endfor %}
+Subtotal: {{ order.subtotal|cop }}
+{% if order.discount_amount %}Descuento{% if order.coupon_code %} ({{ order.coupon_code }}){% endif %}: -{{ order.discount_amount|cop }}
+{% endif %}Envío: {% if order.shipping_cost %}{{ order.shipping_cost|cop }}{% else %}Gratis{% endif %}
+Total: {{ order.total|cop }}
+
+Pago: {{ payment_label }}
+Entrega: {{ delivery_label }}
+Estado: {{ status_label }}
+
+Dirección: {{ order.recipient_name }}, {{ order.full_address }}
+
+{{ action_label }}:
+{{ action_url }}
+
+Gracias por comprar en Nexus Luxury Footwear.

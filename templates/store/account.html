@@ -35,7 +35,7 @@
 
     <!--== Main Style CSS ==-->
     <link href="assets/css/style.css" rel="stylesheet" />
-    <link href="assets/css/juaco-ux.css" rel="stylesheet" />
+    <link href="assets/css/juaco-ux.css?v=20260801-10" rel="stylesheet" />
 
     <!--[if lt IE 9]>
     <script src="//oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
@@ -135,9 +135,9 @@
                     <ul class="submenu-nav">
                       <li><a href="{% url 'catalog_section' 'hombre' %}"><span>Hombre</span></a></li>
                       <li><a href="{% url 'catalog_section' 'mujer' %}"><span>Mujer</span></a></li>
-                      <li><a href="{% url 'catalog_section' 'nike' %}"><span>Nike</span></a></li>
-                      <li><a href="shop.html"><span>Ofertas</span></a></li>
-                      <li><a href="shop.html"><span>Accesorios</span></a></li>
+                      {% for store_section in store_navigation_sections %}<li><a href="{% url 'catalog_section' store_section.slug %}"><span>{{ store_section.title }}</span></a></li>{% endfor %}
+                      <li><a href="{% url 'catalog_section' 'ofertas' %}"><span>Ofertas</span></a></li>
+                      <li><a href="{% url 'catalog_section' 'accesorios' %}"><span>Accesorios</span></a></li>
                     </ul>
                   </li>
                   <li><a href="blog.html"><span>Blog</span></a></li>
@@ -246,6 +246,7 @@
                             <span class="order-status order-status--{{ last_order.status }}" title="Estado del pago">Pago: {{ last_order.get_status_display }}</span>
                             <span class="account-shipping-method"><i class="fa fa-truck" aria-hidden="true"></i> {{ last_order.get_delivery_method_display }}</span>
                             <span class="shipping-status shipping-status--{{ last_order.fulfillment_status }}">{{ last_order.get_fulfillment_status_display }}</span>
+                            {% if last_order.tracking_number %}<span class="order-tracking-inline">GuÃ­a {{ last_order.tracking_number }}</span>{% endif %}
                           </div>
                           <div class="account-recent-order-total">{{ last_order.total|cop }}</div>
                           {% if last_order.awaiting_online_payment %}<a class="check-btn sqr-btn" href="{% url 'order_payment' last_order.number %}">{% if last_order.payment_state == 'rejected' %}Reintentar pago{% else %}Completar pago{% endif %}</a>{% endif %}
@@ -323,6 +324,7 @@
                                 <span class="order-state-group">
                                   <small>Envío · {{ order.get_delivery_method_display }}</small>
                                   <span class="shipping-status shipping-status--{{ order.fulfillment_status }}">{{ order.get_fulfillment_status_display }}</span>
+                                  {% if order.tracking_number %}<span class="order-tracking-inline">GuÃ­a {{ order.tracking_number }}</span>{% endif %}
                                 </span>
                               </td>
                               <td data-label="Total" class="order-total-cell">
@@ -488,7 +490,7 @@
               <div class="about-widget-wrap">
                 <div class="widget-logo-area">
                   <a href="index.html">
-                    <img class="footer-logo-horizontal" src="assets/img/shop/nexus-logo-horizontal.png" srcset="assets/img/shop/nexus-logo-horizontal.png 1x, assets/img/shop/nexus-logo-horizontal@2x.png 2x" width="240" height="66" alt="Nexus Luxury Footwear" />
+                    <img class="footer-logo-horizontal" src="assets/img/shop/nexus-logo-horizontal-dark.png" srcset="assets/img/shop/nexus-logo-horizontal-dark.png 1x, assets/img/shop/nexus-logo-horizontal-dark@2x.png 2x" width="240" height="66" alt="Nexus Luxury Footwear" />
                   </a>
                 </div>
                 <p class="desc">Sneakers seleccionados para todos los estilos, con envíos nacionales y atención personalizada.</p>
@@ -710,7 +712,7 @@
     <div class="offcanvas-body">
       <div class="info-items">
         <ul>
-          <li class="number"><a href="tel://0123456789"><i class="fa fa-phone"></i>+00 123 456 789</a></li>
+          <li class="number contact-phone-row"><i class="fa fa-phone" aria-hidden="true"></i><span class="contact-phone-links"><a href="tel:+573222073377">+57 322 2073377</a><a href="tel:+573106472519">+57 310 6472519</a></span></li>
           <li class="email"><a href="mailto://demo@example.com"><i class="fa fa-envelope"></i>demo@example.com</a></li>
           <li class="account"><a href="account-login.html"><i class="fa fa-user"></i>Cuenta</a></li>
         </ul>
@@ -723,10 +725,10 @@
           <li><a href="shop.html">Tienda</a>
             <ul class="sub-menu">
               <li><a href="{% url 'catalog_section' 'hombre' %}">Hombre</a></li>
-              <li><a href="{% url 'catalog_section' 'nike' %}">Nike</a></li>
               <li><a href="{% url 'catalog_section' 'mujer' %}">Mujer</a></li>
-              <li><a href="shop.html">Ofertas</a></li>
-              <li><a href="shop.html">Accesorios</a></li>
+              {% for store_section in store_navigation_sections %}<li><a href="{% url 'catalog_section' store_section.slug %}">{{ store_section.title }}</a></li>{% endfor %}
+              <li><a href="{% url 'catalog_section' 'ofertas' %}">Ofertas</a></li>
+              <li><a href="{% url 'catalog_section' 'accesorios' %}">Accesorios</a></li>
             </ul>
           </li>
           <li><a href="blog.html">Blog</a></li>

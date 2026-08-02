@@ -1,5 +1,6 @@
 import json
 import logging
+import mimetypes
 from types import SimpleNamespace
 from decimal import Decimal
 
@@ -20,8 +21,9 @@ from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 
 from . import bold
+from .emails import send_order_confirmation_email, send_welcome_email
 from .forms import AccountDetailsForm, AddressForm, BlogCommentForm, CheckoutForm, ContactRequestForm, EmailOrUsernameAuthenticationForm, NewsletterSubscriptionForm, ProductReviewForm, RegisterForm, available_payment_methods, default_payment_method
-from .models import Address, BlogCategory, BlogComment, BlogPost, Cart, CartItem, ContactRequest, Coupon, CustomerProfile, Favorite, HomeBanner, MarketingPopup, NewsletterSubscription, Order, OrderItem, Product, ProductReview
+from .models import Address, BlogCategory, BlogComment, BlogPost, Cart, CartItem, ContactRequest, Coupon, CustomerProfile, Favorite, HomeBanner, MarketingPopup, NewsletterSubscription, Order, OrderItem, OrderStatusHistory, Product, ProductReview, ProductVariant, StoreSection
 from .search import UnifiedSearchService
 from .services import FREE_SHIPPING_THRESHOLD, CouponError, CheckoutError, PaymentError, apply_payment_status, coupon_totals, create_order_from_cart, ensure_payment_reference, ensure_session_key, get_cart, shipping_cost_for, sync_payment_status
 from .receipts import build_order_receipt, verify_receipt_token
@@ -43,7 +45,8 @@ CATALOG_SECTIONS = {
     "hombre": {"title": "Hombre", "subtitle": "Sneakers seleccionados para hombre.", "image": "https://unsplash.com/photos/SUUGUg7RXYY/download?force=true&w=1800", "alt": "Hombre con sneakers negros y blancos en estilo urbano", "banner_credit_name": "Creaslim", "banner_credit_url": "https://unsplash.com/photos/um-homem-encostado-a-uma-parede-usando-tenis-preto-e-branco-SUUGUg7RXYY", "editorial_image": "https://unsplash.com/photos/k4ucH7p-aNE/download?force=true&w=1200", "editorial_alt": "Hombre mostrando sus sneakers", "credit_name": "Kaithleen Gonzalez", "credit_url": "https://unsplash.com/photos/man-showing-his-sneaker-k4ucH7p-aNE"},
     "mujer": {"title": "Mujer", "subtitle": "Sneakers para combinar a tu manera.", "image": "https://unsplash.com/photos/7WRaJmvTJLQ/download?force=true&w=1800", "alt": "Mujer saltando con sneakers blancos", "banner_credit_name": "Frankie", "banner_credit_url": "https://unsplash.com/photos/woman-jumps-using-white-sneakers-7WRaJmvTJLQ", "editorial_image": "https://unsplash.com/photos/DM5iENjcd30/download?force=true&w=1200", "editorial_alt": "Mujer con sneakers de estilo creativo", "credit_name": "ZUZANA", "credit_url": "https://unsplash.com/photos/woman-wearing-sneaker-and-sandal-DM5iENjcd30"},
     "clasicas": {"title": "Clasicas", "subtitle": "Los modelos esenciales de todos los tiempos.", "image": "https://unsplash.com/photos/RVlCGo-KHeA/download?force=true&w=1800", "alt": "Par de sneakers blancos clasicos", "banner_credit_name": "SJ", "banner_credit_url": "https://unsplash.com/photos/a-pair-of-white-sneakers-RVlCGo-KHeA", "editorial_image": "https://unsplash.com/photos/XwWGyrVidZE/download?force=true&w=1200", "editorial_alt": "Sneakers Adidas blanco y negro", "credit_name": "Eddie Palmore", "credit_url": "https://unsplash.com/photos/black-and-white-adidas-sneakers-XwWGyrVidZE"},
-    "nike": {"title": "Nike", "subtitle": "Siluetas iconicas que marcaron la cultura sneaker.", "image": "https://unsplash.com/photos/GXNOb23Jon8/download?force=true&w=1800", "alt": "Sneakers Nike en entorno urbano", "editorial_image": "https://unsplash.com/photos/GXNOb23Jon8/download?force=true&w=1200", "editorial_alt": "Sneakers Nike negros, blancos y naranjas", "credit_name": "Erik Mclean", "credit_url": "https://unsplash.com/photos/a-close-up-of-a-persons-feet-wearing-nike-sneakers-GXNOb23Jon8"},
+    "ofertas": {"title": "Ofertas", "subtitle": "Diseño excepcional. Precios que no se repiten.", "image": "https://unsplash.com/photos/DM-TpKGZV3U/download?force=true&w=2000", "alt": "Vitrina urbana con sneakers iluminados", "editorial_image": "https://unsplash.com/photos/p5C9ZTeDzko/download?force=true&w=1200", "editorial_alt": "Sneaker de perfil lateral sobre un fondo oscuro", "selection_label": "Selección Nexus", "products_title": "Productos en oferta", "products_copy": "Precios especiales en referencias seleccionadas, disponibles hasta agotar existencias.", "empty_title": "Aún no hay productos en oferta", "empty_copy": "Cuando el equipo marque productos desde el panel administrativo, aparecerán automáticamente aquí.", "card_label": "Oferta"},
+    "accesorios": {"title": "Accesorios", "subtitle": "Los detalles que completan tu estilo.", "image": "https://unsplash.com/photos/cexQ3hh-XT0/download?force=true&w=2000", "alt": "Persona combinando una gorra con sneakers y accesorios urbanos", "editorial_image": "https://unsplash.com/photos/sxA_7Tcl1p0/download?force=true&w=1200", "editorial_alt": "Gorra bordada sostenida como accesorio de streetwear", "selection_label": "Complementos Nexus", "products_title": "Accesorios disponibles", "products_copy": "Piezas seleccionadas para acompañar tus sneakers y completar cada look.", "empty_title": "Aún no hemos agregado accesorios", "empty_copy": "Cuando el equipo clasifique productos como accesorios desde el panel administrativo, aparecerán automáticamente aquí.", "card_label": "Accesorio"},
 }
 
 @ensure_csrf_cookie
@@ -160,25 +163,63 @@ def shop(request):
     if product_type:
         products = products.filter(product_type=product_type)
     if brand:
-        products = products.filter(brand__iexact=brand)
+        products = products.filter(brand__title__iexact=brand)
     return render(request, "store/shop.html", {"products": products})
 
 
 @ensure_csrf_cookie
 def catalog_section(request, section):
     section_data = CATALOG_SECTIONS.get(section)
+    custom_section = None
     if section_data is None:
-        raise Http404
-    return render(request, "store/catalog-section.html", {"catalog_section": section_data})
+        custom_section = get_object_or_404(StoreSection, slug=section, is_active=True)
+        section_data = {
+            "title": custom_section.title,
+            "subtitle": custom_section.description,
+            "image": custom_section.banner_source,
+            "alt": custom_section.banner_image_alt or custom_section.title,
+            "editorial_image": custom_section.empty_image_source,
+            "editorial_alt": custom_section.empty_image_alt or custom_section.resolved_empty_title,
+            "selection_label": "Colección Nexus",
+            "products_title": custom_section.title,
+            "products_copy": custom_section.description,
+            "empty_title": custom_section.resolved_empty_title,
+            "empty_copy": custom_section.resolved_empty_description,
+            "card_label": custom_section.title,
+        }
+    is_offer_section = section == "ofertas"
+    is_dynamic_section = section in {"ofertas", "accesorios"} or custom_section is not None
+    products = Product.objects.none()
+    if is_offer_section:
+        products = Product.objects.select_related("brand").filter(is_on_sale=True, is_active=True, stock__gt=0).order_by("brand__title", "name")
+    elif section == "accesorios":
+        products = Product.objects.select_related("brand").filter(product_type=Product.ProductType.ACCESSORY, is_active=True, stock__gt=0).order_by("brand__title", "name")
+    elif custom_section is not None:
+        section_products = (
+            custom_section.brand_products
+            if custom_section.section_type == StoreSection.SectionType.BRAND
+            else custom_section.products
+        )
+        products = section_products.select_related("brand").filter(is_active=True, stock__gt=0).order_by("brand__title", "name")
+    return render(request, "store/catalog-section.html", {
+        "catalog_section": section_data,
+        "is_offer_section": is_offer_section,
+        "is_dynamic_section": is_dynamic_section,
+        "products": products,
+    })
 
 
 @ensure_csrf_cookie
 def product_detail(request):
     slug = request.GET.get("producto")
     if slug:
-        product = get_object_or_404(Product, slug=slug, is_active=True)
+        product = get_object_or_404(
+            Product.objects.select_related("brand").prefetch_related("variants"),
+            slug=slug,
+            is_active=True,
+        )
     else:
-        product = Product.objects.filter(is_active=True).order_by("brand", "name").first()
+        product = Product.objects.select_related("brand").filter(is_active=True).order_by("brand__title", "name").first()
         if product is None:
             raise Http404
     initial = {}
@@ -201,8 +242,8 @@ def product_detail(request):
     review_stats = reviews.aggregate(average=Avg("rating"), total=Count("id"), recommendations=Count("id", filter=Q(recommends=True)))
     recommendation_percent = round((review_stats["recommendations"] / review_stats["total"]) * 100) if review_stats["total"] else 0
     related_products = Product.objects.filter(is_active=True, stock__gt=0).exclude(pk=product.pk).filter(
-        Q(audience=product.audience) | Q(brand__iexact=product.brand)
-    ).order_by("brand", "name")[:4]
+        Q(audience=product.audience) | Q(brand=product.brand)
+    ).select_related("brand").order_by("brand__title", "name")[:4]
     return render(request, "store/single-product.html", {
         "product": product,
         "related_products": related_products,
@@ -211,6 +252,17 @@ def product_detail(request):
         "review_average": review_stats["average"] or 0,
         "review_count": review_stats["total"],
         "recommendation_percent": recommendation_percent,
+        "product_variant_inventory": [
+            {
+                "id": variant.pk,
+                "size": variant.size,
+                "color": variant.color_name,
+                "sku": variant.sku or "",
+                "stock": variant.stock,
+                "active": variant.is_active,
+            }
+            for variant in product.variants.all()
+        ],
     })
 
 
@@ -221,6 +273,10 @@ def login_view(request):
     if request.method == "POST" and form.is_valid():
         guest_cart = get_cart(request)
         login(request, form.get_user())
+        if request.POST.get("remember_me") == "1":
+            request.session.set_expiry(settings.SESSION_COOKIE_AGE)
+        else:
+            request.session.set_expiry(0)
         guest_cart.session_key = ensure_session_key(request)
         guest_cart.save(update_fields=["session_key", "updated_at"])
         get_cart(request)
@@ -245,6 +301,15 @@ def register_view(request):
         guest_cart.session_key = ensure_session_key(request)
         guest_cart.save(update_fields=["session_key", "updated_at"])
         get_cart(request)
+        try:
+            send_welcome_email(
+                user,
+                account_url=request.build_absolute_uri(reverse("account")),
+                shop_url=request.build_absolute_uri(reverse("shop")),
+            )
+        except Exception:
+            # El alta de la cuenta no debe perderse por una caída temporal del proveedor de correo.
+            logger.exception("No se pudo enviar el correo de bienvenida.")
         messages.success(request, "Tu cuenta fue creada correctamente.")
         return redirect("account")
     return render(request, "store/account-register.html", {"form": form})
@@ -279,7 +344,7 @@ def _account_context(request, active_tab, **overrides):
             {"label": "Agrega una direccion", "description": "Guarda tu direccion para agilizar tu compra.", "href": "?tab=addresses", "completed": addresses.exists()},
             {"label": "Explora la tienda", "description": "Encuentra tus proximos sneakers favoritos.", "href": "shop.html", "completed": False},
         ),
-        "recommended_products": Product.objects.filter(is_active=True, stock__gt=0).exclude(cart_items__cart=cart).exclude(slug="adidas-campus").order_by("brand", "name")[:3],
+        "recommended_products": Product.objects.select_related("brand").filter(is_active=True, stock__gt=0).exclude(cart_items__cart=cart).exclude(slug="adidas-campus").order_by("brand__title", "name")[:3],
     }
     context.update(overrides)
     return context
@@ -318,6 +383,7 @@ def admin_dashboard(request):
     # Cada bloque se consulta solo si el permiso lo autoriza: lo que no se puede
     # ver tampoco se carga, así una plantilla no puede filtrarlo por descuido.
     successful_orders = []
+    operational_orders = []
     successful_order_count = 0
     total_revenue = Decimal("0")
     average_ticket = Decimal("0")
@@ -329,6 +395,7 @@ def admin_dashboard(request):
     clients = User.objects.none()
     client_count = 0
     products = Product.objects.none()
+    store_sections = StoreSection.objects.none()
     product_count = 0
     low_stock_count = 0
     blog_posts = BlogPost.objects.none()
@@ -388,6 +455,13 @@ def admin_dashboard(request):
             .order_by("-month")[:12]
         )
 
+        if section_access["sales"]:
+            operational_orders = list(
+                Order.objects.select_related("user", "user__customer_profile")
+                .prefetch_related("items")
+                .order_by("-updated_at")[:100]
+            )
+
     if section_access["clients"]:
         client_search = request.GET.get("q", "").strip()
         clients = (
@@ -410,7 +484,13 @@ def admin_dashboard(request):
         client_count = clients.count()
 
     if section_access["products"]:
-        products = Product.objects.all().order_by("brand", "name")
+        products = Product.objects.select_related("brand").prefetch_related("store_sections").all().order_by("brand__title", "name")
+        store_sections = StoreSection.objects.annotate(
+            custom_product_count=Count("products", distinct=True),
+            brand_product_count=Count("brand_products", distinct=True),
+        ).annotate(
+            product_count=F("custom_product_count") + F("brand_product_count")
+        ).order_by("position", "title")
         product_count = products.count()
         low_stock_count = products.filter(stock__lte=5).count()
 
@@ -437,6 +517,7 @@ def admin_dashboard(request):
         "section": section,
         "section_access": section_access,
         "successful_orders": successful_orders,
+        "operational_orders": operational_orders,
         "successful_order_count": successful_order_count,
         "sold_products": sold_products,
         "clients": clients,
@@ -455,6 +536,7 @@ def admin_dashboard(request):
         "published_post_count": published_post_count,
         "top_favorites": top_favorites,
         "products": products,
+        "store_sections": store_sections,
         "blog_posts": blog_posts,
         "blog_categories": blog_categories,
         "active_banner_count": active_banner_count,
@@ -714,6 +796,19 @@ def checkout(request):
             except CheckoutError as exc:
                 messages.error(request, str(exc))
                 return redirect("checkout")
+            try:
+                send_order_confirmation_email(
+                    order,
+                    order_url=request.build_absolute_uri(reverse("order_confirmation", args=[order.number])),
+                    payment_url=(
+                        request.build_absolute_uri(reverse("order_payment", args=[order.number]))
+                        if order.awaiting_online_payment and bold.is_configured()
+                        else ""
+                    ),
+                )
+            except Exception:
+                # El pedido ya existe: una caída de correo no debe duplicarlo ni impedir el pago.
+                logger.exception("No se pudo enviar la confirmación del pedido %s.", order.number)
             request.session.pop(COUPON_SESSION_KEY, None)
             request.session.pop(SHIPPING_QUOTE_SESSION_KEY, None)
             if order.awaiting_online_payment and bold.is_configured():
@@ -746,7 +841,10 @@ def checkout(request):
 
 def _order_queryset():
     """Pedidos con lo que necesitan la confirmación y el detalle del cliente."""
-    return Order.objects.select_related("user").prefetch_related("items")
+    return Order.objects.select_related("user").prefetch_related(
+        "items",
+        Prefetch("status_history", queryset=OrderStatusHistory.objects.select_related("changed_by")),
+    )
 
 
 @login_required
@@ -884,7 +982,13 @@ def bold_webhook(request):
         logger.warning("Webhook de Bold sin pedido para la referencia %s", reference)
         return JsonResponse({"detail": "Pedido no encontrado."}, status=200)
 
-    apply_payment_status(order, status, transaction_id=bold.webhook_transaction_id(event))
+    apply_payment_status(
+        order,
+        status,
+        transaction_id=bold.webhook_transaction_id(event),
+        source=OrderStatusHistory.Source.WEBHOOK,
+        order_url=request.build_absolute_uri(reverse("order_detail", args=[order.number])),
+    )
     return JsonResponse({"detail": "Evento procesado."}, status=200)
 
 
@@ -899,6 +1003,21 @@ def order_receipt_pdf(request, number):
     )
 
 
+@login_required
+def order_dispatch_receipt(request, number):
+    """Entrega el comprobante logÃ­stico Ãºnicamente al propietario del pedido."""
+    order = get_object_or_404(Order, number=number, user=request.user)
+    if not order.dispatch_receipt:
+        raise Http404
+    content_type = mimetypes.guess_type(order.dispatch_receipt.name)[0] or "application/octet-stream"
+    return FileResponse(
+        order.dispatch_receipt.open("rb"),
+        as_attachment=False,
+        filename=order.dispatch_receipt.name.rsplit("/", 1)[-1],
+        content_type=content_type,
+    )
+
+
 def verify_receipt(request, token):
     """Publica: cualquiera que escanee el QR del comprobante confirma que es autentico.
 
@@ -910,7 +1029,7 @@ def verify_receipt(request, token):
     return render(request, "store/receipt-verification.html", {"order": order})
 
 def _cart_payload(cart, request=None):
-    cart_items = cart.items.select_related("product").annotate(
+    cart_items = cart.items.select_related("product", "product__brand", "variant").annotate(
         approved_review_average=Avg(
             "product__reviews__rating",
             filter=Q(product__reviews__is_approved=True),
@@ -934,7 +1053,7 @@ def _cart_payload(cart, request=None):
             "product_id": item.product.slug,
             "name": item.product.name,
             "image": item.product.image,
-            "brand": item.product.get_brand_display(),
+            "brand": item.product.brand.title,
             "audience": item.product.get_audience_display(),
             "collection": item.product.get_collection_display() if item.product.collection else "Sin colección",
             "reference": item.product.reference,
@@ -944,7 +1063,7 @@ def _cart_payload(cart, request=None):
             "price": int(item.product.price),
             "compare_at_price": int(item.product.compare_at_price) if item.product.compare_at_price else None,
             "discount_percent": item.product.discount_percent,
-            "stock": item.product.stock,
+            "stock": item.available_stock,
             "weight_kg": float(item.product.weight_kg),
             "review_average": round(float(item.approved_review_average), 1) if review_count else None,
             "review_count": review_count,
@@ -997,45 +1116,51 @@ def cart_add_api(request):
         quantity = max(1, int(data.get("quantity", 1)))
     except (ValueError, TypeError, json.JSONDecodeError):
         return JsonResponse({"error": "Datos invalidos."}, status=400)
-    product = get_object_or_404(Product, slug=data.get("product_id"), is_active=True)
+    product = get_object_or_404(
+        Product.objects.prefetch_related("variants"),
+        slug=data.get("product_id"),
+        is_active=True,
+    )
     if product.stock < 1:
         return JsonResponse({"error": "Producto agotado."}, status=409)
 
     size = str(data.get("size", "")).strip()[:12]
-    available_sizes = [str(value) for value in (product.sizes or [])]
-    if available_sizes and not size:
-        size = available_sizes[0]
-    elif available_sizes and size not in available_sizes:
-        return JsonResponse({"error": "Selecciona una talla disponible."}, status=400)
-
     color = str(data.get("color", "")).strip()[:60]
-    available_colors = [
-        str(value.get("name", "")).strip()
-        for value in (product.colors or [])
-        if isinstance(value, dict) and value.get("name")
-    ]
-    if available_colors and not color:
-        color = available_colors[0]
-    elif available_colors and color not in available_colors:
-        return JsonResponse({"error": "Selecciona un color disponible."}, status=400)
+    variants = [variant for variant in product.variants.all() if variant.is_active]
+    variant = None
+    available_stock = product.stock
+    if variants:
+        candidates = [
+            entry for entry in variants
+            if (not size or entry.size == size) and (not color or entry.color_name == color)
+        ]
+        if not candidates:
+            return JsonResponse({"error": "Esta combinación de talla y color no está disponible."}, status=400)
+        variant = next((entry for entry in candidates if entry.stock > 0), candidates[0])
+        size = variant.size
+        color = variant.color_name
+        available_stock = variant.stock
+        if available_stock < 1:
+            return JsonResponse({"error": "Esta variante está agotada."}, status=409)
 
     cart = get_cart(request)
     item, created = CartItem.objects.get_or_create(
         cart=cart,
         product=product,
+        variant=variant,
         size=size,
         color=color,
-        defaults={"quantity": min(quantity, product.stock)},
+        defaults={"quantity": min(quantity, available_stock)},
     )
     if not created:
-        item.quantity = min(item.quantity + quantity, product.stock)
+        item.quantity = min(item.quantity + quantity, available_stock)
         item.save(update_fields=["quantity", "updated_at"])
     return JsonResponse(_cart_payload(cart, request), status=201)
 
 @require_http_methods(["PATCH", "DELETE"])
 def cart_item_api(request, item_id):
     cart = get_cart(request)
-    item = get_object_or_404(CartItem, pk=item_id, cart=cart)
+    item = get_object_or_404(CartItem.objects.select_related("product", "variant"), pk=item_id, cart=cart)
     if request.method == "DELETE":
         item.delete()
     else:
@@ -1047,7 +1172,7 @@ def cart_item_api(request, item_id):
         if quantity <= 0:
             item.delete()
         else:
-            item.quantity = min(quantity, item.product.stock)
+            item.quantity = min(quantity, item.available_stock)
             item.save(update_fields=["quantity", "updated_at"])
     return JsonResponse(_cart_payload(cart, request))
 
@@ -1097,16 +1222,32 @@ def favorite_item_api(request, favorite_id):
 def favorite_move_to_cart_api(request, favorite_id):
     if not request.user.is_authenticated:
         return JsonResponse({"error": "Inicia sesión para gestionar favoritos."}, status=401)
-    favorite = get_object_or_404(Favorite.objects.select_related("product"), pk=favorite_id, user=request.user)
+    favorite = get_object_or_404(
+        Favorite.objects.select_related("product").prefetch_related("product__variants"),
+        pk=favorite_id,
+        user=request.user,
+    )
     product = favorite.product
     if not product.is_active or product.stock < 1:
         return JsonResponse({"error": "Este producto no está disponible."}, status=409)
     cart = get_cart(request)
-    default_size = str(product.sizes[0]) if product.sizes else ""
-    default_color = str(product.colors[0].get("name", "")) if product.colors and isinstance(product.colors[0], dict) else ""
-    item, created = CartItem.objects.get_or_create(cart=cart, product=product, size=default_size, color=default_color, defaults={"quantity": 1})
+    variant = next((entry for entry in product.variants.all() if entry.is_active and entry.stock > 0), None)
+    default_size = variant.size if variant else (str(product.sizes[0]) if product.sizes else "")
+    default_color = variant.color_name if variant else (
+        str(product.colors[0].get("name", ""))
+        if product.colors and isinstance(product.colors[0], dict)
+        else ""
+    )
+    item, created = CartItem.objects.get_or_create(
+        cart=cart,
+        product=product,
+        variant=variant,
+        size=default_size,
+        color=default_color,
+        defaults={"quantity": 1},
+    )
     if not created:
-        item.quantity = min(item.quantity + 1, product.stock)
+        item.quantity = min(item.quantity + 1, variant.stock if variant else product.stock)
         item.save(update_fields=["quantity", "updated_at"])
     favorite.delete()
     return JsonResponse({"favorites": _favorite_payload(request.user), "cart": _cart_payload(cart, request)})
