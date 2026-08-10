@@ -1,4 +1,5 @@
 from django.contrib import admin, messages
+from django.contrib.admin.widgets import RelatedFieldWidgetWrapper
 from django.db.models import Count
 from django.urls import reverse
 from django.utils import timezone
@@ -95,6 +96,25 @@ class ProductAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related("brand").prefetch_related("store_sections")
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        # El wrapper con el boton "+" se agrega aqui (no en formfield_for_foreignkey,
+        # que corre antes de que exista RelatedFieldWidgetWrapper).
+        formfield = super().formfield_for_dbfield(db_field, request, **kwargs)
+        if db_field.name == "brand" and isinstance(formfield.widget, RelatedFieldWidgetWrapper):
+            # El boton "+" abre el alta generica de StoreSection; sin esto queda
+            # en "Sección personalizada" por defecto y hay que corregirla a mano.
+            widget = formfield.widget
+            original_get_context = widget.get_context
+
+            def get_context(name, value, attrs, _original=original_get_context):
+                context = _original(name, value, attrs)
+                if context.get("can_add_related"):
+                    context["url_params"] += "&section_type=brand"
+                return context
+
+            widget.get_context = get_context
+        return formfield
 
     def save_model(self, request, obj, form, change):
         manual_date_changed = "release_date" in form.changed_data
