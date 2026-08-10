@@ -62,7 +62,7 @@ class ProductAdmin(admin.ModelAdmin):
     list_filter = ("audience", "collection", "product_type", "brand", "store_sections", "is_on_sale", "is_active")
     search_fields = ("name", "brand__title", "sku", "slug", "description", "tags", "store_sections__title")
     filter_horizontal = ("store_sections",)
-    readonly_fields = ("stock", "release_date_source", "stockx_product_id", "release_date_checked_at", "created_at")
+    readonly_fields = ("release_date_source", "stockx_product_id", "release_date_checked_at", "created_at")
     inlines = (ProductImageInline, ProductVariantInline)
     fieldsets = (
         ("Identidad y publicación", {"fields": ("name", "slug", "sku", "is_active")}),
@@ -77,7 +77,7 @@ class ProductAdmin(admin.ModelAdmin):
         ("Contenido de la ficha", {"fields": ("description", "additional_information", "detailed_description")}),
         ("Precio e inventario", {
             "fields": ("price", "compare_at_price", "stock", "weight_kg"),
-            "description": "El inventario total se calcula automáticamente desde las variantes de talla y color.",
+            "description": "Si el producto ya tiene variantes de talla o color, el inventario que escribas aqui se reparte en partes iguales entre ellas. Para cantidades distintas por variante, ajusta cada una en Variantes de producto.",
         }),
         ("Imagenes", {
             "fields": ("image_file", "image", "image_alt", "gallery"),
@@ -117,6 +117,7 @@ class ProductAdmin(admin.ModelAdmin):
         return formfield
 
     def save_model(self, request, obj, form, change):
+        stock_changed = "stock" in form.changed_data
         manual_date_changed = "release_date" in form.changed_data
         lookup_requested = form.cleaned_data.get("lookup_release_date", False)
 
@@ -155,6 +156,19 @@ class ProductAdmin(admin.ModelAdmin):
                     )
 
         super().save_model(request, obj, form, change)
+
+        if stock_changed:
+            active_variants = list(obj.variants.filter(is_active=True))
+            if active_variants:
+                # Product.save() reparte obj.stock entre las variantes activas
+                # cuando "stock" viene en update_fields; ver store/models.py.
+                obj.save(update_fields=["stock"])
+                self.message_user(
+                    request,
+                    f"Inventario ({obj.stock}) repartido en partes iguales entre {len(active_variants)} variante(s). "
+                    "Ajusta cada una por separado en Variantes de producto si necesitas cantidades distintas.",
+                    level=messages.SUCCESS,
+                )
 
     def save_related(self, request, form, formsets, change):
         # Corre despues de los inlines para que una variante escrita a mano en la
