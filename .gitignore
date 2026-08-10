@@ -10,3 +10,10 @@ staticfiles/
 !.env.example
 .DS_Store
 Thumbs.db
+media/
+
+# Proyectos y archivos ajenos a la tienda que conviven en esta carpeta de
+# trabajo: el sistema de facturacion es su propio repositorio.
+sistema-facturacion/
+tmp/
+*.doc

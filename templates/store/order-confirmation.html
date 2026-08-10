@@ -2,6 +2,7 @@
 {% load store_extras %}
 
 {% block title %}{% if order.payment_state == 'approved' %}Pago exitoso{% else %}Pedido confirmado{% endif %} - Nexus Luxury Footwear{% endblock %}
+{% block seo %}{% seo_meta title="Pedido confirmado" robots="noindex, nofollow" %}{% endblock %}
 
 {% block content %}
 <div class="page-header-area login-page-header" data-bg-img="assets/img/shop/bannerlogin.png">

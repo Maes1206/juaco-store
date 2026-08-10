@@ -2,7 +2,7 @@
 <div class="marketing-popup-overlay" data-marketing-popup data-popup-key="juaco-popup-{{ marketing_popup.id }}-{{ marketing_popup.updated_at|date:'U' }}" data-popup-delay="{{ marketing_popup.delay_seconds }}" hidden>
   <section class="marketing-popup marketing-popup--image-{{ marketing_popup.image_position }}" role="dialog" aria-modal="true" aria-labelledby="marketing-popup-title-{{ marketing_popup.id }}">
     <button class="marketing-popup__close" type="button" data-popup-close aria-label="Cerrar popup"><i class="fa fa-times"></i></button>
-    <div class="marketing-popup__image"><img src="{{ marketing_popup.image_source }}" alt="{{ marketing_popup.title }}"></div>
+    <div class="marketing-popup__image">{% if marketing_popup.is_video %}<video src="{{ marketing_popup.image_source }}" autoplay muted loop playsinline preload="metadata" aria-label="{{ marketing_popup.title }}"></video>{% else %}<img src="{{ marketing_popup.image_source }}" alt="{{ marketing_popup.title }}">{% endif %}</div>
     <div class="marketing-popup__content"><span>Nexus Luxury Footwear</span><h2 id="marketing-popup-title-{{ marketing_popup.id }}">{{ marketing_popup.title }}</h2><p>{{ marketing_popup.message|linebreaksbr }}</p><a href="{{ marketing_popup.button_url }}">{{ marketing_popup.button_label }}</a></div>
   </section>
 </div>

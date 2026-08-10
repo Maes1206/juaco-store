@@ -1,13 +1,28 @@
 import re
 from django import forms
 from django.contrib.auth import authenticate, get_user_model
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, UserCreationForm
 
 from . import bold
+from .colors import resolve_color_hex
 from .models import Address, BlogComment, ContactRequest, CustomerProfile, Order, Product, ProductReview, StoreSection
 
 
 User = get_user_model()
+
+
+ACCOUNT_EMAIL_DOMAIN_ALIASES = {
+    "usco.edu.com": "usco.edu.co",
+}
+
+
+def normalize_account_email(value):
+    """Normaliza correos de cuenta y corrige dominios institucionales conocidos."""
+    email = (value or "").strip().lower()
+    local_part, separator, domain = email.rpartition("@")
+    if not separator:
+        return email
+    return f"{local_part}@{ACCOUNT_EMAIL_DOMAIN_ALIASES.get(domain, domain)}"
 
 
 def default_payment_method():
@@ -34,14 +49,31 @@ class ProductAdminForm(forms.ModelForm):
     sizes = forms.CharField(
         label="Tallas disponibles",
         required=False,
-        help_text="Separa las tallas con comas. Borra una talla para quitarla o deja el campo vacío para ocultar todas.",
+        help_text=(
+            "Separa las tallas con comas. Al guardar se crea una variante por cada "
+            "talla y color. Para quitar una talla, elimínala en Variantes de producto."
+        ),
         widget=forms.TextInput(attrs={"placeholder": "38, 39, 40, 41, 42"}),
     )
     colors = forms.CharField(
         label="Colores disponibles",
         required=False,
-        help_text="Usa una línea por color: Nombre | #HEX. Borra la línea para quitarlo o deja el campo vacío para ocultar todos.",
-        widget=forms.Textarea(attrs={"rows": 5, "placeholder": "Gris | #505050\nAzul | #586882"}),
+        help_text=(
+            "Un color por línea. El código es opcional: si escribes solo el nombre "
+            "(Negro, Blanco, Azul marino, Bordeaux) se calcula solo, y si el nombre "
+            "no se reconoce se toma el color dominante de la foto."
+        ),
+        widget=forms.Textarea(attrs={"rows": 5, "placeholder": "Negro\nBlanco | #F4F4F4"}),
+    )
+    variant_stock = forms.IntegerField(
+        label="Inventario inicial por variante",
+        required=False,
+        min_value=0,
+        initial=0,
+        help_text=(
+            "Se aplica solo a las variantes nuevas que se creen con las tallas y "
+            "colores de arriba. Las existentes conservan su inventario."
+        ),
     )
     gallery = forms.CharField(
         label="Galeria adicional",
@@ -62,21 +94,32 @@ class ProductAdminForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["sizes"].disabled = True
-        self.fields["sizes"].help_text = "Resumen automático de las tallas configuradas en Variantes de producto."
-        self.fields["colors"].disabled = True
-        self.fields["colors"].help_text = "Resumen automático de los colores configurados en Variantes de producto."
         self.fields["brand"].queryset = StoreSection.objects.filter(
             section_type=StoreSection.SectionType.BRAND
         ).order_by("position", "title")
+        self.fields["brand"].label = "Marca donde se muestra"
         self.fields["brand"].help_text = (
-            "La lista se actualiza automáticamente desde el CRUD de marcas y secciones de Tienda."
+            "El producto aparecerá automáticamente en la página de esta marca."
         )
+        self.fields["audience"].label = "Sección por público"
+        self.fields["audience"].help_text = (
+            "Hombre y Mujer publican en su sección. Unisex publica el producto en ambas."
+        )
+        self.fields["collection"].label = "Colección"
+        self.fields["collection"].help_text = (
+            "Los productos de la colección Clásicas aparecen en esa sección del sitio."
+        )
+        self.fields["product_type"].label = "Tipo de producto"
+        self.fields["product_type"].help_text = (
+            "Los accesorios aparecen automáticamente en la sección Accesorios."
+        )
+        self.fields["is_on_sale"].label = "Mostrar también en Ofertas"
         self.fields["store_sections"].queryset = StoreSection.objects.filter(
             section_type=StoreSection.SectionType.CUSTOM
         ).order_by("position", "title")
+        self.fields["store_sections"].label = "Otras secciones donde se muestra"
         self.fields["store_sections"].help_text = (
-            "Selecciona las colecciones o secciones adicionales donde debe aparecer este producto."
+            "Puedes elegir varias secciones personalizadas. Si la lista está vacía, créalas primero en Marcas y secciones."
         )
         if self.instance and self.instance.pk:
             self.fields["lookup_release_date"].initial = False
@@ -142,15 +185,17 @@ class ProductAdminForm(forms.ModelForm):
             if not line:
                 continue
             parts = [part.strip() for part in line.split("|", 1)]
-            if len(parts) != 2:
-                raise forms.ValidationError("Usa el formato Nombre | #HEX, un color por linea.")
-            name, hex_value = parts
+            name = parts[0]
+            hex_value = parts[1] if len(parts) > 1 else ""
             if not name or len(name) > 60:
                 raise forms.ValidationError("Cada color debe tener un nombre de maximo 60 caracteres.")
-            if not re.fullmatch(r"#[0-9a-fA-F]{6}", hex_value):
+            if hex_value and not re.fullmatch(r"#[0-9a-fA-F]{6}", hex_value):
                 raise forms.ValidationError(f'El color "{name}" debe usar un codigo hexadecimal como #505050.')
             if not any(item["name"].casefold() == name.casefold() for item in colors):
-                colors.append({"name": name, "hex": hex_value.upper()})
+                colors.append({
+                    "name": name,
+                    "hex": resolve_color_hex(name, explicit_hex=hex_value, product=self.instance),
+                })
         return colors
 
     def clean_tags(self):
@@ -177,6 +222,8 @@ class EmailOrUsernameAuthenticationForm(AuthenticationForm):
 
             username = identifier
             if "@" in identifier:
+                identifier = normalize_account_email(identifier)
+                self.cleaned_data["username"] = identifier
                 user = User.objects.filter(email__iexact=identifier).order_by("id").first()
                 if user:
                     username = user.get_username()
@@ -185,6 +232,11 @@ class EmailOrUsernameAuthenticationForm(AuthenticationForm):
                 raise self.get_invalid_login_error()
             self.confirm_login_allowed(self.user_cache)
         return self.cleaned_data
+
+
+class AccountPasswordResetForm(PasswordResetForm):
+    def clean_email(self):
+        return normalize_account_email(self.cleaned_data["email"])
 
 
 class RegisterForm(UserCreationForm):
@@ -234,7 +286,7 @@ class RegisterForm(UserCreationForm):
         self.fields["password2"].widget.attrs.update({"class": "form-control", "autocomplete": "new-password"})
 
     def clean_email(self):
-        email = self.cleaned_data["email"].lower()
+        email = normalize_account_email(self.cleaned_data["email"])
         if User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError("Ya existe una cuenta con este correo.")
         return email
@@ -272,7 +324,7 @@ class AccountDetailsForm(forms.ModelForm):
             self.fields["phone"].initial = profile.phone
 
     def clean_email(self):
-        email = self.cleaned_data["email"].lower()
+        email = normalize_account_email(self.cleaned_data["email"])
         if User.objects.filter(email__iexact=email).exclude(pk=self.instance.pk).exists():
             raise forms.ValidationError("Ya existe una cuenta con este correo.")
         return email

@@ -1,3 +1,4 @@
+import mimetypes
 import os
 import sys
 from datetime import timedelta
@@ -150,6 +151,9 @@ STATICFILES_DIRS = [BASE_DIR / "shome-html" / "assets"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+# La imagen base no trae .webp en su tabla MIME; sin esto los archivos subidos
+# salen como application/octet-stream y el nosniff del proxy impide mostrarlos.
+mimetypes.add_type("image/webp", ".webp")
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
@@ -179,6 +183,11 @@ EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "10"))
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "Nexus Luxury Footwear <no-reply@localhost>")
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 PASSWORD_RESET_TIMEOUT = int(os.getenv("PASSWORD_RESET_TIMEOUT_SECONDS", "3600"))
+ADMIN_REGISTRATION_EMAILS = {
+    email.strip().lower()
+    for email in os.getenv("ADMIN_REGISTRATION_EMAILS", "").split(",")
+    if email.strip()
+}
 
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SAMESITE = "Lax"

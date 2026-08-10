@@ -4,7 +4,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .forms import ProductAdminForm
-from .models import Address, BlogCategory, BlogComment, BlogPost, Cart, CartItem, ContactRequest, Coupon, CouponRedemption, CustomerProfile, Favorite, HomeBanner, MarketingPopup, NewsletterSubscription, Order, OrderItem, OrderStatusHistory, Product, ProductReview, ProductVariant, StoreSection
+from .models import Address, BlogCategory, BlogComment, BlogPost, Cart, CartItem, ContactRequest, Coupon, CouponRedemption, CustomerProfile, Favorite, HomeBanner, MarketingPopup, NewsletterSubscription, Order, OrderItem, OrderStatusHistory, Product, ProductImage, ProductReview, ProductVariant, StoreSection
 from .services import OrderTransitionError, transition_order
 from .stockx import StockXLookupError, StockXNotConfigured, lookup_release_date
 
@@ -47,6 +47,12 @@ class ProductVariantInline(admin.TabularInline):
     readonly_fields = ("updated_at",)
 
 
+class ProductImageInline(admin.TabularInline):
+    model = ProductImage
+    extra = 1
+    fields = ("image_file", "image_alt", "position")
+
+
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     form = ProductAdminForm
@@ -56,9 +62,13 @@ class ProductAdmin(admin.ModelAdmin):
     search_fields = ("name", "brand__title", "sku", "slug", "description", "tags", "store_sections__title")
     filter_horizontal = ("store_sections",)
     readonly_fields = ("stock", "release_date_source", "stockx_product_id", "release_date_checked_at", "created_at")
-    inlines = (ProductVariantInline,)
+    inlines = (ProductImageInline, ProductVariantInline)
     fieldsets = (
-        ("Identidad y publicacion", {"fields": ("name", "slug", "sku", "brand", "audience", "collection", "product_type", "is_on_sale", "is_active")}),
+        ("Identidad y publicación", {"fields": ("name", "slug", "sku", "is_active")}),
+        ("Dónde se muestra", {
+            "fields": ("brand", "audience", "collection", "product_type", "is_on_sale", "store_sections"),
+            "description": "Elige la marca y todas las secciones del sitio donde debe aparecer el producto. La marca es obligatoria; las secciones personalizadas permiten selección múltiple.",
+        }),
         ("Lanzamiento", {
             "fields": ("release_date", "lookup_release_date", "release_date_source", "stockx_product_id", "release_date_checked_at"),
             "description": "Puedes escribir la fecha manualmente o dejarla vacía y consultar StockX usando la referencia.",
@@ -68,8 +78,14 @@ class ProductAdmin(admin.ModelAdmin):
             "fields": ("price", "compare_at_price", "stock", "weight_kg"),
             "description": "El inventario total se calcula automáticamente desde las variantes de talla y color.",
         }),
-        ("Imagenes", {"fields": ("image", "image_alt", "gallery")}),
-        ("Variaciones y clasificacion", {"fields": ("sizes", "colors", "tags", "store_sections")}),
+        ("Imagenes", {
+            "fields": ("image_file", "image", "image_alt", "gallery"),
+            "description": "Sube la imagen principal y la galería inferior. Cada archivo se convierte automáticamente a WebP; las rutas se conservan como alternativa heredada.",
+        }),
+        ("Variaciones y clasificación", {
+            "fields": ("sizes", "colors", "variant_stock", "tags"),
+            "description": "Escribe aquí las tallas y colores: al guardar se crean las variantes que falten. El detalle por variante se ajusta abajo, en Variantes de producto.",
+        }),
         ("Auditoria", {"fields": ("created_at",), "classes": ("collapse",)}),
     )
 
@@ -119,6 +135,63 @@ class ProductAdmin(admin.ModelAdmin):
                     )
 
         super().save_model(request, obj, form, change)
+
+    def save_related(self, request, form, formsets, change):
+        # Corre despues de los inlines para que una variante escrita a mano en la
+        # tabla de abajo no se duplique con la que generan las tallas y colores.
+        super().save_related(request, form, formsets, change)
+        created, restored = self._sync_variants_with_summary(form)
+        if created:
+            self.message_user(
+                request,
+                f"Se crearon {created} variantes desde las tallas y colores. Revisa su inventario en Variantes de producto.",
+                level=messages.SUCCESS,
+            )
+        if restored:
+            self.message_user(request, f"Se reactivaron {restored} variantes que estaban ocultas.", level=messages.SUCCESS)
+
+    @staticmethod
+    def _sync_variants_with_summary(form):
+        """Crea una variante por cada combinacion de talla y color escrita.
+
+        Sin esto el producto mostraria tallas que no se pueden comprar: el
+        inventario y el boton de compra salen de las variantes, no del resumen.
+        Nunca borra nada; quitar una talla se sigue haciendo en el inline.
+        """
+        product = form.instance
+        sizes = form.cleaned_data.get("sizes") or []
+        colors = form.cleaned_data.get("colors") or []
+        if not sizes and not colors:
+            return 0, 0
+
+        initial_stock = form.cleaned_data.get("variant_stock") or 0
+        # Solo se reactiva cuando el administrador acaba de escribir la talla o el
+        # color; de lo contrario se respetaria menos su decision de ocultarla.
+        summary_edited = bool({"sizes", "colors"} & set(form.changed_data))
+        existing = {
+            (variant.size, variant.color_name.casefold()): variant
+            for variant in product.variants.all()
+        }
+
+        created = restored = 0
+        for size in (sizes or [""]):
+            for color in (colors or [{"name": "", "hex": ""}]):
+                key = (str(size), color["name"].casefold())
+                variant = existing.get(key)
+                if variant is None:
+                    existing[key] = ProductVariant.objects.create(
+                        product=product,
+                        size=str(size),
+                        color_name=color["name"],
+                        color_hex=color.get("hex", ""),
+                        stock=initial_stock,
+                    )
+                    created += 1
+                elif summary_edited and not variant.is_active:
+                    variant.is_active = True
+                    variant.save()
+                    restored += 1
+        return created, restored
 
 
 @admin.register(ProductVariant)

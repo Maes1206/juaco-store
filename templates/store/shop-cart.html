@@ -7,9 +7,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Nexus Luxury Footwear - Carrito de compras"/>
-    <meta name="keywords" content="sneakers, tenis, zapatos, carrito, Nexus Luxury Footwear"/>
-    <meta name="author" content="codecarnival"/>
+    {% seo_meta title="Carrito de compras" description="Revisa los productos de tu carrito en Nexus Luxury Footwear." robots="noindex, nofollow" %}
 
     <title>Carrito de compras :: Nexus Luxury Footwear</title>
 
@@ -196,7 +194,7 @@
                   {% for item in cart.items.all %}
                   <tr class="cart-product-item" data-cart-row="{{ item.id }}">
                     <td class="product-remove"><a href="#" data-cart-remove="{{ item.id }}" aria-label="Eliminar {{ item.product.name }}"><i class="fa fa-trash-o"></i></a></td>
-                    <td class="product-thumb"><a href="single-product.html?producto={{ item.product.slug }}"><img src="{{ item.product.image }}" width="90" height="110" alt="{{ item.product.main_image_alt }}"></a></td>
+                    <td class="product-thumb"><a href="single-product.html?producto={{ item.product.slug }}"><img src="{{ item.product.main_image_source }}" width="90" height="110" alt="{{ item.product.main_image_alt }}" loading="lazy"></a></td>
                     <td class="product-name">
                       <h4 class="title"><a href="single-product.html?producto={{ item.product.slug }}">{{ item.product.name }}</a></h4>
                       {% if item.size %}<small>Talla: {{ item.size }}</small>{% endif %}
@@ -323,10 +321,11 @@
               </div>
               {% if messages %}{% for message in messages %}<div class="coupon-feedback{% if message.tags == 'error' %} is-error{% endif %}">{{ message }}</div>{% endfor %}{% endif %}
               {% if coupon %}
-              <div class="coupon-applied"><span><i class="fa fa-ticket"></i><strong>{{ coupon.code }}</strong><small>Descuento: {{ discount|cop }}</small></span><form action="{% url 'coupon_remove' %}" method="post">{% csrf_token %}<button type="submit">Retirar</button></form></div>
+              <div class="coupon-applied"><span><i class="fa fa-ticket"></i><strong>{{ coupon.code }}</strong><small>Descuento: {{ discount|cop }}</small></span><form action="{% url 'coupon_remove' %}" method="post">{% csrf_token %}<input type="hidden" name="origen" value="cart"><button type="submit">Retirar</button></form></div>
               {% else %}
               <form action="{% url 'coupon_apply' %}" method="post">
                 {% csrf_token %}
+                <input type="hidden" name="origen" value="cart">
                 <div class="row">
                   <div class="col-md-12">
                     <div class="form-group">

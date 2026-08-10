@@ -6,9 +6,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Shome - Shoes eCommerce Website Template"/>
-    <meta name="keywords" content="footwear, shoes, modern, shop, store, ecommerce, responsive, e-commerce"/>
-    <meta name="author" content="codecarnival"/>
+    {% seo_meta title="Mi cuenta" description="Gestiona tu cuenta de Nexus Luxury Footwear." robots="noindex, nofollow" %}
 
     <title>Mi cuenta | Nexus Luxury Footwear</title>
 
@@ -267,7 +265,7 @@
                         <div class="account-recommendations__grid">
                           {% for product in recommended_products %}
                           <a class="account-recommendation" href="single-product.html?producto={{ product.slug }}">
-                            <span class="account-recommendation__image"><img src="{{ product.image }}" alt="{{ product.name }}"></span>
+                            <span class="account-recommendation__image"><img src="{{ product.main_image_source }}" alt="{{ product.name }}" loading="lazy"></span>
                             <span class="account-recommendation__body"><small>{{ product.brand }}</small><strong>{{ product.name }}</strong><b>{{ product.price|cop }}</b></span>
                           </a>
                           {% endfor %}

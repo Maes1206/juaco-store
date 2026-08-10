@@ -2,26 +2,30 @@ import json
 import logging
 import mimetypes
 from types import SimpleNamespace
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login, logout, update_session_auth_hash
+from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.http import FileResponse, Http404, JsonResponse
-from django.db.models import Avg, Count, DecimalField, ExpressionWrapper, F, Prefetch, Q, Sum
+from django.core.paginator import Paginator
+from django.db.models import Avg, Count, DecimalField, ExpressionWrapper, F, Max, Min, Prefetch, Q, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.db.models.functions import TruncMonth
 from django.views.decorators.http import require_http_methods, require_POST
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.utils import timezone
-from django.utils.http import url_has_allowed_host_and_scheme
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import url_has_allowed_host_and_scheme, urlsafe_base64_decode, urlsafe_base64_encode
 
 from . import bold
-from .emails import send_order_confirmation_email, send_welcome_email
+from .colors import NEUTRAL_COLOR
+from .emails import send_admin_confirmation_email, send_order_confirmation_email, send_welcome_email
 from .forms import AccountDetailsForm, AddressForm, BlogCommentForm, CheckoutForm, ContactRequestForm, EmailOrUsernameAuthenticationForm, NewsletterSubscriptionForm, ProductReviewForm, RegisterForm, available_payment_methods, default_payment_method
 from .models import Address, BlogCategory, BlogComment, BlogPost, Cart, CartItem, ContactRequest, Coupon, CustomerProfile, Favorite, HomeBanner, MarketingPopup, NewsletterSubscription, Order, OrderItem, OrderStatusHistory, Product, ProductReview, ProductVariant, StoreSection
 from .search import UnifiedSearchService
@@ -167,6 +171,102 @@ def shop(request):
     return render(request, "store/shop.html", {"products": products})
 
 
+CATALOG_PAGE_SIZE = 9
+# Orden pedido en la barra superior -> orden real en la consulta.
+CATALOG_SORTS = {
+    "default": (),
+    "price-asc": ("price", "name"),
+    "price-desc": ("-price", "name"),
+    "name-asc": ("name",),
+}
+
+
+def _size_sort_key(value):
+    """Ordena 39 antes que 40 y deja al final las tallas que no son numéricas."""
+    try:
+        return (0, float(value.replace(",", ".")), "")
+    except (AttributeError, ValueError):
+        return (1, 0.0, (value or "").casefold())
+
+
+def _decimal_or_none(value):
+    try:
+        return Decimal(value)
+    except (InvalidOperation, TypeError, ValueError):
+        return None
+
+
+def _catalog_filter_options(products):
+    """Tallas, colores y precios que existen de verdad en esta sección.
+
+    Se leen de las variantes y no de una lista fija para no ofrecer filtros que
+    devolverían cero resultados.
+    """
+    variants = ProductVariant.objects.filter(product__in=products, is_active=True)
+    sizes = sorted({size for size in variants.values_list("size", flat=True) if size}, key=_size_sort_key)
+
+    colors = []
+    for name, hex_value in variants.values_list("color_name", "color_hex").order_by("color_name"):
+        if not name or any(item["name"].casefold() == name.casefold() for item in colors):
+            continue
+        colors.append({"name": name, "hex": hex_value or NEUTRAL_COLOR})
+
+    bounds = products.aggregate(lowest=Min("price"), highest=Max("price"))
+    return {
+        "sizes": sizes,
+        "colors": colors,
+        "price_floor": bounds["lowest"] or Decimal("0"),
+        "price_ceiling": bounds["highest"] or Decimal("0"),
+    }
+
+
+def _filtered_catalog(request, products):
+    """Aplica los filtros de la barra lateral y devuelve la página pedida."""
+    options = _catalog_filter_options(products)
+    size = (request.GET.get("talla") or "").strip()
+    color = (request.GET.get("color") or "").strip()
+    sort = request.GET.get("orden") or "default"
+    if sort not in CATALOG_SORTS:
+        sort = "default"
+
+    # Un precio fuera del rango de la sección se recorta en vez de rechazarse,
+    # así un enlace viejo sigue mostrando resultados.
+    floor, ceiling = options["price_floor"], options["price_ceiling"]
+    minimum = _decimal_or_none(request.GET.get("precioMin"))
+    maximum = _decimal_or_none(request.GET.get("precioMax"))
+    minimum = min(max(minimum, floor), ceiling) if minimum is not None else floor
+    maximum = min(max(maximum, minimum), ceiling) if maximum is not None else ceiling
+
+    if size:
+        products = products.filter(variants__size=size, variants__is_active=True)
+    if color:
+        products = products.filter(variants__color_name__iexact=color, variants__is_active=True)
+    if size or color:
+        # Un producto con varias variantes que coinciden saldría repetido.
+        products = products.distinct()
+    products = products.filter(price__gte=minimum, price__lte=maximum)
+    if CATALOG_SORTS[sort]:
+        products = products.order_by(*CATALOG_SORTS[sort])
+
+    paginator = Paginator(products, CATALOG_PAGE_SIZE)
+    page = paginator.get_page(request.GET.get("pagina"))
+
+    # Base para los enlaces de paginación: conserva los filtros y quita la página.
+    carried = request.GET.copy()
+    carried.pop("pagina", None)
+    options.update({
+        "selected_size": size,
+        "selected_color": color,
+        "selected_sort": sort,
+        "price_from": minimum,
+        "price_to": maximum,
+        "has_filters": bool(size or color or minimum != floor or maximum != ceiling),
+        "querystring": carried.urlencode(),
+        "total": paginator.count,
+    })
+    return page, options
+
+
 @ensure_csrf_cookie
 def catalog_section(request, section):
     section_data = CATALOG_SECTIONS.get(section)
@@ -187,13 +287,39 @@ def catalog_section(request, section):
             "empty_copy": custom_section.resolved_empty_description,
             "card_label": custom_section.title,
         }
+    else:
+        section_data = dict(section_data)
+        section_data.setdefault("selection_label", "Selección Nexus")
+        section_data.setdefault("products_title", f"Productos para {section_data['title']}")
+        section_data.setdefault("products_copy", section_data["subtitle"])
+        section_data.setdefault("empty_title", f"Aún no hay productos en {section_data['title']}")
+        section_data.setdefault("empty_copy", "Estamos preparando nuevas referencias para esta sección.")
+        section_data.setdefault("card_label", section_data["title"])
     is_offer_section = section == "ofertas"
-    is_dynamic_section = section in {"ofertas", "accesorios"} or custom_section is not None
+    is_dynamic_section = True
     products = Product.objects.none()
     if is_offer_section:
         products = Product.objects.select_related("brand").filter(is_on_sale=True, is_active=True, stock__gt=0).order_by("brand__title", "name")
     elif section == "accesorios":
         products = Product.objects.select_related("brand").filter(product_type=Product.ProductType.ACCESSORY, is_active=True, stock__gt=0).order_by("brand__title", "name")
+    elif section == "hombre":
+        products = Product.objects.select_related("brand").filter(
+            audience__in=(Product.Audience.MEN, Product.Audience.UNISEX),
+            is_active=True,
+            stock__gt=0,
+        ).order_by("brand__title", "name")
+    elif section == "mujer":
+        products = Product.objects.select_related("brand").filter(
+            audience__in=(Product.Audience.WOMEN, Product.Audience.UNISEX),
+            is_active=True,
+            stock__gt=0,
+        ).order_by("brand__title", "name")
+    elif section == "clasicas":
+        products = Product.objects.select_related("brand").filter(
+            collection=Product.Collection.CLASSICS,
+            is_active=True,
+            stock__gt=0,
+        ).order_by("brand__title", "name")
     elif custom_section is not None:
         section_products = (
             custom_section.brand_products
@@ -201,11 +327,17 @@ def catalog_section(request, section):
             else custom_section.products
         )
         products = section_products.select_related("brand").filter(is_active=True, stock__gt=0).order_by("brand__title", "name")
+    page, catalog_filters = _filtered_catalog(request, products)
     return render(request, "store/catalog-section.html", {
         "catalog_section": section_data,
         "is_offer_section": is_offer_section,
         "is_dynamic_section": is_dynamic_section,
-        "products": products,
+        # La seccion tiene productos aunque los filtros actuales no devuelvan
+        # ninguno: distinguirlo evita mostrar "catalogo en preparacion".
+        "section_has_products": products.exists(),
+        "products": page.object_list,
+        "page_obj": page,
+        "catalog_filters": catalog_filters,
     })
 
 
@@ -214,7 +346,7 @@ def product_detail(request):
     slug = request.GET.get("producto")
     if slug:
         product = get_object_or_404(
-            Product.objects.select_related("brand").prefetch_related("variants"),
+            Product.objects.select_related("brand").prefetch_related("variants", "uploaded_images"),
             slug=slug,
             is_active=True,
         )
@@ -293,7 +425,38 @@ def register_view(request):
     form = RegisterForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         guest_cart = get_cart(request)
-        user = form.save()
+        user = form.save(commit=False)
+        is_admin_registration = user.email.lower() in settings.ADMIN_REGISTRATION_EMAILS
+        if is_admin_registration:
+            user.is_active = False
+        user.save()
+
+        if is_admin_registration:
+            confirmation_url = request.build_absolute_uri(
+                reverse(
+                    "admin_registration_confirm",
+                    kwargs={
+                        "uidb64": urlsafe_base64_encode(force_bytes(user.pk)),
+                        "token": default_token_generator.make_token(user),
+                    },
+                )
+            )
+            try:
+                send_admin_confirmation_email(
+                    user,
+                    confirmation_url=confirmation_url,
+                    shop_url=request.build_absolute_uri(reverse("shop")),
+                )
+            except Exception:
+                # Sin confirmar el correo no se puede conceder acceso administrativo.
+                # Se elimina el alta pendiente para que la persona pueda reintentarlo.
+                user.delete()
+                logger.exception("No se pudo enviar la confirmación de la cuenta administrativa.")
+                messages.error(request, "No pudimos enviar la confirmación. Intenta crear la cuenta nuevamente.")
+                return redirect("register")
+            messages.success(request, "Revisa tu correo para confirmar y activar la cuenta administrativa.")
+            return redirect("login")
+
         # Recién se creó la cuenta: no pasa por authenticate() (que asignaría
         # el backend automáticamente), así que hay que indicarlo explícito
         # ahora que AxesBackend hace que haya más de uno configurado.
@@ -313,6 +476,30 @@ def register_view(request):
         messages.success(request, "Tu cuenta fue creada correctamente.")
         return redirect("account")
     return render(request, "store/account-register.html", {"form": form})
+
+
+def admin_registration_confirm(request, uidb64, token):
+    User = get_user_model()
+    try:
+        user_id = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=user_id)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+
+    email_is_authorized = bool(
+        user and user.email and user.email.lower() in settings.ADMIN_REGISTRATION_EMAILS
+    )
+    if not email_is_authorized or not default_token_generator.check_token(user, token):
+        messages.error(request, "El enlace de confirmación no es válido o ya fue utilizado.")
+        return redirect("login")
+
+    user.is_active = True
+    user.is_staff = True
+    user.is_superuser = True
+    user.save(update_fields=("is_active", "is_staff", "is_superuser"))
+    login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+    messages.success(request, "Bienvenidos admins. Tu cuenta administrativa ya está activa.")
+    return redirect("admin_dashboard")
 
 
 @require_POST
@@ -725,6 +912,16 @@ def shipping_quote(request):
     return redirect("/shop-cart.html#shipping-calculator")
 
 
+# El cupon se puede aplicar desde el carrito o desde el checkout. El formulario
+# manda solo una etiqueta de esta lista y no una URL, para que nadie pueda
+# convertir el formulario en un redirect hacia otro sitio.
+COUPON_ORIGINS = {"checkout": "checkout", "cart": "cart"}
+
+
+def _coupon_origin_redirect(request):
+    return redirect(COUPON_ORIGINS.get(request.POST.get("origen"), "cart"))
+
+
 @require_POST
 def coupon_apply(request):
     cart = get_cart(request)
@@ -736,14 +933,14 @@ def coupon_apply(request):
     else:
         request.session[COUPON_SESSION_KEY] = coupon.code
         messages.success(request, f"Cupon {coupon.code} aplicado. Ahorras ${discount:,.0f} COP.")
-    return redirect("cart")
+    return _coupon_origin_redirect(request)
 
 
 @require_POST
 def coupon_remove(request):
     request.session.pop(COUPON_SESSION_KEY, None)
-    messages.info(request, "El cupon fue retirado del carrito.")
-    return redirect("cart")
+    messages.info(request, "El cupon fue retirado de tu compra.")
+    return _coupon_origin_redirect(request)
 
 
 @login_required
@@ -1052,7 +1249,7 @@ def _cart_payload(cart, request=None):
             "id": item.id,
             "product_id": item.product.slug,
             "name": item.product.name,
-            "image": item.product.image,
+            "image": item.product.main_image_source,
             "brand": item.product.brand.title,
             "audience": item.product.get_audience_display(),
             "collection": item.product.get_collection_display() if item.product.collection else "Sin colección",
@@ -1186,7 +1383,7 @@ def _favorite_payload(user):
                 "id": favorite.id,
                 "product_id": favorite.product.slug,
                 "name": favorite.product.name,
-                "image": favorite.product.image,
+                "image": favorite.product.main_image_source,
                 "price": int(favorite.product.price),
                 "stock": favorite.product.stock,
             }
@@ -1255,15 +1452,19 @@ def favorite_move_to_cart_api(request, favorite_id):
 @require_http_methods(["GET"])
 def session_info(request):
     if request.user.is_authenticated:
+        # El encabezado se vuelve a dibujar con estos datos, asi que el destino
+        # del staff debe venir de aqui o el enlace al panel se perderia.
         return JsonResponse({
             "authenticated": True,
             "username": request.user.first_name or request.user.username,
-            "label": "Mi cuenta",
-            "href": "account.html",
+            "greeting": f"Hola, {request.user.first_name or request.user.username}",
+            "label": "Panel admin" if request.user.is_staff else "Mi cuenta",
+            "href": "panel-admin/" if request.user.is_staff else "account.html",
         })
     return JsonResponse({
         "authenticated": False,
         "username": "",
+        "greeting": "",
         "label": "Cuenta",
         "href": "account-login.html",
     })

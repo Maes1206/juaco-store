@@ -1,6 +1,8 @@
 {% extends "store/base.html" %}
+{% load store_extras %}
 
 {% block title %}{% if search_results.query.raw %}Buscar {{ search_results.query.raw }} | {% endif %}Nexus Luxury Footwear{% endblock %}
+{% block seo %}{% seo_meta title="Resultados de búsqueda" description="Resultados de búsqueda en Nexus Luxury Footwear." robots="noindex, follow" %}{% endblock %}
 
 {% block content %}
 <div class="page-header-area search-page-header" data-bg-img="assets/img/shop/bannerblog.png">
@@ -33,7 +35,7 @@
         <div class="row">
           {% for hit in search_results.products %}
           <article class="col-sm-6 col-lg-4 search-product-card">
-            <a class="search-product-card__image" href="single-product.html?producto={{ hit.item.slug }}"><img src="{{ hit.item.image }}" width="270" height="274" alt="{{ hit.item.name }}"></a>
+            <a class="search-product-card__image" href="single-product.html?producto={{ hit.item.slug }}"><img src="{{ hit.item.main_image_source }}" width="270" height="274" alt="{{ hit.item.name }}" loading="lazy"></a>
             <div class="search-product-card__body">
               <p>{{ hit.item.brand }}</p><h3><a href="single-product.html?producto={{ hit.item.slug }}">{{ hit.item.name }}</a></h3>
               <strong>${{ hit.item.price|floatformat:0 }} COP</strong>

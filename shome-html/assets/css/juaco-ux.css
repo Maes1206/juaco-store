@@ -773,7 +773,7 @@ body.marketing-popup-open { overflow: hidden; }
 .marketing-popup--image-right { flex-direction: row-reverse; }
 .marketing-popup__close { position: absolute; top: 13px; right: 13px; z-index: 2; width: 34px; height: 34px; border: 0; border-radius: 50%; background: rgba(255,255,255,.92); color: #222; box-shadow: 0 3px 12px rgba(0,0,0,.12); }
 .marketing-popup__image { width: 46%; min-height: 390px; background: #f2f2f2; }
-.marketing-popup__image img { width: 100%; height: 100%; object-fit: cover; }
+.marketing-popup__image img, .marketing-popup__image video { width: 100%; height: 100%; object-fit: cover; }
 .marketing-popup__content { display: flex; width: 54%; flex-direction: column; align-items: flex-start; justify-content: center; padding: 48px; }
 .marketing-popup__content > span { margin-bottom: 10px; color: var(--juaco-red); font-size: 10px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
 .marketing-popup__content h2 { margin: 0 0 14px; color: var(--juaco-ink); font-size: clamp(25px, 3vw, 38px); line-height: 1.12; }
@@ -1316,4 +1316,208 @@ body.comparison-modal-open { overflow: hidden; }
   .password-reset-card { padding: 30px 22px; }
   .password-reset-card h1 { font-size: 23px; }
   .password-reset-card .btn-theme { width: 100%; text-align: center; }
+}
+
+/* ==========================================================================
+   Filtros de las secciones de marca.
+   La tienda usa botones movidos por JavaScript; aqui los filtros son enlaces
+   normales para que funcionen sin scripts, asi que hay que darles el tamano y
+   el area de clic que los estilos originales daban al boton y al li.
+   ========================================================================== */
+/* El tema ya estiliza `.shop-sidebar-size .size-list > li > a` para su menu de
+   tallas, y esa regla gana por especificidad. Hay que igualarla para que el
+   filtro se vea como el boton de la tienda y no como un enlace de lista. */
+.shop-sidebar-size .sneaker-size-list a.size-filter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 36px;
+  border: 1px solid #e1e1e1;
+  background: #fff;
+  color: #555;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1;
+  text-align: center;
+  text-decoration: none;
+  text-transform: none;
+}
+.shop-sidebar-size .sneaker-size-list a.size-filter:hover,
+.shop-sidebar-size .sneaker-size-list a.size-filter.active {
+  border-color: var(--color-primary-hover);
+  background: var(--color-primary-hover);
+  color: var(--color-on-primary);
+}
+
+.shop-sidebar-color .color-list > li {
+  width: 18px;
+  height: 18px;
+  /* Un aro tenue para que los colores claros (Blanco, Crema, Beige) no
+     desaparezcan sobre el fondo blanco de la barra lateral. */
+  box-shadow: inset 0 0 0 1px rgba(35, 35, 36, 0.16);
+}
+.shop-sidebar-color .color-list > li > a {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+.color-filter-actions .clear-color-filter {
+  text-decoration: none;
+}
+
+/* Campos numericos de precio: son el respaldo cuando no hay deslizador. */
+.price-range-fields {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px 12px;
+  margin-bottom: 4px;
+  color: #777;
+  font-size: 14px;
+}
+.sidebar-price-range.has-slider .price-range-fields {
+  display: none;
+}
+.price-range-fields .apply-price-filter {
+  grid-column: 1 / -1;
+}
+.price-range-fields input {
+  width: 100%;
+  min-width: 0;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid #e1e1e1;
+  background: #fff;
+  color: #555;
+  font-size: 14px;
+}
+.price-range-fields input:focus {
+  border-color: var(--color-primary-hover);
+  outline: none;
+}
+.apply-price-filter {
+  width: 100%;
+  height: 38px;
+  margin-top: 6px;
+  border: 1px solid var(--color-primary-hover);
+  background: var(--color-primary-hover);
+  color: var(--color-on-primary);
+  font-size: 14px;
+  transition: .2s ease;
+}
+.apply-price-filter:hover {
+  background: transparent;
+  color: var(--color-primary-hover);
+}
+
+/* Saludo del cliente en la barra superior. Hereda el tamano y el color de los
+   demas avisos, y el nombre resalta sin cambiar la altura de la fila. */
+.info-items ul .account-greeting {
+  color: inherit;
+  white-space: nowrap;
+}
+.info-items ul .account-greeting strong {
+  color: var(--color-primary);
+  font-weight: 500;
+}
+@media (max-width: 480px) {
+  /* En pantallas angostas el nombre cede espacio antes que romper la fila. */
+  .info-items ul .account-greeting {
+    overflow: hidden;
+    max-width: 46vw;
+    text-overflow: ellipsis;
+  }
+}
+
+/* Botones oscuros del carrito ("Seguir comprando" y "Finalizar compra").
+   El tema les da fondo #232324, pero el color de texto global de este archivo
+   lleva !important y asume el fondo dorado, asi que quedaban negro sobre negro.
+   Se excluye :hover a proposito: ahi el fondo pasa a dorado y el texto oscuro
+   es el que contrasta, igual que en el resto del sitio. */
+.btn-theme.btn-flat:not(:hover) {
+  color: #fff !important;
+}
+
+/* ==========================================================================
+   Cupon en el resumen del checkout. Reutiliza el lenguaje visual del carrito
+   pero en la columna angosta del pedido, asi que apila etiqueta y control.
+   ========================================================================== */
+.checkout-coupon {
+  margin: 16px 0 4px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(35, 35, 36, 0.1);
+}
+.checkout-coupon label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--juaco-muted);
+  font-size: 13px;
+}
+.checkout-coupon__control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+.checkout-coupon__control input {
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid #e1e1e1;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 14px;
+}
+.checkout-coupon__control input:focus {
+  border-color: var(--color-primary);
+  outline: none;
+}
+.checkout-coupon__apply {
+  height: 42px;
+  padding: 0 18px;
+  border: 1px solid var(--color-primary);
+  border-radius: 4px;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: 14px;
+  font-weight: 600;
+  transition: .2s ease;
+}
+.checkout-coupon__apply:hover {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+.checkout-coupon.is-applied {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.checkout-coupon__badge {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 8px;
+  align-items: center;
+}
+.checkout-coupon__badge i {
+  grid-row: 1 / 3;
+  color: var(--color-primary);
+  font-size: 18px;
+}
+.checkout-coupon__badge strong,
+.checkout-coupon__badge small {
+  display: block;
+}
+.checkout-coupon__badge small {
+  color: var(--juaco-muted);
+  font-size: 11px;
+}
+.checkout-coupon__remove {
+  border: 0;
+  background: transparent;
+  color: var(--juaco-red);
+  font-size: 12px;
+  font-weight: 700;
 }

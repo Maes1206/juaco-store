@@ -68,6 +68,22 @@ def coupon_totals(code, subtotal, user=None):
     coupon = validate_coupon(code, subtotal, user=user)
     return coupon, coupon.discount_for(subtotal)
 
+
+def _validate_coupon_reservation(coupon, user):
+    """Evita prometer mas canjes de los disponibles mientras un pago esta pendiente."""
+    pending_orders = Order.objects.filter(
+        coupon=coupon,
+        status=Order.Status.PENDING,
+        payment_method=Order.PaymentMethod.BOLD,
+        stock_reserved=False,
+    )
+    if coupon.usage_limit is not None:
+        reserved_uses = pending_orders.count()
+        if coupon.times_used + reserved_uses >= coupon.usage_limit:
+            raise CouponError("El cupon alcanzo su limite de usos.")
+    if user and user.is_authenticated and coupon.once_per_user and pending_orders.filter(user=user).exists():
+        raise CouponError("Ya tienes un pago pendiente con este cupon.")
+
 class CheckoutError(Exception):
     """Se lanza cuando el carrito no puede convertirse en pedido."""
 
@@ -80,7 +96,7 @@ def _variant_signature(entries):
     return sorted((entry.product_id, entry.variant_id, entry.quantity, entry.size, entry.color) for entry in entries)
 
 
-def _equivalent_pending_order(user, items, address, delivery_method, total):
+def _equivalent_pending_order(user, items, address, delivery_method, total, coupon=None):
     """Pedido pendiente idéntico ya creado, para no duplicarlo si el cliente reintenta.
 
     Al conservar el carrito hasta el pago, volver atrás y confirmar otra vez llegaría
@@ -95,6 +111,7 @@ def _equivalent_pending_order(user, items, address, delivery_method, total):
         payment_method=Order.PaymentMethod.BOLD,
         stock_reserved=False,
         total=total,
+        coupon=coupon,
         delivery_method=delivery_method,
         recipient_name=address.recipient_name,
         address_line_1=address.address_line_1,
@@ -131,9 +148,14 @@ def create_order_from_cart(user, cart, address, payment_method, notes="", coupon
 
     total = max(Decimal("0"), subtotal - discount) + shipping
     if payment_method == Order.PaymentMethod.BOLD:
-        pending = _equivalent_pending_order(user, items, address, delivery_method, total)
+        pending = _equivalent_pending_order(user, items, address, delivery_method, total, coupon=coupon)
         if pending is not None:
             return pending
+        if coupon is not None:
+            try:
+                _validate_coupon_reservation(coupon, user)
+            except CouponError as exc:
+                raise CheckoutError(str(exc)) from exc
 
     order = Order.objects.create(
         user=user,
@@ -170,7 +192,7 @@ def create_order_from_cart(user, cart, address, payment_method, notes="", coupon
             variant=item.variant,
             variant_sku=item.variant.sku if item.variant_id and item.variant.sku else "",
             product_name=item.product.name,
-            product_image=item.product.image,
+            product_image=item.product.main_image_source,
             unit_price=item.product.price,
             quantity=item.quantity,
             size=item.size,
@@ -212,13 +234,19 @@ def commit_order(order, cart=None):
             )
 
     if order.coupon_id and not CouponRedemption.objects.filter(order=order).exists():
+        coupon = Coupon.objects.select_for_update().get(pk=order.coupon_id)
+        if coupon.usage_limit is not None and coupon.times_used >= coupon.usage_limit:
+            raise CheckoutError("El cupon alcanzo su limite de usos antes de confirmar el pago.")
+        if coupon.once_per_user and coupon.redemptions.filter(user=order.user).exists():
+            raise CheckoutError("Este usuario ya utilizo el cupon anteriormente.")
         CouponRedemption.objects.create(
-            coupon_id=order.coupon_id,
+            coupon=coupon,
             user=order.user,
             order=order,
             discount_amount=order.discount_amount,
         )
-        Coupon.objects.filter(pk=order.coupon_id).update(times_used=F("times_used") + 1)
+        coupon.times_used += 1
+        coupon.save(update_fields=("times_used", "updated_at"))
 
     if cart is not None:
         carts = Cart.objects.filter(pk=cart.pk, status=Cart.Status.ACTIVE)

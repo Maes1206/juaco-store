@@ -13,7 +13,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 RUN chmod +x /app/docker-entrypoint.sh && chown -R django:django /app
 
-USER django
 EXPOSE 8000
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]

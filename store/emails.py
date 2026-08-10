@@ -67,6 +67,30 @@ def send_welcome_email(user, *, account_url, shop_url):
     return bool(message.send(fail_silently=False))
 
 
+def send_admin_confirmation_email(user, *, confirmation_url, shop_url):
+    """Confirma el control del correo antes de conceder privilegios administrativos."""
+    if not user.email:
+        return False
+    context = {
+        "display_name": user.first_name.strip() or user.username,
+        "confirmation_url": confirmation_url,
+        "shop_url": shop_url,
+        "logo_cid": WELCOME_LOGO_CID,
+    }
+    message = EmailMultiAlternatives(
+        subject="Bienvenidos admins | Nexus Luxury Footwear",
+        body=render_to_string("store/emails/admin-confirmation-email.txt", context),
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[user.email],
+    )
+    message.attach_alternative(
+        render_to_string("store/emails/admin-confirmation-email.html", context),
+        "text/html",
+    )
+    _attach_inline_image(message, _brand_logo_path(), WELCOME_LOGO_CID)
+    return bool(message.send(fail_silently=False))
+
+
 def build_order_confirmation_message(order, *, order_url, payment_url="", recipient_email=None, items=None):
     """Construye una confirmación compatible con Django 5 y clientes en modo oscuro."""
     order_items = list(items if items is not None else order.items.all())

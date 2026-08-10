@@ -25,7 +25,9 @@ from PIL import Image
 from . import bold
 from .emails import send_order_confirmation_email, send_order_status_email
 from .forms import ProductAdminForm
-from .models import Address, BlogCategory, BlogComment, BlogPost, Cart, CartItem, ContactRequest, Coupon, CouponRedemption, CustomerProfile, Favorite, HomeBanner, MarketingPopup, NewsletterSubscription, Order, OrderItem, OrderStatusHistory, Product, ProductReview, ProductVariant, StoreSection, validate_dispatch_receipt, validate_uploaded_media
+from .image_optimization import TARGET_IMAGE_BYTES, optimize_uploaded_image
+from .colors import color_hex_from_name, dominant_color_from_image, nearest_color_name, resolve_color_hex
+from .models import MAX_VIDEO_UPLOAD_BYTES, Address, BlogCategory, BlogComment, BlogPost, Cart, CartItem, ContactRequest, Coupon, CouponRedemption, CustomerProfile, Favorite, HomeBanner, MarketingPopup, NewsletterSubscription, Order, OrderItem, OrderStatusHistory, Product, ProductImage, ProductReview, ProductVariant, StoreSection, validate_dispatch_receipt, validate_uploaded_media
 from .receipts import receipt_verification_token
 from .services import OrderTransitionError, apply_payment_status, transition_order
 from .shipping import DEPARTMENTS, calculate_shipping
@@ -38,6 +40,19 @@ User = get_user_model()
 class StoreFlowTests(TestCase):
     def setUp(self):
         self.product = Product.objects.first()
+
+    def section_product_names(self, slug, **filters):
+        """Nombres de una seccion recorriendo todas sus paginas."""
+        names = []
+        page_number = 1
+        while True:
+            response = self.client.get(f"/secciones/{slug}/", {**filters, "pagina": page_number})
+            self.assertEqual(response.status_code, 200)
+            page = response.context["page_obj"]
+            names.extend(product.name for product in page.object_list)
+            if not page.has_next():
+                return names
+            page_number += 1
 
     def test_catalog_seeded(self):
         self.assertEqual(Product.objects.count(), 16)
@@ -126,22 +141,32 @@ class StoreFlowTests(TestCase):
             content_type="application/json",
         )
         self.assertEqual(invalid.status_code, 400)
-    def test_individual_catalog_sections_are_blank_and_use_their_banners(self):
+    def test_standard_catalog_sections_list_products_from_admin_classification(self):
+        self.product.audience = Product.Audience.MEN
+        self.product.collection = Product.Collection.CLASSICS
+        self.product.save(update_fields=("audience", "collection"))
         sections = (
-            ("hombre", "Hombre", "SUUGUg7RXYY"),
-            ("mujer", "Mujer", "7WRaJmvTJLQ"),
-            ("clasicas", "Clasicas", "RVlCGo-KHeA"),
+            ("hombre", "Hombre", "SUUGUg7RXYY", True),
+            ("mujer", "Mujer", "7WRaJmvTJLQ", False),
+            ("clasicas", "Clasicas", "RVlCGo-KHeA", True),
         )
-        for slug, title, image in sections:
+        for slug, title, image, should_show_product in sections:
             with self.subTest(section=slug):
                 response = self.client.get(f"/secciones/{slug}/")
                 self.assertEqual(response.status_code, 200)
                 self.assertContains(response, title)
                 self.assertContains(response, image)
-                self.assertContains(response, "Aun no hemos agregado productos")
                 self.assertContains(response, "unsplash.com/photos/")
                 self.assertNotContains(response, "Foto:")
-                self.assertNotContains(response, self.product.name)
+                if should_show_product:
+                    self.assertContains(response, self.product.name)
+                else:
+                    self.assertNotContains(response, self.product.name)
+
+        self.product.audience = Product.Audience.UNISEX
+        self.product.save(update_fields=("audience",))
+        self.assertContains(self.client.get("/secciones/hombre/"), self.product.name)
+        self.assertContains(self.client.get("/secciones/mujer/"), self.product.name)
 
     def test_offers_section_starts_empty_and_only_lists_tagged_products(self):
         empty_response = self.client.get("/secciones/ofertas/")
@@ -303,7 +328,7 @@ class StoreFlowTests(TestCase):
         self.assertContains(section_form, "Banner de la sección")
         self.assertContains(section_form, "Estado vacío")
         product_form = self.client.get(f"/admin/store/product/{self.product.pk}/change/")
-        self.assertContains(product_form, "Secciones personalizadas de Tienda")
+        self.assertContains(product_form, "Otras secciones donde se muestra")
         self.assertContains(product_form, section.title)
         dashboard = self.client.get("/panel-admin/?section=products")
         self.assertContains(dashboard, "Marcas y secciones dinámicas")
@@ -359,6 +384,8 @@ class StoreFlowTests(TestCase):
         user = User.objects.get(username="cliente")
         self.assertEqual(user.first_name, "Maria Jose")
         self.assertEqual(user.last_name, "Perez Gomez")
+        self.assertFalse(user.is_staff)
+        self.assertFalse(user.is_superuser)
         account = self.client.get("/account.html?tab=account-info")
         self.assertContains(account, "Maria Jose")
         self.assertContains(account, "Perez Gomez")
@@ -395,6 +422,60 @@ class StoreFlowTests(TestCase):
         self.assertEqual(len(inline_logos), 1)
         self.assertEqual(inline_logos[0]["Content-ID"], "<nexus-welcome-logo>")
         self.assertEqual(inline_logos[0].get_filename(), "nexus-logo-horizontal-dark.png")
+
+    @override_settings(ADMIN_REGISTRATION_EMAILS={"emersonmanquillo@gmail.com"})
+    def test_authorized_admin_email_requires_confirmation_before_promotion(self):
+        response = self.client.post(
+            "/account-register.html",
+            {
+                "first_name": "Emerson",
+                "last_name": "Manquillo",
+                "username": "emerson-admin",
+                "email": "EmersonManquillo@gmail.com",
+                "password1": "ClaveSegura123!",
+                "password2": "ClaveSegura123!",
+            },
+        )
+
+        self.assertRedirects(response, "/account-login.html")
+        user = User.objects.get(username="emerson-admin")
+        self.assertFalse(user.is_active)
+        self.assertFalse(user.is_staff)
+        self.assertFalse(user.is_superuser)
+        self.assertEqual(len(mail.outbox), 1)
+        confirmation = mail.outbox[0]
+        self.assertEqual(confirmation.subject, "Bienvenidos admins | Nexus Luxury Footwear")
+        self.assertEqual(confirmation.to, ["emersonmanquillo@gmail.com"])
+        self.assertIn("Bienvenidos admins", confirmation.body)
+        confirmation_url = re.search(r"http://testserver/confirmar-admin/[^\s]+", confirmation.body).group(0)
+
+        confirmation_response = self.client.get(confirmation_url)
+
+        self.assertRedirects(confirmation_response, "/panel-admin/")
+        user.refresh_from_db()
+        self.assertTrue(user.is_active)
+        self.assertTrue(user.is_staff)
+        self.assertTrue(user.is_superuser)
+        self.assertEqual(self.client.get("/panel-admin/").status_code, 200)
+
+    @override_settings(ADMIN_REGISTRATION_EMAILS={"emersonmanquillo@gmail.com"})
+    @patch("store.views.send_admin_confirmation_email", side_effect=OSError("smtp no disponible"))
+    def test_failed_admin_confirmation_email_does_not_leave_privileged_account(self, mocked_email):
+        response = self.client.post(
+            "/account-register.html",
+            {
+                "first_name": "Emerson",
+                "last_name": "Manquillo",
+                "username": "emerson-retry",
+                "email": "emersonmanquillo@gmail.com",
+                "password1": "ClaveSegura123!",
+                "password2": "ClaveSegura123!",
+            },
+        )
+
+        self.assertRedirects(response, "/account-register.html")
+        self.assertFalse(User.objects.filter(username="emerson-retry").exists())
+        mocked_email.assert_called_once()
 
     @patch("store.views.send_welcome_email", side_effect=OSError("smtp temporalmente no disponible"))
     def test_registration_succeeds_when_welcome_email_provider_is_unavailable(self, mocked_welcome):
@@ -511,6 +592,43 @@ class StoreFlowTests(TestCase):
         requested = self.client.post("/recuperar-contrasena/", {"email": "desconocido@example.com"})
         self.assertRedirects(requested, "/recuperar-contrasena/enviado/")
         self.assertEqual(len(mail.outbox), 0)
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def test_admin_password_reset_corrects_known_usco_domain_typo(self):
+        admin_user = User.objects.create_superuser(
+            username="admin-usco",
+            email="u20242226877@usco.edu.co",
+            password="ClaveAnterior123!",
+        )
+
+        requested = self.client.post(
+            "/recuperar-contrasena/",
+            {"email": "U20242226877@usco.edu.com"},
+        )
+
+        self.assertRedirects(requested, "/recuperar-contrasena/enviado/")
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [admin_user.email])
+        reset_url = re.search(r"https?://[^\s]+", mail.outbox[0].body).group(0)
+        opened = self.client.get(urlsplit(reset_url).path)
+        self.assertEqual(opened.status_code, 302)
+        form_page = self.client.get(opened.url)
+        self.assertContains(form_page, 'name="new_password1"')
+        self.assertContains(form_page, 'name="new_password2"')
+
+    def test_login_corrects_known_usco_domain_typo(self):
+        User.objects.create_superuser(
+            username="admin-usco-login",
+            email="u20242226877@usco.edu.co",
+            password="ClaveSegura123!",
+        )
+
+        response = self.client.post(
+            "/account-login.html",
+            {"username": "U20242226877@usco.edu.com", "password": "ClaveSegura123!"},
+        )
+
+        self.assertRedirects(response, "/panel-admin/")
     def test_anonymous_cart_persists_in_database(self):
         response = self.client.post(
             "/api/cart/items/",
@@ -855,6 +973,171 @@ class StoreFlowTests(TestCase):
         )
         expired_response = self.client.post("/cart-coupon/apply/", {"code": expired.code}, follow=True)
         self.assertContains(expired_response, "El cupon ya expiro.")
+
+    def _coupon_client(self, username="cupon-checkout"):
+        """Cliente con sesión, dirección y un producto en el carrito."""
+        user = User.objects.create_user(username=username, email=f"{username}@example.com", password="ClaveSegura123!")
+        Address.objects.create(
+            user=user, first_name="Lina", last_name="Rojas", address_line_1="Calle 10 # 4-20",
+            department="Huila", city="Neiva", phone="3009998877", is_default=True,
+        )
+        self.client.force_login(user)
+        cart = Cart.objects.create(user=user, status=Cart.Status.ACTIVE)
+        CartItem.objects.create(cart=cart, product=self.product, quantity=1, size="40")
+        return user, cart
+
+    def test_checkout_offers_its_own_coupon_field_and_returns_to_checkout(self):
+        user, _ = self._coupon_client()
+        Coupon.objects.create(
+            code="CHECKOUT15", discount_type=Coupon.DiscountType.PERCENTAGE, value=15,
+            starts_at=timezone.now() - timedelta(days=1), expires_at=timezone.now() + timedelta(days=1),
+        )
+
+        page = self.client.get("/shop-checkout.html")
+        self.assertContains(page, 'id="checkoutCouponCode"', count=1)
+        # El campo no puede anidarse dentro del formulario del pedido: se enlaza por id.
+        self.assertContains(page, 'form="checkout-coupon-apply"')
+        self.assertContains(page, 'id="checkout-coupon-apply"', count=1)
+
+        applied = self.client.post("/cart-coupon/apply/", {"code": "checkout15", "origen": "checkout"})
+        # Aplicarlo desde el checkout debe devolver al checkout, no al carrito.
+        self.assertRedirects(applied, "/shop-checkout.html")
+
+        expected = (self.product.price * Decimal("15") / Decimal("100")).quantize(Decimal("0.01"))
+        summary = self.client.get("/shop-checkout.html")
+        self.assertContains(summary, "CHECKOUT15")
+        self.assertContains(summary, f"-${expected:,.0f} COP".replace(",", "."))
+        self.assertContains(summary, 'form="checkout-coupon-remove"')
+
+        removed = self.client.post("/cart-coupon/remove/", {"origen": "checkout"})
+        self.assertRedirects(removed, "/shop-checkout.html")
+        self.assertContains(self.client.get("/shop-checkout.html"), 'id="checkoutCouponCode"')
+
+    def test_coupon_origin_only_accepts_known_destinations(self):
+        self._coupon_client(username="cupon-origen")
+        Coupon.objects.create(
+            code="ORIGEN", discount_type=Coupon.DiscountType.FIXED, value=5000,
+            starts_at=timezone.now() - timedelta(days=1), expires_at=timezone.now() + timedelta(days=1),
+        )
+
+        # Un origen inventado no debe poder sacar al cliente del sitio.
+        for hostile in ("https://example.com/robo", "//example.com", "checkout/../../"):
+            with self.subTest(origen=hostile):
+                response = self.client.post("/cart-coupon/apply/", {"code": "ORIGEN", "origen": hostile})
+                self.assertRedirects(response, "/shop-cart.html")
+
+    def test_fixed_coupon_never_exceeds_the_subtotal(self):
+        user, _ = self._coupon_client(username="cupon-grande")
+        Coupon.objects.create(
+            code="ENORME", discount_type=Coupon.DiscountType.FIXED, value=Decimal("99999999"),
+            starts_at=timezone.now() - timedelta(days=1), expires_at=timezone.now() + timedelta(days=1),
+        )
+
+        self.client.post("/cart-coupon/apply/", {"code": "ENORME", "origen": "cart"})
+        payload = self.client.get("/api/cart/").json()
+        # El descuento se topa en el subtotal: nunca puede generar un total negativo.
+        self.assertEqual(payload["discount"], int(self.product.price))
+        self.assertEqual(payload["total_after_discount"], 0)
+        self.assertGreaterEqual(payload["total"], 0)
+
+        self.client.post("/shop-checkout.html", {
+            "address": user.addresses.first().id,
+            "payment_method": Order.PaymentMethod.BANK_TRANSFER,
+            "notes": "", "accept_terms": "on",
+        })
+        order = Order.objects.get(user=user)
+        self.assertEqual(order.discount_amount, order.subtotal)
+        self.assertEqual(order.total, order.shipping_cost)
+
+    def test_coupon_is_dropped_when_the_cart_stops_meeting_the_minimum(self):
+        user, cart = self._coupon_client(username="cupon-minimo")
+        CartItem.objects.filter(cart=cart).update(quantity=3)
+        Coupon.objects.create(
+            code="MINIMO", discount_type=Coupon.DiscountType.FIXED, value=10000,
+            minimum_purchase=self.product.price * 2,
+            starts_at=timezone.now() - timedelta(days=1), expires_at=timezone.now() + timedelta(days=1),
+        )
+
+        self.client.post("/cart-coupon/apply/", {"code": "MINIMO", "origen": "cart"})
+        self.assertEqual(self.client.get("/api/cart/").json()["coupon_code"], "MINIMO")
+
+        # Al bajar la cantidad el carrito deja de alcanzar la compra minima.
+        CartItem.objects.filter(cart=cart).update(quantity=1)
+        payload = self.client.get("/api/cart/").json()
+        self.assertEqual(payload["coupon_code"], "")
+        self.assertEqual(payload["discount"], 0)
+
+    def test_coupon_not_yet_valid_and_usage_limit_are_rejected(self):
+        self._coupon_client(username="cupon-vigencia")
+        Coupon.objects.create(
+            code="FUTURO", discount_type=Coupon.DiscountType.FIXED, value=5000,
+            starts_at=timezone.now() + timedelta(days=1), expires_at=timezone.now() + timedelta(days=2),
+        )
+        agotado = Coupon.objects.create(
+            code="AGOTADO", discount_type=Coupon.DiscountType.FIXED, value=5000,
+            starts_at=timezone.now() - timedelta(days=1), expires_at=timezone.now() + timedelta(days=1),
+            usage_limit=1,
+        )
+        Coupon.objects.filter(pk=agotado.pk).update(times_used=1)
+
+        future = self.client.post("/cart-coupon/apply/", {"code": "FUTURO", "origen": "cart"}, follow=True)
+        self.assertContains(future, "El cupon aun no esta vigente.")
+
+        used_up = self.client.post("/cart-coupon/apply/", {"code": "AGOTADO", "origen": "cart"}, follow=True)
+        self.assertContains(used_up, "El cupon alcanzo su limite de usos.")
+        self.assertEqual(self.client.get("/api/cart/").json()["coupon_code"], "")
+
+    def test_coupon_admin_rejects_case_insensitive_duplicates_and_invalid_limits(self):
+        staff = User.objects.create_superuser(
+            username="coupon-admin",
+            email="coupon-admin@example.com",
+            password="ClaveSegura123!",
+        )
+        now = timezone.localtime()
+        Coupon.objects.create(
+            code="SEGURO10",
+            discount_type=Coupon.DiscountType.PERCENTAGE,
+            value=10,
+            minimum_purchase=0,
+            starts_at=now - timedelta(days=1),
+            expires_at=now + timedelta(days=1),
+        )
+        self.client.force_login(staff)
+        valid_dates = {
+            "starts_at_0": (now - timedelta(days=1)).date().isoformat(),
+            "starts_at_1": "00:00:00",
+            "expires_at_0": (now + timedelta(days=1)).date().isoformat(),
+            "expires_at_1": "23:59:59",
+        }
+
+        duplicate = self.client.post("/admin/store/coupon/add/", {
+            "code": "  seguro10  ",
+            "discount_type": Coupon.DiscountType.PERCENTAGE,
+            "value": "10",
+            "minimum_purchase": "0",
+            "usage_limit": "1",
+            "once_per_user": "on",
+            "is_active": "on",
+            **valid_dates,
+        })
+
+        self.assertEqual(duplicate.status_code, 200)
+        self.assertEqual(Coupon.objects.filter(code="SEGURO10").count(), 1)
+
+        invalid = self.client.post("/admin/store/coupon/add/", {
+            "code": "LIMITES-INVALIDOS",
+            "discount_type": Coupon.DiscountType.PERCENTAGE,
+            "value": "101",
+            "minimum_purchase": "-1",
+            "usage_limit": "0",
+            "once_per_user": "on",
+            "is_active": "on",
+            **valid_dates,
+        })
+
+        self.assertEqual(invalid.status_code, 200)
+        self.assertFalse(Coupon.objects.filter(code="LIMITES-INVALIDOS").exists())
+
     def test_checkout_pickup_in_neiva_does_not_require_address(self):
         user = User.objects.create_user(
             username="sin-direccion-pickup",
@@ -1467,6 +1750,73 @@ class StoreFlowTests(TestCase):
             self.assertContains(response, f'id="id_{field_name}"', html=False)
         self.assertContains(response, "El inventario total se calcula automáticamente")
         self.assertContains(response, 'id="id_variants-0-stock"', html=False)
+        self.assertContains(response, "Dónde se muestra")
+        self.assertContains(response, "Marca donde se muestra")
+        self.assertContains(response, "Otras secciones donde se muestra")
+
+    def test_product_admin_creates_product_in_selected_brand_and_sections(self):
+        custom_section = StoreSection.objects.create(
+            title="Destacados",
+            slug="destacados",
+            description="Productos destacados por el equipo.",
+            banner_image_url="https://images.example.com/destacados-banner.webp",
+            empty_image_url="https://images.example.com/destacados-empty.webp",
+        )
+        staff = User.objects.create_superuser(
+            username="product-placement-admin",
+            email="placement@example.com",
+            password="ClaveSegura123!",
+        )
+        self.client.force_login(staff)
+
+        response = self.client.post("/admin/store/product/add/", {
+            "name": "Producto multisección",
+            "slug": "producto-multiseccion",
+            "sku": "MULTI-001",
+            "brand": StoreSection.objects.get(slug="nike").pk,
+            "audience": Product.Audience.MEN,
+            "product_type": Product.ProductType.FOOTWEAR,
+            "collection": Product.Collection.CLASSICS,
+            "is_on_sale": "on",
+            "store_sections": [custom_section.pk],
+            "description": "Producto visible en destinos seleccionados.",
+            "additional_information": "",
+            "detailed_description": "",
+            "price": "320000",
+            "compare_at_price": "350000",
+            "weight_kg": "1.00",
+            "image": "assets/img/shop/jordan423.png",
+            "image_alt": "Producto multisección",
+            "gallery": "",
+            "tags": "Destacado",
+            "is_active": "on",
+            "uploaded_images-TOTAL_FORMS": "1",
+            "uploaded_images-INITIAL_FORMS": "0",
+            "uploaded_images-MIN_NUM_FORMS": "0",
+            "uploaded_images-MAX_NUM_FORMS": "1000",
+            "uploaded_images-0-image_alt": "",
+            "uploaded_images-0-position": "0",
+            "variants-TOTAL_FORMS": "1",
+            "variants-INITIAL_FORMS": "0",
+            "variants-MIN_NUM_FORMS": "1",
+            "variants-MAX_NUM_FORMS": "1000",
+            "variants-0-sku": "MULTI-001-40",
+            "variants-0-size": "40",
+            "variants-0-color_name": "Negro",
+            "variants-0-color_hex": "#111111",
+            "variants-0-stock": "4",
+            "variants-0-is_active": "on",
+            "_save": "Guardar",
+        })
+
+        self.assertEqual(response.status_code, 302)
+        product = Product.objects.get(slug="producto-multiseccion")
+        self.assertEqual(product.brand.slug, "nike")
+        self.assertEqual(list(product.store_sections.values_list("slug", flat=True)), ["destacados"])
+        self.assertEqual(product.stock, 4)
+        for section_slug in ("nike", "hombre", "clasicas", "ofertas", "destacados"):
+            with self.subTest(section=section_slug):
+                self.assertIn(product.name, self.section_product_names(section_slug))
 
     def test_product_admin_can_show_remove_and_clear_sizes_and_colors(self):
         self.product.variants.all().delete()
@@ -1521,6 +1871,302 @@ class StoreFlowTests(TestCase):
         detail_without_variants = self.client.get(detail_url)
         self.assertNotContains(detail_without_variants, '<div class="product-size">', html=False)
         self.assertNotContains(detail_without_variants, '<div class="product-color">', html=False)
+
+    def test_session_greets_the_client_by_name(self):
+        anonymous = self.client.get("/api/session/").json()
+        self.assertFalse(anonymous["authenticated"])
+        self.assertEqual(anonymous["greeting"], "")
+
+        client_user = User.objects.create_user(
+            username="camila123",
+            email="camila@example.com",
+            password="ClaveSegura123!",
+            first_name="Camila",
+        )
+        self.client.force_login(client_user)
+        greeted = self.client.get("/api/session/").json()
+        self.assertEqual(greeted["greeting"], "Hola, Camila")
+        self.assertEqual(greeted["username"], "Camila")
+        self.assertEqual(greeted["label"], "Mi cuenta")
+
+    def test_session_greeting_falls_back_to_the_username(self):
+        nameless = User.objects.create_user(
+            username="sinnombre",
+            email="sinnombre@example.com",
+            password="ClaveSegura123!",
+        )
+        self.client.force_login(nameless)
+
+        payload = self.client.get("/api/session/").json()
+        self.assertEqual(payload["greeting"], "Hola, sinnombre")
+
+    def test_session_keeps_the_admin_panel_destination_for_staff(self):
+        staff = User.objects.create_superuser(
+            username="staff-saludo",
+            email="staff-saludo@example.com",
+            password="ClaveSegura123!",
+            first_name="Emerson",
+        )
+        self.client.force_login(staff)
+
+        payload = self.client.get("/api/session/").json()
+        self.assertEqual(payload["greeting"], "Hola, Emerson")
+        # El encabezado se redibuja con estos datos: si dijera "Mi cuenta" el
+        # staff perderia el acceso al panel desde la barra superior.
+        self.assertEqual(payload["label"], "Panel admin")
+        self.assertEqual(payload["href"], "panel-admin/")
+
+    def test_brand_section_paginates_after_nine_products(self):
+        jordan = StoreSection.objects.get(slug="jordan")
+        for index in range(12):
+            product = Product.objects.create(
+                slug=f"jordan-paginado-{index}",
+                name=f"Jordan Paginado {index:02d}",
+                brand=jordan,
+                description="Producto para probar la paginacion.",
+                price=Decimal("200000") + index,
+                image="assets/img/shop/jordan423.png",
+                audience=Product.Audience.UNISEX,
+                product_type=Product.ProductType.FOOTWEAR,
+                collection=Product.Collection.URBAN,
+            )
+            ProductVariant.objects.create(product=product, size="41", color_name="Negro", stock=2)
+
+        first_page = self.client.get("/secciones/jordan/")
+        self.assertEqual(len(first_page.context["page_obj"].object_list), 9)
+        self.assertTrue(first_page.context["page_obj"].has_next())
+        self.assertContains(first_page, 'class="pagination')
+
+        names = self.section_product_names("jordan")
+        # Ninguna pagina repite ni se salta productos.
+        self.assertEqual(len(names), len(set(names)))
+        self.assertEqual(len(names), first_page.context["page_obj"].paginator.count)
+
+    def test_brand_section_filters_by_size_color_and_price(self):
+        jordan = StoreSection.objects.get(slug="jordan")
+        exclusive = Product.objects.create(
+            slug="jordan-filtro-exclusivo",
+            name="Jordan Filtro Exclusivo",
+            brand=jordan,
+            description="Unico con esta talla y color.",
+            price=Decimal("999000"),
+            image="assets/img/shop/jordan423.png",
+            audience=Product.Audience.UNISEX,
+            product_type=Product.ProductType.FOOTWEAR,
+            collection=Product.Collection.URBAN,
+        )
+        ProductVariant.objects.create(product=exclusive, size="47", color_name="Turquesa", stock=3)
+
+        by_size = self.client.get("/secciones/jordan/", {"talla": "47"})
+        self.assertEqual([item.name for item in by_size.context["page_obj"].object_list], [exclusive.name])
+
+        by_color = self.client.get("/secciones/jordan/", {"color": "Turquesa"})
+        self.assertEqual([item.name for item in by_color.context["page_obj"].object_list], [exclusive.name])
+
+        # El precio mas alto del catalogo aisla al mismo producto.
+        by_price = self.client.get("/secciones/jordan/", {"precioMin": "900000"})
+        self.assertEqual([item.name for item in by_price.context["page_obj"].object_list], [exclusive.name])
+
+        empty = self.client.get("/secciones/jordan/", {"talla": "47", "color": "Bordeaux"})
+        self.assertEqual(list(empty.context["page_obj"].object_list), [])
+        # Sigue siendo una seccion con productos, no una en preparacion.
+        self.assertContains(empty, "No encontramos productos")
+
+        options = by_size.context["catalog_filters"]
+        self.assertIn("47", options["sizes"])
+        self.assertIn({"name": "Turquesa", "hex": "#17A2A2"}, options["colors"])
+        # Solo se ofrecen tallas que existen en la seccion.
+        self.assertNotIn("35", options["sizes"])
+
+    def test_brand_section_sorts_by_price_and_keeps_filters_in_pagination(self):
+        ascending = self.client.get("/secciones/jordan/", {"orden": "price-asc"})
+        prices = [item.price for item in ascending.context["page_obj"].object_list]
+        self.assertEqual(prices, sorted(prices))
+
+        descending = self.client.get("/secciones/jordan/", {"orden": "price-desc"})
+        prices = [item.price for item in descending.context["page_obj"].object_list]
+        self.assertEqual(prices, sorted(prices, reverse=True))
+
+        # El enlace de paginacion conserva el filtro activo y descarta la pagina.
+        filtered = self.client.get("/secciones/jordan/", {"talla": "40", "pagina": "1"})
+        self.assertEqual(filtered.context["catalog_filters"]["querystring"], "talla=40")
+
+    def test_brand_section_cards_drop_the_brand_badge(self):
+        response = self.client.get("/secciones/jordan/")
+        # El diseno pasa a ser el de la tienda.
+        self.assertContains(response, 'class="product-item"')
+        self.assertContains(response, "shop-sidebar")
+        # La etiqueta de marca sobre la imagen ya no se dibuja.
+        self.assertNotContains(response, "offer-product-card__media")
+
+    def test_color_hex_is_deduced_from_the_name_in_spanish_and_english(self):
+        self.assertEqual(color_hex_from_name("Negro"), "#111111")
+        self.assertEqual(color_hex_from_name("  BLANCO "), "#F4F4F4")
+        self.assertEqual(color_hex_from_name("Bordeaux"), "#6D1F2E")
+        # El nombre compuesto mas largo gana sobre el generico que contiene.
+        self.assertEqual(color_hex_from_name("Azul marino"), "#17224D")
+        self.assertNotEqual(color_hex_from_name("Azul marino"), color_hex_from_name("Azul"))
+        self.assertEqual(color_hex_from_name("Negro/Blanco"), "#111111")
+        # Los acentos y las mayusculas no deben cambiar el resultado.
+        self.assertEqual(color_hex_from_name("Púrpura"), color_hex_from_name("purpura"))
+        self.assertIsNone(color_hex_from_name("Color principal"))
+        self.assertIsNone(color_hex_from_name(""))
+
+    def test_calculated_color_gets_a_readable_name(self):
+        self.assertEqual(nearest_color_name("#111111"), "Negro")
+        self.assertEqual(nearest_color_name("#6D1F2E"), "Bordeaux")
+        # Un carbon sin saturacion debe nombrarse gris y no "Chocolate", que es
+        # el marron mas cercano si solo se mide la distancia entre canales.
+        self.assertEqual(nearest_color_name("#363638"), "Gris oscuro")
+        self.assertIsNone(nearest_color_name("no es un color"))
+
+    def test_unknown_color_name_falls_back_to_the_dominant_color_of_the_photo(self):
+        product = Product.objects.get(slug="nike-sb-dunk-low-travis-scott")
+        dominant = dominant_color_from_image(product)
+
+        self.assertIsNotNone(dominant)
+        self.assertRegex(dominant, r"^#[0-9A-F]{6}$")
+        # El fondo blanco del estudio no puede ganar: seria un swatch invisible.
+        self.assertLess(int(dominant[1:3], 16), 235)
+        self.assertEqual(resolve_color_hex("Tono exclusivo", product=product), dominant)
+        # Un hexadecimal explicito manda sobre el nombre y sobre la foto.
+        self.assertEqual(resolve_color_hex("Negro", explicit_hex="#ABCDEF", product=product), "#ABCDEF")
+        self.assertEqual(resolve_color_hex("Negro", product=product), "#111111")
+
+    def test_variant_without_hex_takes_the_color_deduced_from_its_name(self):
+        self.product.variants.all().delete()
+        variant = ProductVariant.objects.create(
+            product=self.product,
+            size="41",
+            color_name="Bordeaux",
+            stock=2,
+        )
+
+        variant.refresh_from_db()
+        self.assertEqual(variant.color_hex, "#6D1F2E")
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.colors, [{"name": "Bordeaux", "hex": "#6D1F2E"}])
+
+    def test_product_admin_creates_variants_from_manually_written_sizes_and_colors(self):
+        staff = User.objects.create_superuser(
+            username="variantes-manuales",
+            email="manuales@example.com",
+            password="ClaveSegura123!",
+        )
+        self.client.force_login(staff)
+
+        response = self.client.post("/admin/store/product/add/", {
+            "name": "Producto escrito a mano",
+            "slug": "producto-escrito-a-mano",
+            "sku": "MANUAL-001",
+            "brand": StoreSection.objects.get(slug="jordan").pk,
+            "audience": Product.Audience.UNISEX,
+            "product_type": Product.ProductType.FOOTWEAR,
+            "collection": Product.Collection.URBAN,
+            "description": "Tallas y colores escritos desde el CRUD.",
+            "additional_information": "",
+            "detailed_description": "",
+            "price": "300000",
+            "compare_at_price": "",
+            "weight_kg": "1.00",
+            "image": "assets/img/shop/jordan423.png",
+            "image_alt": "Producto escrito a mano",
+            "gallery": "",
+            "sizes": "40, 41, 42",
+            # Sin hexadecimal: se debe deducir del nombre.
+            "colors": "Negro\nBlanco",
+            "variant_stock": "3",
+            "tags": "",
+            "is_active": "on",
+            "uploaded_images-TOTAL_FORMS": "1",
+            "uploaded_images-INITIAL_FORMS": "0",
+            "uploaded_images-MIN_NUM_FORMS": "0",
+            "uploaded_images-MAX_NUM_FORMS": "1000",
+            "uploaded_images-0-image_alt": "",
+            "uploaded_images-0-position": "0",
+            "variants-TOTAL_FORMS": "1",
+            "variants-INITIAL_FORMS": "0",
+            "variants-MIN_NUM_FORMS": "1",
+            "variants-MAX_NUM_FORMS": "1000",
+            "variants-0-size": "40",
+            "variants-0-color_name": "Negro",
+            "variants-0-color_hex": "#111111",
+            "variants-0-stock": "5",
+            "variants-0-is_active": "on",
+            "_save": "Guardar",
+        })
+
+        self.assertEqual(response.status_code, 302)
+        product = Product.objects.get(slug="producto-escrito-a-mano")
+        # 3 tallas x 2 colores, sin duplicar la que vino en el inline.
+        self.assertEqual(product.variants.count(), 6)
+        self.assertEqual(product.variants.get(size="40", color_name="Negro").stock, 5)
+        self.assertEqual(product.variants.get(size="42", color_name="Blanco").stock, 3)
+        self.assertEqual(product.sizes, ["40", "41", "42"])
+        self.assertEqual(product.colors, [
+            {"name": "Negro", "hex": "#111111"},
+            {"name": "Blanco", "hex": "#F4F4F4"},
+        ])
+        # 5 de la variante del inline + 5 variantes nuevas de 3 unidades.
+        self.assertEqual(product.stock, 20)
+
+        detail = self.client.get(f"/single-product.html?producto={product.slug}")
+        self.assertContains(detail, 'data-size="41"')
+        self.assertContains(detail, 'data-bg-color="#F4F4F4"')
+        self.assertContains(detail, 'data-color="Negro"')
+        self.assertNotContains(detail, "Producto agotado")
+
+    def test_product_admin_keeps_variants_when_the_summary_is_left_empty(self):
+        staff = User.objects.create_superuser(
+            username="resumen-vacio",
+            email="vacio@example.com",
+            password="ClaveSegura123!",
+        )
+        self.client.force_login(staff)
+        self.product.variants.all().delete()
+        kept = ProductVariant.objects.create(
+            product=self.product,
+            size="43",
+            color_name="Verde militar",
+            stock=4,
+        )
+
+        response = self.client.post(f"/admin/store/product/{self.product.pk}/change/", {
+            "name": self.product.name,
+            "slug": self.product.slug,
+            "sku": self.product.sku,
+            "brand": self.product.brand_id,
+            "audience": self.product.audience,
+            "product_type": self.product.product_type,
+            "collection": self.product.collection,
+            "description": self.product.description,
+            "additional_information": "",
+            "detailed_description": "",
+            "price": str(self.product.price),
+            "compare_at_price": "",
+            "weight_kg": "1.00",
+            "image": self.product.image,
+            "image_alt": "",
+            "gallery": "",
+            "sizes": "",
+            "colors": "",
+            "variant_stock": "0",
+            "tags": "",
+            "is_active": "on",
+            "uploaded_images-TOTAL_FORMS": "0",
+            "uploaded_images-INITIAL_FORMS": "0",
+            "uploaded_images-MIN_NUM_FORMS": "0",
+            "uploaded_images-MAX_NUM_FORMS": "1000",
+            "variants-TOTAL_FORMS": "0",
+            "variants-INITIAL_FORMS": "0",
+            "variants-MIN_NUM_FORMS": "1",
+            "variants-MAX_NUM_FORMS": "1000",
+            "_save": "Guardar",
+        })
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(ProductVariant.objects.filter(pk=kept.pk).exists())
+        self.assertEqual(self.product.variants.count(), 1)
 
     @override_settings(
         STOCKX_API_KEY="api-key-prueba",
@@ -1589,6 +2235,12 @@ class StoreFlowTests(TestCase):
             "tags": "Urbano",
             "is_active": "on",
             "lookup_release_date": "on",
+            "uploaded_images-TOTAL_FORMS": "1",
+            "uploaded_images-INITIAL_FORMS": "0",
+            "uploaded_images-MIN_NUM_FORMS": "0",
+            "uploaded_images-MAX_NUM_FORMS": "1000",
+            "uploaded_images-0-image_alt": "",
+            "uploaded_images-0-position": "0",
             "variants-TOTAL_FORMS": "1",
             "variants-INITIAL_FORMS": "0",
             "variants-MIN_NUM_FORMS": "1",
@@ -1721,9 +2373,9 @@ class StoreFlowTests(TestCase):
         self.assertNotIn("cart_shipping_quote", self.client.session)
 
 
-def _fake_image_bytes(image_format):
+def _fake_image_bytes(image_format, size=(2, 2)):
     buffer = io.BytesIO()
-    Image.new("RGB", (2, 2), color=(200, 30, 30)).save(buffer, format=image_format)
+    Image.new("RGB", size, color=(200, 30, 30)).save(buffer, format=image_format)
     return buffer.getvalue()
 
 
@@ -1740,11 +2392,69 @@ class UploadedMediaValidationTests(TestCase):
         with self.assertRaises(ValidationError):
             validate_uploaded_media(upload)
 
+    def test_rejects_an_image_whose_extension_does_not_match_its_content(self):
+        upload = SimpleUploadedFile(
+            "banner.jpg",
+            _fake_image_bytes("PNG"),
+            content_type="image/jpeg",
+        )
+        with self.assertRaises(ValidationError):
+            validate_uploaded_media(upload)
+
+    def test_complex_image_is_compressed_to_the_web_weight_target(self):
+        source = io.BytesIO()
+        Image.effect_noise((1200, 1200), 100).convert("RGB").save(source, format="PNG")
+        upload = SimpleUploadedFile("textura.png", source.getvalue(), content_type="image/png")
+
+        name, optimized = optimize_uploaded_image(upload, max_size=(1600, 1600))
+
+        self.assertEqual(name, "textura.webp")
+        self.assertLessEqual(optimized.size, TARGET_IMAGE_BYTES)
+        with Image.open(optimized) as image:
+            self.assertEqual(image.format, "WEBP")
+
     def test_accepts_genuine_mp4_and_webm_signatures(self):
         mp4 = SimpleUploadedFile("clip.mp4", b"\x00\x00\x00\x18ftypmp42" + b"\x00" * 20, content_type="video/mp4")
         validate_uploaded_media(mp4)
         webm = SimpleUploadedFile("clip.webm", b"\x1a\x45\xdf\xa3" + b"\x00" * 20, content_type="video/webm")
         validate_uploaded_media(webm)
+
+    def test_rejects_a_video_heavier_than_the_upload_limit(self):
+        oversized = SimpleUploadedFile(
+            "pesado.mp4",
+            b"\x00\x00\x00\x18ftypmp42" + b"\x00" * (MAX_VIDEO_UPLOAD_BYTES + 1),
+            content_type="video/mp4",
+        )
+        # Nginx corta en 20 MB devolviendo un 413 sin explicacion: el limite
+        # propio tiene que saltar antes para que el mensaje sea entendible.
+        with self.assertRaises(ValidationError) as raised:
+            validate_uploaded_media(oversized)
+        self.assertIn("15 MB", str(raised.exception))
+
+    def test_banner_media_type_follows_the_uploaded_file(self):
+        video_bytes = b"\x00\x00\x00\x18ftypmp42" + b"\x00" * 20
+        # El desplegable queda en "Imagen" pero el archivo es un MP4: sin
+        # corregirlo el banner se dibujaria como una <img> rota.
+        banner = HomeBanner(
+            name="Banner con video",
+            media_type=HomeBanner.MediaType.IMAGE,
+            media_file=SimpleUploadedFile("promo.mp4", video_bytes, content_type="video/mp4"),
+        )
+        banner.full_clean()
+        self.assertEqual(banner.media_type, HomeBanner.MediaType.VIDEO)
+
+        image = HomeBanner(
+            name="Banner con imagen",
+            media_type=HomeBanner.MediaType.VIDEO,
+            media_file=SimpleUploadedFile("promo.png", _fake_image_bytes("PNG"), content_type="image/png"),
+        )
+        image.full_clean()
+        self.assertEqual(image.media_type, HomeBanner.MediaType.IMAGE)
+
+        # Una URL sin extension conserva la eleccion manual del administrador.
+        streamed = HomeBanner(name="Banner remoto", media_type=HomeBanner.MediaType.VIDEO, media_url="https://cdn.example.com/clip")
+        streamed.full_clean()
+        self.assertEqual(streamed.media_type, HomeBanner.MediaType.VIDEO)
 
     def test_rejects_a_video_extension_without_a_matching_signature(self):
         upload = SimpleUploadedFile("clip.mp4", b"esto no es un video real", content_type="video/mp4")
@@ -1768,6 +2478,50 @@ class UploadedMediaValidationTests(TestCase):
         )
         banner.full_clean()
 
+    def test_marketing_popup_accepts_video_and_keeps_it_untouched(self):
+        video_bytes = b"\x00\x00\x00\x18ftypmp42" + b"\x00" * 20
+        with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            popup = MarketingPopup(
+                name="Popup con video", title="Lanzamiento", message="Mira el clip.",
+                button_label="Ver", button_url="shop.html",
+                image_file=SimpleUploadedFile("promo.mp4", video_bytes, content_type="video/mp4"),
+            )
+            popup.full_clean()
+            popup.save()
+
+            self.assertTrue(popup.is_video)
+            # Un video no debe pasar por el optimizador de imagenes.
+            self.assertTrue(popup.image_file.name.endswith(".mp4"))
+            with popup.image_file.open("rb") as stored:
+                self.assertEqual(stored.read(), video_bytes)
+
+    def test_marketing_popup_renders_video_instead_of_image(self):
+        video_bytes = b"\x00\x00\x00\x18ftypmp42" + b"\x00" * 20
+        with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            MarketingPopup.objects.all().delete()
+            MarketingPopup.objects.create(
+                name="Popup con video", title="Lanzamiento", message="Mira el clip.",
+                button_label="Ver", button_url="shop.html", is_active=True,
+                image_file=SimpleUploadedFile("promo.mp4", video_bytes, content_type="video/mp4"),
+            )
+            home = self.client.get("/")
+            self.assertContains(home, "<video")
+            self.assertContains(home, "promo.mp4")
+            self.assertNotContains(home, 'img src="/media/marketing/popups/promo.mp4"')
+
+    def test_marketing_popup_image_is_still_converted_to_webp(self):
+        with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            popup = MarketingPopup.objects.create(
+                name="Popup con imagen", title="Oferta", message="Mensaje.",
+                button_label="Ver", button_url="shop.html",
+                image_file=SimpleUploadedFile("Portada.png", _fake_image_bytes("PNG", size=(2000, 2000)), content_type="image/png"),
+            )
+            self.assertFalse(popup.is_video)
+            self.assertTrue(popup.image_file.name.endswith("portada.webp"))
+            with Image.open(popup.image_file.path) as optimized:
+                self.assertEqual(optimized.format, "WEBP")
+                self.assertLessEqual(optimized.width, 1400)
+
     def test_marketing_popup_full_clean_rejects_a_disguised_image_file(self):
         popup = MarketingPopup(
             name="Popup de prueba", title="Oferta", message="Mensaje de prueba.",
@@ -1776,6 +2530,66 @@ class UploadedMediaValidationTests(TestCase):
         )
         with self.assertRaises(ValidationError):
             popup.full_clean()
+
+    def test_product_uploads_are_resized_and_converted_to_webp(self):
+        with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            product = Product.objects.first()
+            product.image_file = SimpleUploadedFile(
+                "Producto Principal.png",
+                _fake_image_bytes("PNG", size=(2200, 1800)),
+                content_type="image/png",
+            )
+            product.save()
+
+            gallery_image = ProductImage.objects.create(
+                product=product,
+                image_file=SimpleUploadedFile(
+                    "Vista Lateral.jpg",
+                    _fake_image_bytes("JPEG", size=(1800, 2100)),
+                    content_type="image/jpeg",
+                ),
+                image_alt="Vista lateral",
+            )
+
+            self.assertTrue(product.image_file.name.endswith("producto-principal.webp"))
+            self.assertTrue(gallery_image.image_file.name.endswith("vista-lateral.webp"))
+            with Image.open(product.image_file.path) as optimized:
+                self.assertEqual(optimized.format, "WEBP")
+                self.assertLessEqual(optimized.width, 1600)
+                self.assertLessEqual(optimized.height, 1600)
+            with Image.open(gallery_image.image_file.path) as optimized:
+                self.assertEqual(optimized.format, "WEBP")
+                self.assertLessEqual(optimized.width, 1600)
+                self.assertLessEqual(optimized.height, 1600)
+            self.assertEqual(product.main_image_source, product.image_file.url)
+            self.assertIn(gallery_image.image_file.url, [item["url"] for item in product.product_images])
+
+    def test_image_banner_is_converted_but_video_is_not_modified(self):
+        with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            banner = HomeBanner.objects.create(
+                name="Banner optimizado",
+                media_type=HomeBanner.MediaType.IMAGE,
+                media_file=SimpleUploadedFile(
+                    "Portada.png",
+                    _fake_image_bytes("PNG", size=(2800, 1800)),
+                    content_type="image/png",
+                ),
+            )
+            video_bytes = b"\x00\x00\x00\x18ftypmp42" + b"\x00" * 20
+            video = HomeBanner.objects.create(
+                name="Video intacto",
+                media_type=HomeBanner.MediaType.VIDEO,
+                media_file=SimpleUploadedFile("portada.mp4", video_bytes, content_type="video/mp4"),
+            )
+
+            self.assertTrue(banner.media_file.name.endswith("portada.webp"))
+            with Image.open(banner.media_file.path) as optimized:
+                self.assertEqual(optimized.format, "WEBP")
+                self.assertLessEqual(optimized.width, 2400)
+                self.assertLessEqual(optimized.height, 1400)
+            self.assertTrue(video.media_file.name.endswith("portada.mp4"))
+            with video.media_file.open("rb") as uploaded_video:
+                self.assertEqual(uploaded_video.read(), video_bytes)
 
 
 @override_settings(AXES_ENABLED=True, AXES_FAILURE_LIMIT=3, AXES_COOLOFF_TIME=timedelta(minutes=15))
@@ -2357,6 +3171,58 @@ class BoldPaymentTests(TestCase):
         coupon.refresh_from_db()
         self.assertEqual(coupon.times_used, 1)
         self.assertTrue(CouponRedemption.objects.filter(order=order).exists())
+
+    def test_pending_online_payment_reserves_the_last_coupon_use(self):
+        coupon = Coupon.objects.create(
+            code="ULTIMO-USO",
+            discount_type=Coupon.DiscountType.FIXED,
+            value=5000,
+            minimum_purchase=1000,
+            starts_at=timezone.now() - timedelta(days=1),
+            expires_at=timezone.now() + timedelta(days=1),
+            usage_limit=1,
+            once_per_user=False,
+        )
+        first_cart = Cart.objects.create(user=self.user, status=Cart.Status.ACTIVE)
+        CartItem.objects.create(cart=first_cart, product=self.product, quantity=1, size="40")
+        self.client.post("/cart-coupon/apply/", {"code": coupon.code})
+        first_response = self.client.post("/shop-checkout.html", {
+            "address": self.address.id,
+            "payment_method": Order.PaymentMethod.BOLD,
+            "accept_terms": "on",
+        })
+        self.assertEqual(first_response.status_code, 302)
+        self.assertEqual(Order.objects.filter(coupon=coupon, status=Order.Status.PENDING).count(), 1)
+
+        second_user = User.objects.create_user(
+            username="segundo-pagador",
+            email="segundo-pagador@example.com",
+            password="ClaveSegura123!",
+        )
+        second_address = Address.objects.create(
+            user=second_user,
+            first_name="Ana",
+            last_name="Rojas",
+            address_line_1="Calle 8 # 10-20",
+            department="Huila",
+            city="Neiva",
+            phone="300 111 2233",
+            is_default=True,
+        )
+        self.client.force_login(second_user)
+        second_cart = Cart.objects.create(user=second_user, status=Cart.Status.ACTIVE)
+        CartItem.objects.create(cart=second_cart, product=self.product, quantity=1, size="40")
+        self.client.post("/cart-coupon/apply/", {"code": coupon.code})
+        second_response = self.client.post("/shop-checkout.html", {
+            "address": second_address.id,
+            "payment_method": Order.PaymentMethod.BOLD,
+            "accept_terms": "on",
+        }, follow=True)
+
+        self.assertContains(second_response, "El cupon alcanzo su limite de usos.")
+        self.assertEqual(Order.objects.filter(coupon=coupon).count(), 1)
+        coupon.refresh_from_db()
+        self.assertEqual(coupon.times_used, 0)
 
     def test_confirming_the_same_cart_twice_reuses_the_pending_order(self):
         _, first = self._place_bold_order()

@@ -1,0 +1,62 @@
+name: nexus-sneakers
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: nexus_sneakers_db
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    volumes:
+      - nexus_postgres_data:/var/lib/postgresql/data
+    networks:
+      - nexus_internal
+
+  web:
+    build: .
+    container_name: nexus_sneakers_web
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      DJANGO_DEBUG: "0"
+      DJANGO_SECURE_SSL_REDIRECT: "1"
+      DJANGO_SESSION_COOKIE_SECURE: "1"
+      DJANGO_CSRF_COOKIE_SECURE: "1"
+      DJANGO_SECURE_HSTS_SECONDS: "31536000"
+    expose:
+      - "8000"
+    volumes:
+      - nexus_media_data:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+    init: true
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; r=urllib.request.Request('http://127.0.0.1:8000/healthz/', headers={'X-Forwarded-Proto':'https'}); urllib.request.urlopen(r, timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - nexus_internal
+      - proxy
+
+volumes:
+  nexus_postgres_data:
+  nexus_media_data:
+
+networks:
+  nexus_internal:
+    driver: bridge
+  proxy:
+    external: true
+    name: sistema-facturacion_invoiceplane

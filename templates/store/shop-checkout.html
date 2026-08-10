@@ -2,6 +2,7 @@
 {% load l10n store_extras %}
 
 {% block title %}Finalizar compra - Nexus Luxury Footwear{% endblock %}
+{% block seo %}{% seo_meta title="Finalizar compra" description="Completa tu pedido en Nexus Luxury Footwear." robots="noindex, nofollow" %}{% endblock %}
 
 {% block content %}
 <div class="page-header-area login-page-header" data-bg-img="assets/img/shop/bannerlogin.png">
@@ -126,6 +127,22 @@
             {% if shipping_cost > 0 %}
             <p class="checkout-shipping-hint" data-shipping-hint{% if form.delivery_method.value == 'pickup' %} hidden{% endif %}>Envío gratis en compras superiores a {{ free_shipping_threshold|cop }}.</p>
             {% endif %}
+            {# El formulario del cupon no puede anidarse dentro del formulario del
+               pedido, asi que los controles se enlazan por id con `form=`. #}
+            {% if coupon %}
+            <div class="checkout-coupon is-applied">
+              <span class="checkout-coupon__badge"><i class="fa fa-ticket" aria-hidden="true"></i><strong>{{ coupon.code }}</strong><small>Ahorras {{ discount|cop }}</small></span>
+              <button type="submit" form="checkout-coupon-remove" class="checkout-coupon__remove">Retirar</button>
+            </div>
+            {% else %}
+            <div class="checkout-coupon">
+              <label for="checkoutCouponCode">¿Tienes un código de descuento?</label>
+              <div class="checkout-coupon__control">
+                <input type="text" id="checkoutCouponCode" name="code" form="checkout-coupon-apply" maxlength="40" required autocomplete="off" placeholder="Ingresa tu código">
+                <button type="submit" form="checkout-coupon-apply" class="checkout-coupon__apply">Aplicar</button>
+              </div>
+            </div>
+            {% endif %}
             <label class="checkout-terms">
               <input type="checkbox" name="accept_terms"> He leído y acepto los términos y condiciones.
             </label>
@@ -135,6 +152,13 @@
         </div>
       </div>
     </form>
+    {# Vive fuera del formulario del pedido: los controles del resumen apuntan
+       aqui con el atributo `form`, porque anidar formularios no es valido. #}
+    {% if coupon %}
+    <form id="checkout-coupon-remove" action="{% url 'coupon_remove' %}" method="post" hidden>{% csrf_token %}<input type="hidden" name="origen" value="checkout"></form>
+    {% else %}
+    <form id="checkout-coupon-apply" action="{% url 'coupon_apply' %}" method="post" hidden>{% csrf_token %}<input type="hidden" name="origen" value="checkout"></form>
+    {% endif %}
     {% endif %}
   </div>
 </section>

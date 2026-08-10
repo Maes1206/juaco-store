@@ -2,6 +2,7 @@ from django.contrib.auth import views as auth_views
 from django.urls import path, reverse_lazy
 
 from . import views
+from .forms import AccountPasswordResetForm
 
 
 urlpatterns = [
@@ -36,6 +37,7 @@ urlpatterns = [
     path(
         "recuperar-contrasena/",
         auth_views.PasswordResetView.as_view(
+            form_class=AccountPasswordResetForm,
             template_name="store/password-reset-form.html",
             email_template_name="store/emails/password-reset-email.txt",
             subject_template_name="store/emails/password-reset-subject.txt",
@@ -62,6 +64,11 @@ urlpatterns = [
         name="password_reset_complete",
     ),
     path("account-register.html", views.register_view, name="register"),
+    path(
+        "confirmar-admin/<uidb64>/<token>/",
+        views.admin_registration_confirm,
+        name="admin_registration_confirm",
+    ),
     path("account-logout/", views.logout_view, name="logout"),
     path("account.html", views.account, name="account"),
     path("account-details/", views.account_details_update, name="account_details_update"),

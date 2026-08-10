@@ -5,7 +5,11 @@ from django.conf import settings
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator, MaxValueValidator, MinValueValidator, RegexValidator
+from django.db.models.functions import Lower
 from PIL import Image, UnidentifiedImageError
+
+from .colors import resolve_color_hex
+from .image_optimization import IMAGE_EXTENSIONS, optimize_field_file, validate_image_upload
 
 
 # Firmas mínimas de contenedor para los formatos de video aceptados. No hay una
@@ -15,8 +19,22 @@ _VIDEO_SIGNATURE_CHECKS = {
     "mp4": lambda header: header[4:8] == b"ftyp",
     "webm": lambda header: header.startswith(b"\x1a\x45\xdf\xa3"),
 }
-_IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
+_IMAGE_EXTENSIONS = IMAGE_EXTENSIONS
+_VIDEO_EXTENSIONS = frozenset(_VIDEO_SIGNATURE_CHECKS)
+# Nginx corta las subidas en 20 MB. El limite propio se queda por debajo para
+# que el administrador vea un mensaje del formulario y no un error 413 crudo.
+MAX_VIDEO_UPLOAD_BYTES = 15 * 1024 * 1024
 RESERVED_STORE_SECTION_SLUGS = {"hombre", "mujer", "clasicas", "ofertas", "accesorios"}
+
+
+def media_extension(reference):
+    """Extension de un archivo subido o de una ruta/URL, sin query ni punto."""
+    name = getattr(reference, "name", reference) or ""
+    return os.path.splitext(str(name).split("?")[0])[1].lstrip(".").lower()
+
+
+def looks_like_video(reference):
+    return media_extension(reference) in _VIDEO_EXTENSIONS
 
 
 def validate_uploaded_media(file):
@@ -30,11 +48,15 @@ def validate_uploaded_media(file):
     file.seek(0)
     try:
         if extension in _IMAGE_EXTENSIONS:
-            with Image.open(file) as image:
-                image.verify()
+            validate_image_upload(file)
             return
         signature_check = _VIDEO_SIGNATURE_CHECKS.get(extension)
         if signature_check:
+            if file.size > MAX_VIDEO_UPLOAD_BYTES:
+                raise ValidationError(
+                    f"El video no puede superar {MAX_VIDEO_UPLOAD_BYTES // (1024 * 1024)} MB. "
+                    "Recorta el clip o bajale la calidad."
+                )
             if not signature_check(file.read(12)):
                 raise ValidationError("El archivo no tiene un formato de video válido.")
             return
@@ -145,6 +167,11 @@ class StoreSection(models.Model):
         if errors:
             raise ValidationError(errors)
 
+    def save(self, *args, **kwargs):
+        optimize_field_file(self, "banner_image_file", max_size=(2400, 1400))
+        optimize_field_file(self, "empty_image_file", max_size=(1600, 1600))
+        super().save(*args, **kwargs)
+
     @property
     def banner_source(self):
         return self.banner_image_file.url if self.banner_image_file else self.banner_image_url
@@ -216,7 +243,19 @@ class Product(models.Model):
     additional_information = models.TextField("informacion del producto", blank=True, help_text="Contenido de la pestaña Informacion.")
     price = models.DecimalField("precio de venta", max_digits=12, decimal_places=2)
     compare_at_price = models.DecimalField("precio anterior", max_digits=12, decimal_places=2, null=True, blank=True)
-    image = models.CharField("imagen principal", max_length=255)
+    image_file = models.FileField(
+        "archivo de imagen principal",
+        upload_to="products/main/",
+        blank=True,
+        validators=(FileExtensionValidator(("jpg", "jpeg", "png", "webp")), validate_uploaded_media),
+        help_text="Se redimensiona y convierte automáticamente a WebP.",
+    )
+    image = models.CharField(
+        "URL o ruta de imagen principal",
+        max_length=255,
+        blank=True,
+        help_text="Alternativa al archivo subido para imágenes externas o heredadas.",
+    )
     image_alt = models.CharField("texto alternativo", max_length=180, blank=True)
     gallery = models.JSONField("galeria", default=list, blank=True)
     tags = models.JSONField("etiquetas", default=list, blank=True)
@@ -245,12 +284,15 @@ class Product(models.Model):
 
     def clean(self):
         super().clean()
+        if not self.image_file and not self.image:
+            raise ValidationError({"image_file": "Sube una imagen principal o indica una URL."})
         if self.brand_id and self.brand.section_type != StoreSection.SectionType.BRAND:
             raise ValidationError({"brand": "Selecciona una sección configurada como marca."})
         if self.compare_at_price is not None and self.compare_at_price <= self.price:
             raise ValidationError({"compare_at_price": "El precio anterior debe ser mayor al precio de venta."})
 
     def save(self, *args, **kwargs):
+        optimize_field_file(self, "image_file", max_size=(1600, 1600))
         update_fields = kwargs.get("update_fields")
         if self.brand_id:
             self.legacy_brand = self.brand.title
@@ -278,8 +320,17 @@ class Product(models.Model):
         return self.image_alt or self.name
 
     @property
+    def main_image_source(self):
+        return self.image_file.url if self.image_file else self.image
+
+    @property
     def product_images(self):
-        images = [{"url": self.image, "alt": self.main_image_alt}]
+        images = [{"url": self.main_image_source, "alt": self.main_image_alt}]
+        images.extend(
+            {"url": item.image_file.url, "alt": item.image_alt or self.main_image_alt}
+            for item in self.uploaded_images.all()
+            if item.image_file
+        )
         images.extend(
             {"url": item.get("url"), "alt": item.get("alt") or self.main_image_alt}
             for item in (self.gallery or [])
@@ -301,6 +352,36 @@ class Product(models.Model):
         return self.name
 
 
+class ProductImage(models.Model):
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="uploaded_images",
+        verbose_name="producto",
+    )
+    image_file = models.FileField(
+        "archivo",
+        upload_to="products/gallery/",
+        validators=(FileExtensionValidator(("jpg", "jpeg", "png", "webp")), validate_uploaded_media),
+        help_text="Se redimensiona y convierte automáticamente a WebP.",
+    )
+    image_alt = models.CharField("texto alternativo", max_length=180, blank=True)
+    position = models.PositiveSmallIntegerField("orden", default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "imagen de producto"
+        verbose_name_plural = "imágenes de producto"
+        ordering = ("position", "id")
+
+    def save(self, *args, **kwargs):
+        optimize_field_file(self, "image_file", max_size=(1600, 1600))
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.product} · imagen {self.position + 1}"
+
+
 class ProductVariant(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="variants", verbose_name="producto")
     sku = models.CharField("referencia de variante", max_length=100, unique=True, null=True, blank=True)
@@ -310,6 +391,7 @@ class ProductVariant(models.Model):
         "código de color",
         max_length=7,
         blank=True,
+        help_text="Opcional: si escribes un color y lo dejas vacío, se usará #505050 por defecto.",
         validators=(RegexValidator(r"^#[0-9A-Fa-f]{6}$", "Usa un color hexadecimal como #505050."),),
     )
     stock = models.PositiveIntegerField("existencias", default=0)
@@ -333,10 +415,15 @@ class ProductVariant(models.Model):
         self.size = self.size.strip()
         self.color_name = self.color_name.strip()
         self.color_hex = self.color_hex.strip().upper()
-        if self.color_name and not self.color_hex:
-            raise ValidationError({"color_hex": "Indica el código hexadecimal de este color."})
         if self.color_hex and not self.color_name:
             raise ValidationError({"color_name": "Indica el nombre de este color."})
+        if self.color_name and not self.color_hex:
+            # El hexadecimal es opcional: se deduce del nombre y, si no se
+            # reconoce, del color dominante de la foto del producto.
+            self.color_hex = resolve_color_hex(
+                self.color_name,
+                product=self.product if self.product_id else None,
+            )
 
     @classmethod
     def sync_product_summary(cls, product_id):
@@ -349,7 +436,10 @@ class ProductVariant(models.Model):
             if variant.color_name and not any(
                 item["name"].casefold() == variant.color_name.casefold() for item in colors
             ):
-                colors.append({"name": variant.color_name, "hex": variant.color_hex or "#505050"})
+                colors.append({
+                    "name": variant.color_name,
+                    "hex": variant.color_hex or resolve_color_hex(variant.color_name, product=variant.product),
+                })
         Product.objects.filter(pk=product_id).update(
             sizes=sizes,
             colors=colors,
@@ -434,7 +524,7 @@ class HomeBanner(models.Model):
     eyebrow = models.CharField("texto decorativo", max_length=80, blank=True)
     media_type = models.CharField("tipo de medio", max_length=10, choices=MediaType.choices, default=MediaType.IMAGE)
     layout = models.CharField("estilo", max_length=12, choices=Layout.choices, default=Layout.EDITORIAL)
-    media_file = models.FileField("archivo de imagen o video", upload_to="marketing/banners/", blank=True, validators=(FileExtensionValidator(("jpg", "jpeg", "png", "webp", "mp4", "webm")), validate_uploaded_media), help_text="Puedes subir JPG, PNG, WebP, MP4 o WebM de hasta 10 segundos.")
+    media_file = models.FileField("archivo de imagen o video", upload_to="marketing/banners/", blank=True, validators=(FileExtensionValidator(("jpg", "jpeg", "png", "webp", "mp4", "webm")), validate_uploaded_media), help_text="Las imágenes se redimensionan y convierten a WebP. También puedes subir MP4 o WebM de hasta 10 segundos.")
     media_url = models.CharField("URL de imagen o video", max_length=500, blank=True, help_text="Alternativa al archivo: pega una URL o ruta existente.")
     background_url = models.CharField("URL de fondo", max_length=500, blank=True, default="assets/img/shape/1.webp")
     button_label = models.CharField("texto del boton", max_length=60, blank=True)
@@ -453,6 +543,19 @@ class HomeBanner(models.Model):
         super().clean()
         if not self.media_file and not self.media_url:
             raise ValidationError("Debes subir un archivo o indicar una URL para el banner.")
+        # El tipo se deduce del archivo en vez de confiar en el desplegable: si
+        # se sube un MP4 y queda seleccionado "Imagen", el banner saldria como
+        # una <img> rota. Una URL sin extension conserva la eleccion manual.
+        if self.media_file:
+            self.media_type = self.MediaType.VIDEO if looks_like_video(self.media_file.name) else self.MediaType.IMAGE
+        elif looks_like_video(self.media_url):
+            self.media_type = self.MediaType.VIDEO
+
+    def save(self, *args, **kwargs):
+        # Los videos se guardan tal cual: optimize_field_file solo sabe de imagenes.
+        if self.media_file and media_extension(self.media_file) in _IMAGE_EXTENSIONS:
+            optimize_field_file(self, "media_file", max_size=(2400, 1400))
+        super().save(*args, **kwargs)
 
     @property
     def media_source(self):
@@ -484,8 +587,14 @@ class MarketingPopup(models.Model):
     name = models.CharField("nombre interno", max_length=120)
     title = models.CharField("titulo", max_length=180)
     message = models.TextField("mensaje", max_length=600)
-    image_file = models.FileField("imagen", upload_to="marketing/popups/", blank=True, validators=(FileExtensionValidator(("jpg", "jpeg", "png", "webp")), validate_uploaded_media))
-    image_url = models.CharField("URL de imagen", max_length=500, blank=True)
+    image_file = models.FileField(
+        "imagen o video",
+        upload_to="marketing/popups/",
+        blank=True,
+        validators=(FileExtensionValidator(("jpg", "jpeg", "png", "webp", "mp4", "webm")), validate_uploaded_media),
+        help_text="Las imágenes se redimensionan y convierten a WebP. También puedes subir un MP4 o WebM corto.",
+    )
+    image_url = models.CharField("URL de imagen o video", max_length=500, blank=True)
     image_position = models.CharField("posicion de imagen", max_length=8, choices=ImagePosition.choices, default=ImagePosition.LEFT)
     button_label = models.CharField("texto del boton", max_length=60)
     button_url = models.CharField("URL del boton", max_length=500)
@@ -505,9 +614,20 @@ class MarketingPopup(models.Model):
         if not self.image_file and not self.image_url:
             raise ValidationError("Debes subir una imagen o indicar una URL para el popup.")
 
+    def save(self, *args, **kwargs):
+        # Los videos se guardan tal cual: optimize_field_file solo sabe de imagenes.
+        if self.image_file and media_extension(self.image_file) in _IMAGE_EXTENSIONS:
+            optimize_field_file(self, "image_file", max_size=(1400, 1400))
+        super().save(*args, **kwargs)
+
     @property
     def image_source(self):
         return self.image_file.url if self.image_file else self.image_url
+
+    @property
+    def is_video(self):
+        """El tipo se deduce del archivo, sin un campo aparte que se desincronice."""
+        return looks_like_video(self.image_file.name if self.image_file else self.image_url)
 
     def __str__(self):
         return self.name
@@ -641,10 +761,21 @@ class Coupon(models.Model):
     code = models.CharField("codigo", max_length=40, unique=True)
     discount_type = models.CharField("tipo de descuento", max_length=12, choices=DiscountType.choices, default=DiscountType.PERCENTAGE)
     value = models.DecimalField("valor", max_digits=12, decimal_places=2, validators=(MinValueValidator(Decimal("0.01")),))
-    minimum_purchase = models.DecimalField("compra minima", max_digits=12, decimal_places=2, default=Decimal("0"))
+    minimum_purchase = models.DecimalField(
+        "compra minima",
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0"),
+        validators=(MinValueValidator(Decimal("0")),),
+    )
     starts_at = models.DateTimeField("inicio de vigencia")
     expires_at = models.DateTimeField("fecha de expiracion")
-    usage_limit = models.PositiveIntegerField("limite total de usos", null=True, blank=True)
+    usage_limit = models.PositiveIntegerField(
+        "limite total de usos",
+        null=True,
+        blank=True,
+        validators=(MinValueValidator(1),),
+    )
     times_used = models.PositiveIntegerField("veces canjeado", default=0, editable=False)
     once_per_user = models.BooleanField("un uso por usuario", default=True)
     is_active = models.BooleanField("activo", default=True, db_index=True)
@@ -655,16 +786,51 @@ class Coupon(models.Model):
         verbose_name = "cupon"
         verbose_name_plural = "cupones"
         ordering = ("-created_at",)
+        constraints = (
+            models.UniqueConstraint(Lower("code"), name="unique_coupon_code_ci"),
+            models.CheckConstraint(
+                condition=models.Q(minimum_purchase__gte=0),
+                name="coupon_minimum_purchase_nonnegative",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(value__gt=0),
+                name="coupon_value_positive",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(discount_type="fixed") | models.Q(value__lte=100),
+                name="coupon_percentage_at_most_100",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(expires_at__gt=models.F("starts_at")),
+                name="coupon_expiry_after_start",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(usage_limit__isnull=True) | models.Q(usage_limit__gte=1),
+                name="coupon_usage_limit_positive",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(usage_limit__isnull=True) | models.Q(usage_limit__gte=models.F("times_used")),
+                name="coupon_usage_not_over_limit",
+            ),
+        )
 
     def clean(self):
+        self.code = (self.code or "").strip().upper()
         super().clean()
+        errors = {}
+        if not self.code:
+            errors["code"] = "Ingresa un codigo de cupon."
         if self.expires_at and self.starts_at and self.expires_at <= self.starts_at:
-            raise ValidationError("La fecha de expiracion debe ser posterior al inicio de vigencia.")
-        if self.discount_type == self.DiscountType.PERCENTAGE and self.value > 100:
-            raise ValidationError("El porcentaje de descuento no puede superar el 100%.")
+            errors["expires_at"] = "La fecha de expiracion debe ser posterior al inicio de vigencia."
+        if self.discount_type == self.DiscountType.PERCENTAGE and self.value is not None and self.value > 100:
+            errors["value"] = "El porcentaje de descuento no puede superar el 100%."
+        if self.usage_limit is not None and self.usage_limit < self.times_used:
+            errors["usage_limit"] = "El limite no puede ser menor que la cantidad de usos ya registrados."
+        if errors:
+            raise ValidationError(errors)
 
     def save(self, *args, **kwargs):
-        self.code = self.code.strip().upper()
+        self.code = (self.code or "").strip().upper()
         super().save(*args, **kwargs)
 
     def discount_for(self, subtotal):

@@ -7,9 +7,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Nexus Luxury Footwear - Detalle de producto"/>
-    <meta name="keywords" content="sneakers, tenis, zapatos, producto, Nexus Luxury Footwear"/>
-    <meta name="author" content="codecarnival"/>
+    {% seo_meta product=product %}
 
     <title>{% if product %}{{ product.name }}{% else %}Producto{% endif %} | Nexus Luxury Footwear</title>
 
@@ -351,7 +349,7 @@
                       <div class="inner-content">
                         <div class="product-thumb">
                           <a href="single-product.html?producto={{ related.slug }}">
-                            <img src="{{ related.image }}" width="270" height="274" alt="{{ related.main_image_alt }}">
+                            <img src="{{ related.main_image_source }}" width="270" height="274" alt="{{ related.main_image_alt }}" loading="lazy">
                           </a>
                           {% if related.has_discount %}<div class="product-flag"><ul><li class="discount">-{{ related.discount_percent }}%</li></ul></div>{% endif %}
                           <div class="product-action">
