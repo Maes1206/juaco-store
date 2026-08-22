@@ -1,0 +1,1239 @@
+{% load store_extras %}<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <base href="/">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {% seo_meta title="Tienda de sneakers Top Quality" description="Explora sneakers Top Quality, tenis para hombre y mujer, modelos clásicos, deportivos, urbanos y ediciones limitadas en Colombia." %}
+
+    <title>Tienda | Nexus Luxury Footwear</title>
+
+    <!--== Favicon ==-->
+    <link rel="icon" type="image/png" href="assets/img/favicon.png" />
+
+    <!--== Google Fonts ==-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,600;0,700;0,800;1,400;1,500&display=swap" rel="stylesheet">
+
+    <!--== Bootstrap CSS ==-->
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet" />
+    <!--== Font Awesome Min Icon CSS ==-->
+    <link href="assets/css/font-awesome.min.css" rel="stylesheet" />
+    <!--== Pe7 Stroke Icon CSS ==-->
+    <link href="assets/css/pe-icon-7-stroke.css" rel="stylesheet" />
+    <!--== Swiper CSS ==-->
+    <link href="assets/css/swiper.min.css" rel="stylesheet" />
+    <!--== Fancybox Min CSS ==-->
+    <link href="assets/css/fancybox.min.css" rel="stylesheet" />
+    <!--== Aos Min CSS ==-->
+    <link href="assets/css/aos.min.css" rel="stylesheet" />
+
+    <!--== Main Style CSS ==-->
+    <link href="assets/css/style.css" rel="stylesheet" />
+    <link href="assets/css/juaco-ux.css?v=20260801-7" rel="stylesheet" />
+
+    <!--[if lt IE 9]>
+    <script src="//oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <script src="//oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+
+<body>
+
+<!--wrapper start-->
+<div class="wrapper">
+
+  <!--== Start Header Wrapper ==-->
+  <header class="main-header-wrapper position-relative">
+    <div class="header-top">
+      <div class="container pt--0 pb--0">
+        <div class="row">
+          <div class="col-12">
+            <div class="header-top-align">
+              <div class="header-top-align-start">
+                <div class="desc">
+                  <p>Envíos nacionales gratis por compras superiores a $400.000 COP</p>
+                </div>
+              </div>
+              <div class="header-top-align-end">
+                <div class="header-info-items">
+                  <div class="info-items" data-header-info></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="header-middle">
+      <div class="container pt--0 pb--0">
+        <div class="row align-items-center">
+          <div class="col-12">
+            <div class="header-middle-align">
+              <div class="header-middle-align-start">
+                <div class="header-logo-area">
+                  <a href="index.html">
+                    <img class="logo-main" src="assets/img/shop/nexus-logo-horizontal.png" srcset="assets/img/shop/nexus-logo-horizontal.png 1x, assets/img/shop/nexus-logo-horizontal@2x.png 2x" width="199" height="55" alt="Nexus Luxury Footwear" />
+                    <img class="logo-light" src="assets/img/shop/nexus-logo-horizontal.png" srcset="assets/img/shop/nexus-logo-horizontal.png 1x, assets/img/shop/nexus-logo-horizontal@2x.png 2x" width="199" height="55" alt="Nexus Luxury Footwear" />
+                  </a>
+                </div>
+              </div>
+              <div class="header-middle-align-center">
+                <div class="header-search-area">
+                  <form class="header-searchbox" action="buscar/" method="get" role="search">
+                    <input type="search" name="q" class="form-control" placeholder="Buscar productos y artículos" aria-label="Buscar productos y artículos" maxlength="100" required>
+                    <button class="btn-submit" type="submit"><i class="pe-7s-search"></i></button>
+                  </form>
+                </div>
+              </div>
+              <div class="header-middle-align-end">
+                <div class="header-action-area">
+                  <div class="shopping-search">
+                    <button class="shopping-search-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#AsideOffcanvasSearch" aria-controls="AsideOffcanvasSearch"><i class="pe-7s-search icon"></i></button>
+                  </div>
+                  <div class="shopping-wishlist">
+                    <a class="shopping-wishlist-btn" href="shop-wishlist.html">
+                      <i class="pe-7s-like icon"></i>
+                    </a>
+                  </div>
+                  <div class="shopping-cart">
+                    <button class="shopping-cart-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#AsideOffcanvasCart" aria-controls="offcanvasRightLabel">
+                      <i class="pe-7s-shopbag icon"></i>
+                      <sup class="shop-count" aria-label="{{ global_cart_count }} artículos en el carrito">{{ global_cart_count }}</sup>
+                    </button>
+                  </div>
+                  <button class="btn-menu" type="button" data-bs-toggle="offcanvas" data-bs-target="#AsideOffcanvasMenu" aria-controls="AsideOffcanvasMenu">
+                    <i class="pe-7s-menu"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="header-area header-default">
+      <div class="container">
+        <div class="row no-gutter align-items-center position-relative">
+          <div class="col-12">
+            <div class="header-align">
+              <div class="header-navigation-area position-relative">
+                <ul class="main-menu nav">
+                  <li><a href="index.html"><span>Inicio</span></a></li>
+                  <li><a href="about-us.html"><span>Nosotros</span></a></li>
+                  <li class="has-submenu"><a href="shop.html"><span>Tienda</span></a>
+                    <ul class="submenu-nav">
+                      <li><a href="{% url 'catalog_section' 'hombre' %}"><span>Hombre</span></a></li>
+                      <li><a href="{% url 'catalog_section' 'mujer' %}"><span>Mujer</span></a></li>
+                      {% for store_section in store_navigation_sections %}<li><a href="{% url 'catalog_section' store_section.slug %}"><span>{{ store_section.title }}</span></a></li>{% endfor %}
+                      <li><a href="{% url 'catalog_section' 'ofertas' %}"><span>Ofertas</span></a></li>
+                      <li><a href="{% url 'catalog_section' 'accesorios' %}"><span>Accesorios</span></a></li>
+                    </ul>
+                  </li>
+                  <li><a href="blog.html"><span>Blog</span></a></li>
+                  <li><a href="contact.html"><span>Contacto</span></a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+  <!--== End Header Wrapper ==-->
+
+  <main class="main-content">
+    <!--== Start Page Header Area Wrapper ==-->
+    <section class="catalog-section-banner catalog-brand-banner is-loading" id="catalog-page-header" aria-labelledby="catalog-title">
+      <img class="catalog-section-banner__image" id="catalog-hero-image" alt="Banner de colección">
+      <div class="container catalog-section-banner__content">
+        <div>
+          <p class="catalog-section-banner__eyebrow">Nexus Luxury Footwear</p>
+          <h1 id="catalog-title">Jordan</h1>
+          <p id="catalog-hero-subtitle">La leyenda del baloncesto llevada a la calle.</p>
+        </div>
+      </div>
+    </section>
+    <!--== End Page Header Area Wrapper ==-->
+
+    <!--== Start Product Area Wrapper ==-->
+    <section class="product-area product-default-area" id="catalog-products">
+      <div class="container">
+        <div class="row flex-xl-row-reverse justify-content-between">
+          <div class="col-xl-9">
+            <div class="row">
+              <div class="col-12">
+                <div class="shop-top-bar">
+                  <div class="shop-top-left">
+                    <p class="pagination-line" id="catalog-count">12 productos encontrados</p>
+                  </div>
+                  <div class="shop-top-center">
+                    <nav class="product-nav">
+                      <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                        <button class="nav-link active" id="nav-grid-tab" data-bs-toggle="tab" data-bs-target="#nav-grid" type="button" role="tab" aria-controls="nav-grid" aria-selected="true"><i class="fa fa-th"></i></button>
+                        <button class="nav-link" id="nav-list-tab" data-bs-toggle="tab" data-bs-target="#nav-list" type="button" role="tab" aria-controls="nav-list" aria-selected="false"><i class="fa fa-list"></i></button>
+                      </div>
+                    </nav>
+                  </div>
+                  <div class="shop-top-right">
+                    <div class="shop-sort">
+                      <label for="product-sort">Ordenar por</label>
+                      <select class="form-select" id="product-sort" aria-label="Ordenar productos">
+                        <option value="default">Predeterminado</option>
+                        <option value="price-asc">Precio: menor a mayor</option>
+                        <option value="price-desc">Precio: mayor a menor</option>
+                        <option value="name-asc">Nombre: A a Z</option>
+                      </select>
+                    </div>
+                  </div>
+                  </div>
+                </div>
+              <div class="col-12">
+                <div class="tab-content catalog-results" id="nav-tabContent">
+                  <div class="tab-pane fade show active" id="nav-grid" role="tabpanel" aria-labelledby="nav-grid-tab">
+                    <div class="row">
+                      <div class="col-sm-6 col-lg-4">
+                        <!--== Start Product Item ==-->
+                        <div class="product-item">
+                          <div class="inner-content">
+                            <div class="product-thumb">
+                              <a href="single-product.html">
+                                <img src="assets/img/shop/1.webp" width="270" height="274" alt="Image-HasTech">
+                              </a>
+                              <div class="product-flag">
+                                <ul>
+                                  <li class="discount">-10%</li>
+                                </ul>
+                              </div>
+                              <div class="product-action">
+                    <a class="btn-product-wishlist" href="shop-wishlist.html"><i class="fa fa-heart"></i></a>
+                    <a class="btn-product-cart" href="shop-cart.html"><i class="fa fa-shopping-cart"></i></a>
+                    <button class="btn-product-share" type="button" data-product-share aria-label="Compartir producto" title="Compartir producto"><i class="fa fa-share-alt"></i></button>
+                  </div>
+                              <a class="banner-link-overlay" href="shop.html"></a>
+                            </div>
+                            <div class="product-info">
+                              <div class="category">
+                                <ul>
+                                  <li><a href="shop.html">Men</a></li>
+                                  <li class="sep">/</li>
+                                  <li><a href="shop.html">Women</a></li>
+                                </ul>
+                              </div>
+                              <h4 class="title"><a href="single-product.html">Leather Mens Slipper</a></h4>
+                              <div class="prices">
+                                <span class="price-old">$300</span>
+                                <span class="sep">-</span>
+                                <span class="price">$240.00</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <!--== End prPduct Item ==-->
+                      </div>
+                      <div class="col-sm-6 col-lg-4">
+                        <!--== Start Product Item ==-->
+                        <div class="product-item">
+                          <div class="inner-content">
+                            <div class="product-thumb">
+                              <a href="single-product.html">
+                                <img src="assets/img/shop/2.webp" width="270" height="274" alt="Image-HasTech">
+                              </a>
+                              <div class="product-action">
+                    <a class="btn-product-wishlist" href="shop-wishlist.html"><i class="fa fa-heart"></i></a>
+                    <a class="btn-product-cart" href="shop-cart.html"><i class="fa fa-shopping-cart"></i></a>
+                    <button class="btn-product-share" type="button" data-product-share aria-label="Compartir producto" title="Compartir producto"><i class="fa fa-share-alt"></i></button>
+                  </div>
+                              <a class="banner-link-overlay" href="shop.html"></a>
+                            </div>
+                            <div class="product-info">
+                              <div class="category">
+                                <ul>
+                                  <li><a href="shop.html">Men</a></li>
+                                  <li class="sep">/</li>
+                                  <li><a href="shop.html">Women</a></li>
+                                </ul>
+                              </div>
+                              <h4 class="title"><a href="single-product.html">Quickiin Mens shoes</a></h4>
+                              <div class="prices">
+                                <span class="price">$240.00</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <!--== End prPduct Item ==-->
+                      </div>
+                      <div class="col-sm-6 col-lg-4">
+                        <!--== Start Product Item ==-->
+                        <div class="product-item">
+                          <div class="inner-content">
+                            <div class="product-thumb">
+                              <a href="single-product.html">
+                                <img src="assets/img/shop/3.webp" width="270" height="274" alt="Image-HasTech">
+                              </a>
+                              <div class="product-flag">
+                                <ul>
+                                  <li class="discount">-10%</li>
+                                </ul>
+                              </div>
+                              <div class="product-action">
+                    <a class="btn-product-wishlist" href="shop-wishlist.html"><i class="fa fa-heart"></i></a>
+                    <a class="btn-product-cart" href="shop-cart.html"><i class="fa fa-shopping-cart"></i></a>
+                    <button class="btn-product-share" type="button" data-product-share aria-label="Compartir producto" title="Compartir producto"><i class="fa fa-share-alt"></i></button>
+                  </div>
+                              <a class="banner-link-overlay" href="shop.html"></a>
+                            </div>
+                            <div class="product-info">
+                              <div class="category">
+                                <ul>
+                                  <li><a href="shop.html">Men</a></li>
+                                  <li class="sep">/</li>
+                                  <li><a href="shop.html">Women</a></li>
+                                </ul>
+                              </div>
+                              <h4 class="title"><a href="single-product.html">Rexpo Womens shoes</a></h4>
+                              <div class="prices">
+                                <span class="price-old">$300</span>
+                                <span class="sep">-</span>
+                                <span class="price">$240.00</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <!--== End prPduct Item ==-->
+                      </div>
+                      <div class="col-sm-6 col-lg-4">
+                        <!--== Start Product Item ==-->
+                        <div class="product-item">
+                          <div class="inner-content">
+                            <div class="product-thumb">
+                              <a href="single-product.html">
+                                <img src="assets/img/shop/4.webp" width="270" height="274" alt="Image-HasTech">
+                              </a>
+                              <div class="product-action">
+                    <a class="btn-product-wishlist" href="shop-wishlist.html"><i class="fa fa-heart"></i></a>
+                    <a class="btn-product-cart" href="shop-cart.html"><i class="fa fa-shopping-cart"></i></a>
+                    <button class="btn-product-share" type="button" data-product-share aria-label="Compartir producto" title="Compartir producto"><i class="fa fa-share-alt"></i></button>
+                  </div>
+                              <a class="banner-link-overlay" href="shop.html"></a>
+                            </div>
+                            <div class="product-info">
+                              <div class="category">
+                                <ul>
+                                  <li><a href="shop.html">Men</a></li>
+                                  <li class="sep">/</li>
+                                  <li><a href="shop.html">Women</a></li>
+                                </ul>
+                              </div>
+                              <h4 class="title"><a href="single-product.html">Modern Smart Shoes</a></h4>
+                              <div class="prices">
+                                <span class="price">$240.00</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <!--== End prPduct Item ==-->
+                      </div>
+                      <div class="col-sm-6 col-lg-4">
+                        <!--== Start Product Item ==-->
+                        <div class="product-item">
+                          <div class="inner-content">
+                            <div class="product-thumb">
+                              <a href="single-product.html">
+                                <img src="assets/img/shop/5.webp" width="270" height="274" alt="Image-HasTech">
+                              </a>
+                              <div class="product-flag">
+                                <ul>
+                                  <li class="discount">-10%</li>
+                                </ul>
+                              </div>
+                              <div class="product-action">
+                    <a class="btn-product-wishlist" href="shop-wishlist.html"><i class="fa fa-heart"></i></a>
+                    <a class="btn-product-cart" href="shop-cart.html"><i class="fa fa-shopping-cart"></i></a>
+                    <button class="btn-product-share" type="button" data-product-share aria-label="Compartir producto" title="Compartir producto"><i class="fa fa-share-alt"></i></button>
+                  </div>
+                              <a class="banner-link-overlay" href="shop.html"></a>
+                            </div>
+                            <div class="product-info">
+                              <div class="category">
+                                <ul>
+                                  <li><a href="shop.html">Men</a></li>
+                                  <li class="sep">/</li>
+                                  <li><a href="shop.html">Women</a></li>
+                                </ul>
+                              </div>
+                              <h4 class="title"><a href="single-product.html">Primitive Mens shoes</a></h4>
+                              <div class="prices">
+                                <span class="price">$240.00</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <!--== End prPduct Item ==-->
+                      </div>
+                      <div class="col-sm-6 col-lg-4">
+                        <!--== Start Product Item ==-->
+                        <div class="product-item">
+                          <div class="inner-content">
+                            <div class="product-thumb">
+                              <a href="single-product.html">
+                                <img src="assets/img/shop/6.webp" width="270" height="274" alt="Image-HasTech">
+                              </a>
+                              <div class="product-action">
+                    <a class="btn-product-wishlist" href="shop-wishlist.html"><i class="fa fa-heart"></i></a>
+                    <a class="btn-product-cart" href="shop-cart.html"><i class="fa fa-shopping-cart"></i></a>
+                    <button class="btn-product-share" type="button" data-product-share aria-label="Compartir producto" title="Compartir producto"><i class="fa fa-share-alt"></i></button>
+                  </div>
+                              <a class="banner-link-overlay" href="shop.html"></a>
+                            </div>
+                            <div class="product-info">
+                              <div class="category">
+                                <ul>
+                                  <li><a href="shop.html">Men</a></li>
+                                  <li class="sep">/</li>
+                                  <li><a href="shop.html">Women</a></li>
+                                </ul>
+                              </div>
+                              <h4 class="title"><a href="single-product.html">Leather Mens Slipper</a></h4>
+                              <div class="prices">
+                                <span class="price-old">$300</span>
+                                <span class="sep">-</span>
+                                <span class="price">$240.00</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <!--== End prPduct Item ==-->
+                      </div>
+                      <div class="col-sm-6 col-lg-4">
+                        <!--== Start Product Item ==-->
+                        <div class="product-item">
+                          <div class="inner-content">
+                            <div class="product-thumb">
+                              <a href="single-product.html">
+                                <img src="assets/img/shop/7.webp" width="270" height="274" alt="Image-HasTech">
+                              </a>
+                              <div class="product-flag">
+                                <ul>
+                                  <li class="discount">-10%</li>
+                                </ul>
+                              </div>
+                              <div class="product-action">
+                    <a class="btn-product-wishlist" href="shop-wishlist.html"><i class="fa fa-heart"></i></a>
+                    <a class="btn-product-cart" href="shop-cart.html"><i class="fa fa-shopping-cart"></i></a>
+                    <button class="btn-product-share" type="button" data-product-share aria-label="Compartir producto" title="Compartir producto"><i class="fa fa-share-alt"></i></button>
+                  </div>
+                              <a class="banner-link-overlay" href="shop.html"></a>
+                            </div>
+                            <div class="product-info">
+                              <div class="category">
+                                <ul>
+                                  <li><a href="shop.html">Men</a></li>
+                                  <li class="sep">/</li>
+                                  <li><a href="shop.html">Women</a></li>
+                                </ul>
+                              </div>
+                              <h4 class="title"><a href="single-product.html">Simple Fabric Shoe</a></h4>
+                              <div class="prices">
+                                <span class="price">$240.00</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <!--== End prPduct Item ==-->
+                      </div>
+                      <div class="col-sm-6 col-lg-4">
+                        <!--== Start Product Item ==-->
+                        <div class="product-item">
+                          <div class="inner-content">
+                            <div class="product-thumb">
+                              <a href="single-product.html">
+                                <img src="assets/img/shop/8.webp" width="270" height="274" alt="Image-HasTech">
+                              </a>
+                              <div class="product-action">
+                    <a class="btn-product-wishlist" href="shop-wishlist.html"><i class="fa fa-heart"></i></a>
+                    <a class="btn-product-cart" href="shop-cart.html"><i class="fa fa-shopping-cart"></i></a>
+                    <button class="btn-product-share" type="button" data-product-share aria-label="Compartir producto" title="Compartir producto"><i class="fa fa-share-alt"></i></button>
+                  </div>
+                              <a class="banner-link-overlay" href="shop.html"></a>
+                            </div>
+                            <div class="product-info">
+                              <div class="category">
+                                <ul>
+                                  <li><a href="shop.html">Men</a></li>
+                                  <li class="sep">/</li>
+                                  <li><a href="shop.html">Women</a></li>
+                                </ul>
+                              </div>
+                              <h4 class="title"><a href="single-product.html">Primitive Men shoes</a></h4>
+                              <div class="prices">
+                                <span class="price-old">$300</span>
+                                <span class="sep">-</span>
+                                <span class="price">$240.00</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <!--== End prPduct Item ==-->
+                      </div>
+                      <div class="col-sm-6 col-lg-4">
+                        <!--== Start Product Item ==-->
+                        <div class="product-item">
+                          <div class="inner-content">
+                            <div class="product-thumb">
+                              <a href="single-product.html">
+                                <img src="assets/img/shop/1.webp" width="270" height="274" alt="Image-HasTech">
+                              </a>
+                              <div class="product-flag">
+                                <ul>
+                                  <li class="discount">-10%</li>
+                                </ul>
+                              </div>
+                              <div class="product-action">
+                    <a class="btn-product-wishlist" href="shop-wishlist.html"><i class="fa fa-heart"></i></a>
+                    <a class="btn-product-cart" href="shop-cart.html"><i class="fa fa-shopping-cart"></i></a>
+                    <button class="btn-product-share" type="button" data-product-share aria-label="Compartir producto" title="Compartir producto"><i class="fa fa-share-alt"></i></button>
+                  </div>
+                              <a class="banner-link-overlay" href="shop.html"></a>
+                            </div>
+                            <div class="product-info">
+                              <div class="category">
+                                <ul>
+                                  <li><a href="shop.html">Men</a></li>
+                                  <li class="sep">/</li>
+                                  <li><a href="shop.html">Women</a></li>
+                                </ul>
+                              </div>
+                              <h4 class="title"><a href="single-product.html">Hollister V-Neck Knit</a></h4>
+                              <div class="prices">
+                                <span class="price-old">$300</span>
+                                <span class="sep">-</span>
+                                <span class="price">$240.00</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <!--== End prPduct Item ==-->
+                      </div>
+                      <div class="col-sm-6 col-lg-4">
+                        <!--== Start Product Item ==-->
+                        <div class="product-item">
+                          <div class="inner-content">
+                            <div class="product-thumb">
+                              <a href="single-product.html">
+                                <img src="assets/img/shop/4.webp" width="270" height="274" alt="Image-HasTech">
+                              </a>
+                              <div class="product-action">
+                    <a class="btn-product-wishlist" href="shop-wishlist.html"><i class="fa fa-heart"></i></a>
+                    <a class="btn-product-cart" href="shop-cart.html"><i class="fa fa-shopping-cart"></i></a>
+                    <button class="btn-product-share" type="button" data-product-share aria-label="Compartir producto" title="Compartir producto"><i class="fa fa-share-alt"></i></button>
+                  </div>
+                              <a class="banner-link-overlay" href="shop.html"></a>
+                            </div>
+                            <div class="product-info">
+                              <div class="category">
+                                <ul>
+                                  <li><a href="shop.html">Men</a></li>
+                                  <li class="sep">/</li>
+                                  <li><a href="shop.html">Women</a></li>
+                                </ul>
+                              </div>
+                              <h4 class="title"><a href="single-product.html">exclusive mens shoe</a></h4>
+                              <div class="prices">
+                                <span class="price">$240.00</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <!--== End prPduct Item ==-->
+                      </div>
+                      <div class="col-sm-6 col-lg-4">
+                        <!--== Start Product Item ==-->
+                        <div class="product-item">
+                          <div class="inner-content">
+                            <div class="product-thumb">
+                              <a href="single-product.html">
+                                <img src="assets/img/shop/2.webp" width="270" height="274" alt="Image-HasTech">
+                              </a>
+                              <div class="product-flag">
+                                <ul>
+                                  <li class="discount">-10%</li>
+                                </ul>
+                              </div>
+                              <div class="product-action">
+                    <a class="btn-product-wishlist" href="shop-wishlist.html"><i class="fa fa-heart"></i></a>
+                    <a class="btn-product-cart" href="shop-cart.html"><i class="fa fa-shopping-cart"></i></a>
+                    <button class="btn-product-share" type="button" data-product-share aria-label="Compartir producto" title="Compartir producto"><i class="fa fa-share-alt"></i></button>
+                  </div>
+                              <a class="banner-link-overlay" href="shop.html"></a>
+                            </div>
+                            <div class="product-info">
+                              <div class="category">
+                                <ul>
+                                  <li><a href="shop.html">Men</a></li>
+                                  <li class="sep">/</li>
+                                  <li><a href="shop.html">Women</a></li>
+                                </ul>
+                              </div>
+                              <h4 class="title"><a href="single-product.html">New Womens High Hills</a></h4>
+                              <div class="prices">
+                                <span class="price-old">$300</span>
+                                <span class="sep">-</span>
+                                <span class="price">$240.00</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <!--== End prPduct Item ==-->
+                      </div>
+                      <div class="col-sm-6 col-lg-4">
+                        <!--== Start Product Item ==-->
+                        <div class="product-item">
+                          <div class="inner-content">
+                            <div class="product-thumb">
+                              <a href="single-product.html">
+                                <img src="assets/img/shop/3.webp" width="270" height="274" alt="Image-HasTech">
+                              </a>
+                              <div class="product-action">
+                    <a class="btn-product-wishlist" href="shop-wishlist.html"><i class="fa fa-heart"></i></a>
+                    <a class="btn-product-cart" href="shop-cart.html"><i class="fa fa-shopping-cart"></i></a>
+                    <button class="btn-product-share" type="button" data-product-share aria-label="Compartir producto" title="Compartir producto"><i class="fa fa-share-alt"></i></button>
+                  </div>
+                              <a class="banner-link-overlay" href="shop.html"></a>
+                            </div>
+                            <div class="product-info">
+                              <div class="category">
+                                <ul>
+                                  <li><a href="shop.html">Men</a></li>
+                                  <li class="sep">/</li>
+                                  <li><a href="shop.html">Women</a></li>
+                                </ul>
+                              </div>
+                              <h4 class="title"><a href="single-product.html">Leather Mens slippers</a></h4>
+                              <div class="prices">
+                                <span class="price">$240.00</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <!--== End prPduct Item ==-->
+                      </div>
+                      <div class="col-12">
+                        <div class="pagination-items">
+                          <ul class="pagination justify-content-end mb--0">
+                            <li><a class="active" href="shop.html">1</a></li>
+                            <li><a href="shop.html">2</a></li>
+                            <li><a href="shop.html">3</a></li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="tab-pane fade" id="nav-list" role="tabpanel" aria-labelledby="nav-list-tab">
+                    <div class="row">
+                      <div class="col-md-12">
+                        <!--== Start Product Item ==-->
+                        <div class="product-item product-list-item">
+                          <div class="inner-content">
+                            <div class="product-thumb">
+                              <a href="single-product.html">
+                                <img src="assets/img/shop/list-1.webp" width="322" height="360" alt="Image-HasTech">
+                              </a>
+                              <div class="product-flag">
+                                <ul>
+                                  <li class="discount">-10%</li>
+                                </ul>
+                              </div>
+                              <div class="product-action">
+                    <a class="btn-product-wishlist" href="shop-wishlist.html"><i class="fa fa-heart"></i></a>
+                    <a class="btn-product-cart" href="shop-cart.html"><i class="fa fa-shopping-cart"></i></a>
+                    <button class="btn-product-share" type="button" data-product-share aria-label="Compartir producto" title="Compartir producto"><i class="fa fa-share-alt"></i></button>
+                  </div>
+                              <a class="banner-link-overlay" href="shop.html"></a>
+                            </div>
+                            <div class="product-info">
+                              <div class="category">
+                                <ul>
+                                  <li><a href="shop.html">Men</a></li>
+                                  <li class="sep">/</li>
+                                  <li><a href="shop.html">Women</a></li>
+                                </ul>
+                              </div>
+                              <h4 class="title"><a href="single-product.html">Leather Mens Slipper</a></h4>
+                              <div class="prices">
+                                <span class="price-old">$300</span>
+                                <span class="sep">-</span>
+                                <span class="price">$240.00</span>
+                              </div>
+                              <p>Lorem ipsum dolor sit amet consectetur, adipisicing elit. Voluptatem quo, rerum rem soluta quisquam, repellat is deleniti omnis culpa ea quis provident dolore esse, offici modi dolorem nam cum eligendi enim!</p>
+                              <a class="btn-theme btn-sm" href="shop-cart.html">Add To Cart</a>
+                            </div>
+                          </div>
+                        </div>
+                        <!--== End prPduct Item ==-->
+                      </div>
+                      <div class="col-md-12">
+                        <!--== Start Product Item ==-->
+                        <div class="product-item product-list-item">
+                          <div class="inner-content">
+                            <div class="product-thumb">
+                              <a href="single-product.html">
+                                <img src="assets/img/shop/list-2.webp" width="322" height="360" alt="Image-HasTech">
+                              </a>
+                              <div class="product-action">
+                    <a class="btn-product-wishlist" href="shop-wishlist.html"><i class="fa fa-heart"></i></a>
+                    <a class="btn-product-cart" href="shop-cart.html"><i class="fa fa-shopping-cart"></i></a>
+                    <button class="btn-product-share" type="button" data-product-share aria-label="Compartir producto" title="Compartir producto"><i class="fa fa-share-alt"></i></button>
+                  </div>
+                              <a class="banner-link-overlay" href="shop.html"></a>
+                            </div>
+                            <div class="product-info">
+                              <div class="category">
+                                <ul>
+                                  <li><a href="shop.html">Men</a></li>
+                                  <li class="sep">/</li>
+                                  <li><a href="shop.html">Women</a></li>
+                                </ul>
+                              </div>
+                              <h4 class="title"><a href="single-product.html">Quickiin Mens shoes</a></h4>
+                              <div class="prices">
+                                <span class="price">$240.00</span>
+                              </div>
+                              <p>Lorem ipsum dolor sit amet consectetur, adipisicing elit. Voluptatem quo, rerum rem soluta quisquam, repellat is deleniti omnis culpa ea quis provident dolore esse, offici modi dolorem nam cum eligendi enim!</p>
+                              <a class="btn-theme btn-sm" href="shop-cart.html">Add To Cart</a>
+                            </div>
+                          </div>
+                        </div>
+                        <!--== End prPduct Item ==-->
+                      </div>
+                      <div class="col-md-12">
+                        <!--== Start Product Item ==-->
+                        <div class="product-item product-list-item">
+                          <div class="inner-content">
+                            <div class="product-thumb">
+                              <a href="single-product.html">
+                                <img src="assets/img/shop/list-3.webp" width="322" height="360" alt="Image-HasTech">
+                              </a>
+                              <div class="product-flag">
+                                <ul>
+                                  <li class="discount">-10%</li>
+                                </ul>
+                              </div>
+                              <div class="product-action">
+                    <a class="btn-product-wishlist" href="shop-wishlist.html"><i class="fa fa-heart"></i></a>
+                    <a class="btn-product-cart" href="shop-cart.html"><i class="fa fa-shopping-cart"></i></a>
+                    <button class="btn-product-share" type="button" data-product-share aria-label="Compartir producto" title="Compartir producto"><i class="fa fa-share-alt"></i></button>
+                  </div>
+                              <a class="banner-link-overlay" href="shop.html"></a>
+                            </div>
+                            <div class="product-info">
+                              <div class="category">
+                                <ul>
+                                  <li><a href="shop.html">Men</a></li>
+                                  <li class="sep">/</li>
+                                  <li><a href="shop.html">Women</a></li>
+                                </ul>
+                              </div>
+                              <h4 class="title"><a href="single-product.html">Rexpo Womens shoes</a></h4>
+                              <div class="prices">
+                                <span class="price-old">$300</span>
+                                <span class="sep">-</span>
+                                <span class="price">$240.00</span>
+                              </div>
+                              <p>Lorem ipsum dolor sit amet consectetur, adipisicing elit. Voluptatem quo, rerum rem soluta quisquam, repellat is deleniti omnis culpa ea quis provident dolore esse, offici modi dolorem nam cum eligendi enim!</p>
+                              <a class="btn-theme btn-sm" href="shop-cart.html">Add To Cart</a>
+                            </div>
+                          </div>
+                        </div>
+                        <!--== End prPduct Item ==-->
+                      </div>
+                      <div class="col-md-12">
+                        <!--== Start Product Item ==-->
+                        <div class="product-item product-list-item">
+                          <div class="inner-content">
+                            <div class="product-thumb">
+                              <a href="single-product.html">
+                                <img src="assets/img/shop/list-4.webp" width="322" height="360" alt="Image-HasTech">
+                              </a>
+                              <div class="product-action">
+                    <a class="btn-product-wishlist" href="shop-wishlist.html"><i class="fa fa-heart"></i></a>
+                    <a class="btn-product-cart" href="shop-cart.html"><i class="fa fa-shopping-cart"></i></a>
+                    <button class="btn-product-share" type="button" data-product-share aria-label="Compartir producto" title="Compartir producto"><i class="fa fa-share-alt"></i></button>
+                  </div>
+                              <a class="banner-link-overlay" href="shop.html"></a>
+                            </div>
+                            <div class="product-info">
+                              <div class="category">
+                                <ul>
+                                  <li><a href="shop.html">Men</a></li>
+                                  <li class="sep">/</li>
+                                  <li><a href="shop.html">Women</a></li>
+                                </ul>
+                              </div>
+                              <h4 class="title"><a href="single-product.html">Modern Smart Shoes</a></h4>
+                              <div class="prices">
+                                <span class="price">$240.00</span>
+                              </div>
+                              <p>Lorem ipsum dolor sit amet consectetur, adipisicing elit. Voluptatem quo, rerum rem soluta quisquam, repellat is deleniti omnis culpa ea quis provident dolore esse, offici modi dolorem nam cum eligendi enim!</p>
+                              <a class="btn-theme btn-sm" href="shop-cart.html">Add To Cart</a>
+                            </div>
+                          </div>
+                        </div>
+                        <!--== End prPduct Item ==-->
+                      </div>
+                      <div class="col-md-12">
+                        <!--== Start Product Item ==-->
+                        <div class="product-item product-list-item">
+                          <div class="inner-content">
+                            <div class="product-thumb">
+                              <a href="single-product.html">
+                                <img src="assets/img/shop/list-5.webp" width="322" height="360" alt="Image-HasTech">
+                              </a>
+                              <div class="product-flag">
+                                <ul>
+                                  <li class="discount">-10%</li>
+                                </ul>
+                              </div>
+                              <div class="product-action">
+                    <a class="btn-product-wishlist" href="shop-wishlist.html"><i class="fa fa-heart"></i></a>
+                    <a class="btn-product-cart" href="shop-cart.html"><i class="fa fa-shopping-cart"></i></a>
+                    <button class="btn-product-share" type="button" data-product-share aria-label="Compartir producto" title="Compartir producto"><i class="fa fa-share-alt"></i></button>
+                  </div>
+                              <a class="banner-link-overlay" href="shop.html"></a>
+                            </div>
+                            <div class="product-info">
+                              <div class="category">
+                                <ul>
+                                  <li><a href="shop.html">Men</a></li>
+                                  <li class="sep">/</li>
+                                  <li><a href="shop.html">Women</a></li>
+                                </ul>
+                              </div>
+                              <h4 class="title"><a href="single-product.html">Primitive Mens shoes</a></h4>
+                              <div class="prices">
+                                <span class="price">$240.00</span>
+                              </div>
+                              <p>Lorem ipsum dolor sit amet consectetur, adipisicing elit. Voluptatem quo, rerum rem soluta quisquam, repellat is deleniti omnis culpa ea quis provident dolore esse, offici modi dolorem nam cum eligendi enim!</p>
+                              <a class="btn-theme btn-sm" href="shop-cart.html">Add To Cart</a>
+                            </div>
+                          </div>
+                        </div>
+                        <!--== End prPduct Item ==-->
+                      </div>
+                      <div class="col-md-12">
+                        <!--== Start Product Item ==-->
+                        <div class="product-item product-list-item">
+                          <div class="inner-content">
+                            <div class="product-thumb">
+                              <a href="single-product.html">
+                                <img src="assets/img/shop/list-6.webp" width="322" height="360" alt="Image-HasTech">
+                              </a>
+                              <div class="product-action">
+                    <a class="btn-product-wishlist" href="shop-wishlist.html"><i class="fa fa-heart"></i></a>
+                    <a class="btn-product-cart" href="shop-cart.html"><i class="fa fa-shopping-cart"></i></a>
+                    <button class="btn-product-share" type="button" data-product-share aria-label="Compartir producto" title="Compartir producto"><i class="fa fa-share-alt"></i></button>
+                  </div>
+                              <a class="banner-link-overlay" href="shop.html"></a>
+                            </div>
+                            <div class="product-info">
+                              <div class="category">
+                                <ul>
+                                  <li><a href="shop.html">Men</a></li>
+                                  <li class="sep">/</li>
+                                  <li><a href="shop.html">Women</a></li>
+                                </ul>
+                              </div>
+                              <h4 class="title"><a href="single-product.html">Leather Mens Slipper</a></h4>
+                              <div class="prices">
+                                <span class="price-old">$300</span>
+                                <span class="sep">-</span>
+                                <span class="price">$240.00</span>
+                              </div>
+                              <p>Lorem ipsum dolor sit amet consectetur, adipisicing elit. Voluptatem quo, rerum rem soluta quisquam, repellat is deleniti omnis culpa ea quis provident dolore esse, offici modi dolorem nam cum eligendi enim!</p>
+                              <a class="btn-theme btn-sm" href="shop-cart.html">Add To Cart</a>
+                            </div>
+                          </div>
+                        </div>
+                        <!--== End prPduct Item ==-->
+                      </div>
+                      <div class="col-12">
+                        <div class="pagination-items">
+                          <ul class="pagination justify-content-end mb--0">
+                            <li><a class="active" href="shop.html">1</a></li>
+                            <li><a href="shop.html">2</a></li>
+                            <li><a href="shop.html">3</a></li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-xl-3">
+            <div class="shop-sidebar">
+              <div class="shop-sidebar-size shop-sidebar-size-primary">
+                <h4 class="sidebar-title">Filtrar por talla</h4>
+                <div class="sidebar-size">
+                  <ul class="size-list sneaker-size-list" aria-label="Seleccionar talla">
+                    <li><button type="button" class="size-filter" data-size="35">35</button></li>
+                    <li><button type="button" class="size-filter" data-size="36">36</button></li>
+                    <li><button type="button" class="size-filter" data-size="37">37</button></li>
+                    <li><button type="button" class="size-filter" data-size="38">38</button></li>
+                    <li><button type="button" class="size-filter" data-size="39">39</button></li>
+                    <li><button type="button" class="size-filter" data-size="40">40</button></li>
+                    <li><button type="button" class="size-filter" data-size="41">41</button></li>
+                    <li><button type="button" class="size-filter" data-size="42">42</button></li>
+                    <li><button type="button" class="size-filter" data-size="43">43</button></li>
+                    <li><button type="button" class="size-filter" data-size="44">44</button></li>
+                    <li><button type="button" class="size-filter" data-size="45">45</button></li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="shop-sidebar-price-range">
+                <h4 class="sidebar-title">Filtro de precio</h4>
+                <div class="sidebar-price-range" data-catalog-price-filter>
+                  <div class="price-range-labels" aria-live="polite">
+                    <span id="price-min-label">Desde $0</span>
+                    <span id="price-max-label">Hasta $0</span>
+                  </div>
+                  <div id="price-range" aria-label="Rango de precio"></div>
+                </div>
+              </div>
+
+              <div class="shop-sidebar-color">
+                <h4 class="sidebar-title">Color</h4>
+                <div class="sidebar-color">
+                  <ul class="color-list" id="catalog-color-filter" aria-label="Filtrar por color"></ul>
+                  <div class="color-filter-actions">
+                    <button type="button" id="clear-color-filter" class="clear-color-filter">Limpiar</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="shop-sidebar-brand">
+                <h4 class="sidebar-title">Marca</h4>
+                <div class="sidebar-brand">
+                  <ul class="brand-list mb--0">
+                    <li><a id="active-brand-filter" href="shop.html?marca=jordan">Jordan <span>(6)</span></a></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!--== End Product Area Wrapper ==-->
+  </main>
+
+  <!--== Start Footer Area Wrapper ==-->
+  <footer class="footer-area">
+    <!--== Start Footer Main ==-->
+    <div class="footer-main">
+      <div class="container pt--0 pb--0">
+        <div class="row">
+          <div class="col-md-6 col-lg-3">
+            <!--== Start widget Item ==-->
+            <div class="widget-item">
+              <div class="about-widget-wrap">
+                <div class="widget-logo-area">
+                  <a href="index.html">
+                    <img class="footer-logo-horizontal" src="assets/img/shop/nexus-logo-horizontal-dark.png" srcset="assets/img/shop/nexus-logo-horizontal-dark.png 1x, assets/img/shop/nexus-logo-horizontal-dark@2x.png 2x" width="240" height="66" alt="Nexus Luxury Footwear" />
+                  </a>
+                </div>
+                <p class="desc">Sneakers seleccionados para todos los estilos, con envíos nacionales y atención personalizada.</p>
+                <div class="social-icons">
+                  <a href="https://www.facebook.com/" target="_blank" rel="noopener" aria-label="Facebook"><i class="fa fa-facebook"></i></a>
+                  <a href="https://www.instagram.com/" target="_blank" rel="noopener" aria-label="Instagram"><i class="fa fa-instagram"></i></a>
+                  <a href="contact.html" aria-label="Contacto"><i class="fa fa-envelope"></i></a>
+                </div>
+              </div>
+            </div>
+            <!--== End widget Item ==-->
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <!--== Start widget Item ==-->
+            <div class="widget-item widget-services-item">
+              <h4 class="widget-title">Servicios</h4>
+              <h4 class="widget-collapsed-title collapsed" data-bs-toggle="collapse" data-bs-target="#widgetId-1">Servicios</h4>
+              <div id="widgetId-1" class="collapse widget-collapse-body">
+                <div class="collapse-body">
+                  <div class="widget-menu-wrap">
+                    <ul class="nav-menu">
+                      <li><a href="contact.html">Seguimiento de pedidos</a></li>
+                      <li><a href="contact.html">Cambios y devoluciones</a></li>
+                      <li><a href="contact.html">Asesoría personalizada</a></li>
+                      <li><a href="contact.html">Envíos nacionales</a></li>
+                      <li><a href="contact.html">Ventas al por mayor</a></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!--== End widget Item ==-->
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <!--== Start widget Item ==-->
+            <div class="widget-item widget-account-item">
+              <h4 class="widget-title">Mi cuenta</h4>
+              <h4 class="widget-collapsed-title collapsed" data-bs-toggle="collapse" data-bs-target="#widgetId-2">Mi cuenta</h4>
+              <div id="widgetId-2" class="collapse widget-collapse-body">
+                <div class="collapse-body">
+                  <div class="widget-menu-wrap">
+                    <ul class="nav-menu">
+                      <li><a href="account-login.html">Mi cuenta</a></li>
+                      <li><a href="contact.html">Contacto</a></li>
+                      <li><a href="shop-cart.html">Carrito de compras</a></li>
+                      <li><a href="shop.html">Tienda</a></li>
+                      <li><a href="account-login.html">Iniciar sesión</a></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!--== End widget Item ==-->
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <!--== Start widget Item ==-->
+            <div class="widget-item">
+              <h4 class="widget-title">Información de compra</h4>
+              <h4 class="widget-collapsed-title collapsed" data-bs-toggle="collapse" data-bs-target="#widgetId-3">Información de compra</h4>
+              <div id="widgetId-3" class="collapse widget-collapse-body">
+                <div class="collapse-body">
+                  <div class="widget-contact-wrap">
+                    <ul>
+                      <li><span>Cobertura:</span> Envíos a toda Colombia.</li>
+                      <li><span>Envío gratis:</span> Desde $400.000 COP.</li>
+                      <li><span>Asesoría:</span> <a href="contact.html">Contáctanos aquí</a></li>
+                      <li><a href="contact.html">Ver canales de atención</a></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!--== End widget Item ==-->
+          </div>
+        </div>
+      </div>
+    </div>
+    <!--== End Footer Main ==-->
+
+    <!--== Start Footer Bottom ==-->
+    <div class="footer-bottom">
+      <div class="container pt--0 pb--0">
+        <div class="row">
+          <div class="col-md-7 col-lg-6">
+            <p class="copyright">&copy; 2026. Nexus Luxury Footwear. Hecho con amor por <a class="digital-brain-link" href="#" aria-label="Digital Brain"><img class="digital-brain-icon" src="assets/img/logdb.png" width="20" height="20" alt=""><span class="digital-brain-text">Digital Brain.</span></a></p>
+          </div>
+          <div class="col-md-5 col-lg-6">
+            <div class="payment" data-payment-methods></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!--== End Footer Bottom ==-->
+  </footer>
+  <!--== End Footer Area Wrapper ==-->
+
+  <!--== Scroll Top Button ==-->
+  <div id="scroll-to-top" class="scroll-to-top"><span class="fa fa-angle-up"></span></div>
+
+  <!--== Start Quick View Menu ==-->
+  <aside class="product-quick-view-modal">
+    <div class="product-quick-view-inner">
+      <div class="product-quick-view-content">
+        <button type="button" class="btn-close">
+          <span class="close-icon"><i class="fa fa-close"></i></span>
+        </button>
+        <div class="row align-items-center">
+          <div class="col-lg-6 col-md-6 col-12">
+            <div class="thumb">
+              <img src="assets/img/shop/product-single/1.webp" width="570" height="541" alt="Alan-Shop">
+            </div>
+          </div>
+          <div class="col-lg-6 col-md-6 col-12">
+            <div class="content">
+              <h4 class="title">Space X Bag For Office</h4>
+              <div class="prices">
+                <del class="price-old">$85.00</del>
+                <span class="price">$70.00</span>
+              </div>
+              <p>Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia,</p>
+              <div class="quick-view-select">
+                <div class="quick-view-select-item">
+                  <label for="forSize" class="form-label">Size:</label>
+                  <select class="form-select" id="forSize" required>
+                    <option selected value="">s</option>
+                    <option>m</option>
+                    <option>l</option>
+                    <option>xl</option>
+                  </select>
+                </div>
+                <div class="quick-view-select-item">
+                  <label for="forColor" class="form-label">Color:</label>
+                  <select class="form-select" id="forColor" required>
+                    <option selected value="">red</option>
+                    <option>green</option>
+                    <option>blue</option>
+                    <option>yellow</option>
+                    <option>white</option>
+                  </select>
+                </div>
+              </div>
+              <div class="action-top">
+                <div class="pro-qty">
+                  <input type="text" id="quantity20" title="Quantity" value="1" />
+                </div>
+                <button class="btn btn-black">Add to cart</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="canvas-overlay"></div>
+  </aside>
+  <!--== End Quick View Menu ==-->
+
+  <!--== Start Aside Cart Menu ==-->
+  <div class="aside-cart-wrapper offcanvas offcanvas-end" tabindex="-1" id="AsideOffcanvasCart" aria-labelledby="offcanvasRightLabel">
+    <div class="offcanvas-header">
+      <h1 id="offcanvasRightLabel"></h1>
+      <button class="btn-aside-cart-close" data-bs-dismiss="offcanvas" aria-label="Cerrar">Carrito de compras <i class="fa fa-chevron-right"></i></button>
+    </div>
+    <div class="offcanvas-body">
+      <ul class="aside-cart-product-list">
+        <li class="product-list-item">
+          <a href="#/" class="remove">×</a>
+          <a href="single-product.html">
+            <img src="assets/img/shop/27734.png" width="90" height="110" alt="Image-HasTech">
+            <span class="product-title">Leather Mens Slipper</span>
+          </a>
+          <span class="product-price">1 x $240.000 COP</span>
+        </li>
+        <li class="product-list-item">
+          <a href="#/" class="remove">×</a>
+          <a href="single-product.html">
+            <img src="assets/img/shop/727340.png" width="90" height="110" alt="Image-HasTech">
+            <span class="product-title">Quickiin Mens shoes</span>
+          </a>
+          <span class="product-price">1 x $190.000 COP</span>
+        </li>
+      </ul>
+      <p class="cart-total"><span>Subtotal:</span><span class="amount">$430.000 COP</span></p>
+      <a class="btn-theme" data-margin-bottom="10" href="shop-cart.html">Ver carrito</a>
+      <a class="btn-theme" href="shop-checkout.html">Finalizar compra</a>
+      <a class="bold-checkout-btn" href="shop-checkout.html" aria-label="Pagar con Bold">Pagar con <span>Bold</span></a>
+    </div>
+  </div>
+  <!--== End Aside Cart Menu ==-->
+
+  <!--== Start Aside Search Menu ==-->
+  <aside class="aside-search-box-wrapper offcanvas offcanvas-top" tabindex="-1" id="AsideOffcanvasSearch" aria-labelledby="offcanvasTopLabel">
+    <div class="offcanvas-header">
+      <h5 class="d-none" id="offcanvasTopLabel">Aside Search</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"><i class="pe-7s-close"></i></button>
+    </div>
+    <div class="offcanvas-body">
+      <div class="container pt--0 pb--0">
+        <div class="search-box-form-wrap">
+          <div class="search-note">
+            <p>Escribe y presiona Enter para buscar</p>
+          </div>
+          <form action="buscar/" method="get" role="search">
+            <div class="search-form position-relative">
+              <label for="search-input" class="visually-hidden">Buscar</label>
+              <input id="search-input" name="q" type="search" class="form-control" placeholder="Buscar productos y artículos" aria-label="Buscar productos y artículos" maxlength="100" required>
+              <button class="search-button"><i class="fa fa-search"></i></button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <!--== End Aside Search Menu ==-->
+
+  <!--== Start Side Menu ==-->
+  <div class="off-canvas-wrapper offcanvas offcanvas-start" tabindex="-1" id="AsideOffcanvasMenu" aria-labelledby="offcanvasExampleLabel">
+    <div class="offcanvas-header">
+      <h1 id="offcanvasExampleLabel"></h1>
+      <button class="btn-menu-close" data-bs-dismiss="offcanvas" aria-label="Cerrar">menu <i class="fa fa-chevron-left"></i></button>
+    </div>
+    <div class="offcanvas-body">
+      <div class="info-items">
+        <ul>
+          <li class="number contact-phone-row"><i class="fa fa-phone" aria-hidden="true"></i><span class="contact-phone-links"><a href="tel:+573222073377">+57 322 2073377</a><a href="tel:+573106472519">+57 310 6472519</a></span></li>
+          <li class="email"><a href="mailto://demo@example.com"><i class="fa fa-envelope"></i>demo@example.com</a></li>
+          <li class="account"><a href="account-login.html"><i class="fa fa-user"></i>Cuenta</a></li>
+        </ul>
+      </div>
+      <!-- Mobile Menu Start -->
+      <div class="mobile-menu-items">
+        <ul class="nav-menu">
+          <li><a href="index.html">Inicio</a></li>
+          <li><a href="about-us.html">Nosotros</a></li>
+          <li><a href="shop.html">Tienda</a>
+            <ul class="sub-menu">
+              <li><a href="{% url 'catalog_section' 'hombre' %}">Hombre</a></li>
+              <li><a href="{% url 'catalog_section' 'mujer' %}">Mujer</a></li>
+              {% for store_section in store_navigation_sections %}<li><a href="{% url 'catalog_section' store_section.slug %}">{{ store_section.title }}</a></li>{% endfor %}
+              <li><a href="{% url 'catalog_section' 'ofertas' %}">Ofertas</a></li>
+              <li><a href="{% url 'catalog_section' 'accesorios' %}">Accesorios</a></li>
+            </ul>
+          </li>
+          <li><a href="blog.html">Blog</a></li>
+          <li><a href="contact.html">Contacto</a></li>
+        </ul>
+      </div>
+      <!-- Mobile Menu End -->
+    </div>
+  </div>
+  <!--== End Side Menu ==-->
+</div>
+
+<!--=======================Javascript============================-->
+
+<!--=== jQuery Modernizr Min Js ===-->
+<script src="assets/js/modernizr.js"></script>
+<!--=== jQuery Min Js ===-->
+<script src="assets/js/jquery-main.js"></script>
+<!--=== jQuery Migration Min Js ===-->
+<script src="assets/js/jquery-migrate.js"></script>
+<!--=== jQuery Popper Min Js ===-->
+<script src="assets/js/popper.min.js"></script>
+<!--=== jQuery Bootstrap Min Js ===-->
+<script src="assets/js/bootstrap.min.js"></script>
+<!--=== jQuery Ui Min Js ===-->
+<script src="assets/js/jquery-ui.min.js"></script>
+<!--=== jQuery Swiper Min Js ===-->
+<script src="assets/js/swiper.min.js"></script>
+<!--=== jQuery Fancybox Min Js ===-->
+<script src="assets/js/fancybox.min.js"></script>
+<!--=== jQuery Waypoint Js ===-->
+<script src="assets/js/waypoint.js"></script>
+<!--=== jQuery Parallax Min Js ===-->
+<script src="assets/js/parallax.min.js"></script>
+<!--=== jQuery Aos Min Js ===-->
+<script src="assets/js/aos.min.js"></script>
+
+<!--=== jQuery Custom Js ===-->
+<script src="assets/js/custom.js"></script>
+<script src="assets/js/product-share.js"></script>
+<script src="assets/js/footer-info.js"></script>
+<script src="assets/js/catalog-data.js"></script>
+<script src="assets/js/image-color-analyzer.js"></script>
+<script src="assets/js/header-info.js"></script>
+<script src="assets/js/payment-methods.js"></script>
+<!--=== Catálogo por marca ===-->
+<script src="assets/js/brand-catalog.js"></script>
+
+<script src="assets/js/cart.js"></script>
+</body>
+
+</html>

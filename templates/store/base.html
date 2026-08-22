@@ -1,0 +1,353 @@
+{% load store_extras %}<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <base href="/">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {% block seo %}{% seo_meta title="Sneakers Top Quality y calzado premium en Colombia" %}{% endblock %}
+
+    <title>{% block title %}Nexus Luxury Footwear{% endblock %}</title>
+
+    <!--== Favicon ==-->
+    <link rel="icon" type="image/png" href="assets/img/favicon.png" />
+
+    <!--== Google Fonts ==-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,600;0,700;0,800;1,400;1,500&display=swap" rel="stylesheet">
+
+    <!--== Bootstrap CSS ==-->
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet" />
+    <!--== Font Awesome Min Icon CSS ==-->
+    <link href="assets/css/font-awesome.min.css" rel="stylesheet" />
+    <!--== Pe7 Stroke Icon CSS ==-->
+    <link href="assets/css/pe-icon-7-stroke.css" rel="stylesheet" />
+    <!--== Swiper CSS ==-->
+    <link href="assets/css/swiper.min.css" rel="stylesheet" />
+    <!--== Fancybox Min CSS ==-->
+    <link href="assets/css/fancybox.min.css" rel="stylesheet" />
+    <!--== Aos Min CSS ==-->
+    <link href="assets/css/aos.min.css" rel="stylesheet" />
+
+    <!--== Main Style CSS ==-->
+    <link href="assets/css/style.css" rel="stylesheet" />
+    <link href="assets/css/juaco-ux.css?v=20260801-10" rel="stylesheet" />
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+
+<div class="wrapper">
+
+  <!--== Start Header Wrapper ==-->
+  <header class="main-header-wrapper position-relative">
+    <div class="header-top">
+      <div class="container pt--0 pb--0">
+        <div class="row">
+          <div class="col-12">
+            <div class="header-top-align">
+              <div class="header-top-align-start">
+                <div class="desc">
+                  <p>Envíos nacionales gratis por compras superiores a $400.000 COP</p>
+                </div>
+              </div>
+              <div class="header-top-align-end">
+                <div class="header-info-items">
+                  <div class="info-items">
+                    <ul>
+                      {% if request.user.is_authenticated %}<li class="account-greeting">Hola, <strong>{% firstof request.user.first_name request.user.get_username %}</strong></li>{% endif %}
+                      <li class="support"><i class="fa fa-comments"></i><a href="contact.html">Canales de atención</a></li>
+                      <li class="account"><i class="fa fa-user"></i><a href="{% if request.user.is_staff %}panel-admin/{% elif request.user.is_authenticated %}account.html{% else %}account-login.html{% endif %}">{% if request.user.is_staff %}Panel admin{% elif request.user.is_authenticated %}Mi cuenta{% else %}Cuenta{% endif %}</a></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="header-middle">
+      <div class="container pt--0 pb--0">
+        <div class="row align-items-center">
+          <div class="col-12">
+            <div class="header-middle-align">
+              <div class="header-middle-align-start">
+                <div class="header-logo-area">
+                  <a href="index.html">
+                    <img class="logo-main" src="assets/img/shop/nexus-logo-horizontal.png" srcset="assets/img/shop/nexus-logo-horizontal.png 1x, assets/img/shop/nexus-logo-horizontal@2x.png 2x" width="199" height="55" alt="Nexus Luxury Footwear" />
+                    <img class="logo-light" src="assets/img/shop/nexus-logo-horizontal.png" srcset="assets/img/shop/nexus-logo-horizontal.png 1x, assets/img/shop/nexus-logo-horizontal@2x.png 2x" width="199" height="55" alt="Nexus Luxury Footwear" />
+                  </a>
+                </div>
+              </div>
+              <div class="header-middle-align-center">
+                <div class="header-search-area">
+                  <form class="header-searchbox" action="buscar/" method="get" role="search">
+                    <input type="search" name="q" class="form-control" placeholder="Buscar productos y artículos" aria-label="Buscar productos y artículos" maxlength="100" required>
+                    <button class="btn-submit" type="submit"><i class="pe-7s-search"></i></button>
+                  </form>
+                </div>
+              </div>
+              <div class="header-middle-align-end">
+                <div class="header-action-area">
+                  <div class="shopping-search">
+                    <button class="shopping-search-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#AsideOffcanvasSearch" aria-controls="AsideOffcanvasSearch"><i class="pe-7s-search icon"></i></button>
+                  </div>
+                  <div class="shopping-wishlist">
+                    <a class="shopping-wishlist-btn" href="shop-wishlist.html">
+                      <i class="pe-7s-like icon"></i>
+                    </a>
+                  </div>
+                  <div class="shopping-cart">
+                    <button class="shopping-cart-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#AsideOffcanvasCart" aria-controls="offcanvasRightLabel">
+                      <i class="pe-7s-shopbag icon"></i>
+                      <sup class="shop-count" aria-label="{{ global_cart_count }} artículos en el carrito">{{ global_cart_count }}</sup>
+                    </button>
+                  </div>
+                  <button class="btn-menu" type="button" data-bs-toggle="offcanvas" data-bs-target="#AsideOffcanvasMenu" aria-controls="AsideOffcanvasMenu">
+                    <i class="pe-7s-menu"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="header-area header-default">
+      <div class="container">
+        <div class="row no-gutter align-items-center position-relative">
+          <div class="col-12">
+            <div class="header-align">
+              <div class="header-navigation-area position-relative">
+                <ul class="main-menu nav">
+                  <li><a href="index.html"><span>Inicio</span></a></li>
+                  <li><a href="about-us.html"><span>Nosotros</span></a></li>
+                  <li class="has-submenu"><a href="shop.html"><span>Tienda</span></a>
+                    <ul class="submenu-nav">
+                      <li><a href="{% url 'catalog_section' 'hombre' %}"><span>Hombre</span></a></li>
+                      <li><a href="{% url 'catalog_section' 'mujer' %}"><span>Mujer</span></a></li>
+                      {% for store_section in store_navigation_sections %}<li><a href="{% url 'catalog_section' store_section.slug %}"><span>{{ store_section.title }}</span></a></li>{% endfor %}
+                      <li><a href="{% url 'catalog_section' 'ofertas' %}"><span>Ofertas</span></a></li>
+                      <li><a href="{% url 'catalog_section' 'accesorios' %}"><span>Accesorios</span></a></li>
+                    </ul>
+                  </li>
+                  <li><a href="blog.html"><span>Blog</span></a></li>
+                  <li><a href="contact.html"><span>Contacto</span></a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+  <!--== End Header Wrapper ==-->
+
+  <main class="main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!--== Start Footer Area Wrapper ==-->
+  <footer class="footer-area">
+    <div class="footer-main">
+      <div class="container pt--0 pb--0">
+        <div class="row">
+          <div class="col-md-6 col-lg-3">
+            <div class="widget-item">
+              <div class="about-widget-wrap">
+                <div class="widget-logo-area">
+                  <a href="index.html">
+                    <img class="footer-logo-horizontal" src="assets/img/shop/nexus-logo-horizontal-dark.png" srcset="assets/img/shop/nexus-logo-horizontal-dark.png 1x, assets/img/shop/nexus-logo-horizontal-dark@2x.png 2x" width="240" height="66" alt="Nexus Luxury Footwear" />
+                  </a>
+                </div>
+                <p class="desc">Sneakers seleccionados para todos los estilos, con envíos nacionales y atención personalizada.</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <div class="widget-item widget-services-item">
+              <h4 class="widget-title">Servicios</h4>
+              <h4 class="widget-collapsed-title collapsed" data-bs-toggle="collapse" data-bs-target="#widgetId-1">Servicios</h4>
+              <div id="widgetId-1" class="collapse widget-collapse-body">
+                <div class="collapse-body">
+                  <div class="widget-menu-wrap">
+                    <ul class="nav-menu">
+                      <li><a href="contact.html">Seguimiento de pedidos</a></li>
+                      <li><a href="contact.html">Cambios y devoluciones</a></li>
+                      <li><a href="contact.html">Asesoría personalizada</a></li>
+                      <li><a href="contact.html">Envíos nacionales</a></li>
+                      <li><a href="contact.html">Ventas al por mayor</a></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <div class="widget-item widget-account-item">
+              <h4 class="widget-title">Mi cuenta</h4>
+              <h4 class="widget-collapsed-title collapsed" data-bs-toggle="collapse" data-bs-target="#widgetId-2">Mi cuenta</h4>
+              <div id="widgetId-2" class="collapse widget-collapse-body">
+                <div class="collapse-body">
+                  <div class="widget-menu-wrap">
+                    <ul class="nav-menu">
+                      <li><a href="account.html">Mi cuenta</a></li>
+                      <li><a href="contact.html">Contacto</a></li>
+                      <li><a href="shop-cart.html">Carrito de compras</a></li>
+                      <li><a href="shop.html">Tienda</a></li>
+                      <li><a href="account-login.html">Iniciar sesión</a></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <div class="widget-item">
+              <h4 class="widget-title">Información de compra</h4>
+              <h4 class="widget-collapsed-title collapsed" data-bs-toggle="collapse" data-bs-target="#widgetId-3">Información de compra</h4>
+              <div id="widgetId-3" class="collapse widget-collapse-body">
+                <div class="collapse-body">
+                  <div class="widget-contact-wrap">
+                    <ul>
+                      <li><span>Cobertura:</span> Envíos a toda Colombia.</li>
+                      <li><span>Envío gratis:</span> Desde $400.000 COP.</li>
+                      <li><span>Asesoría:</span> <a href="contact.html">Contáctanos aquí</a></li>
+                      <li><a href="contact.html">Ver canales de atención</a></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="container pt--0 pb--0">
+        <div class="row">
+          <div class="col-md-7 col-lg-6">
+            <p class="copyright">&copy; 2026. Nexus Luxury Footwear. Hecho con amor por <a class="digital-brain-link" href="#" aria-label="Digital Brain"><img class="digital-brain-icon" src="assets/img/logdb.png" width="20" height="20" alt=""><span class="digital-brain-text">Digital Brain.</span></a></p>
+          </div>
+          <div class="col-md-5 col-lg-6">
+            <div class="payment">
+              <a class="payment-card payment-card-amex" href="account-login.html" aria-label="American Express">AMERICAN<br>EXPRESS</a>
+              <a class="payment-card payment-card-paypal" href="account-login.html" aria-label="PayPal">PayPal</a>
+              <a class="payment-card payment-card-mastercard" href="account-login.html" aria-label="Mastercard"><span></span><span></span></a>
+              <a class="payment-card payment-card-bold" href="account-login.html" aria-label="Pago con Bold"><span>Bold</span></a>
+              <a class="payment-card payment-card-visa" href="account-login.html" aria-label="Visa">VISA</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+  <!--== End Footer Area Wrapper ==-->
+
+  <div id="scroll-to-top" class="scroll-to-top"><span class="fa fa-angle-up"></span></div>
+
+  <!--== Start Aside Cart Menu ==-->
+  <div class="aside-cart-wrapper offcanvas offcanvas-end" tabindex="-1" id="AsideOffcanvasCart" aria-labelledby="offcanvasRightLabel">
+    <div class="offcanvas-header">
+      <h1 id="offcanvasRightLabel"></h1>
+      <button class="btn-aside-cart-close" data-bs-dismiss="offcanvas" aria-label="Cerrar">Carrito de compras <i class="fa fa-chevron-right"></i></button>
+    </div>
+    <div class="offcanvas-body">
+      <ul class="aside-cart-product-list"></ul>
+      <p class="cart-total"><span>Subtotal:</span><span class="amount">$0 COP</span></p>
+      <a class="btn-theme" data-margin-bottom="10" href="shop-cart.html">Ver carrito</a>
+      <a class="btn-theme" href="shop-checkout.html">Finalizar compra</a>
+      <a class="bold-checkout-btn" href="shop-checkout.html" aria-label="Pagar con Bold">Pagar con <span>Bold</span></a>
+    </div>
+  </div>
+  <!--== End Aside Cart Menu ==-->
+
+  <!--== Start Aside Search Menu ==-->
+  <aside class="aside-search-box-wrapper offcanvas offcanvas-top" tabindex="-1" id="AsideOffcanvasSearch" aria-labelledby="offcanvasTopLabel">
+    <div class="offcanvas-header">
+      <h5 class="d-none" id="offcanvasTopLabel">Búsqueda</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"><i class="pe-7s-close"></i></button>
+    </div>
+    <div class="offcanvas-body">
+      <div class="container pt--0 pb--0">
+        <div class="search-box-form-wrap">
+          <div class="search-note">
+            <p>Escribe y presiona Enter para buscar</p>
+          </div>
+          <form action="buscar/" method="get" role="search">
+            <div class="search-form position-relative">
+              <label for="search-input" class="visually-hidden">Buscar</label>
+              <input id="search-input" name="q" type="search" class="form-control" placeholder="Buscar productos y artículos" aria-label="Buscar productos y artículos" maxlength="100" required>
+              <button class="search-button"><i class="fa fa-search"></i></button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <!--== End Aside Search Menu ==-->
+
+  <!--== Start Side Menu ==-->
+  <div class="off-canvas-wrapper offcanvas offcanvas-start" tabindex="-1" id="AsideOffcanvasMenu" aria-labelledby="offcanvasExampleLabel">
+    <div class="offcanvas-header">
+      <h1 id="offcanvasExampleLabel"></h1>
+      <button class="btn-menu-close" data-bs-dismiss="offcanvas" aria-label="Cerrar">menú <i class="fa fa-chevron-left"></i></button>
+    </div>
+    <div class="offcanvas-body">
+      <div class="info-items">
+        <ul>
+          {% if request.user.is_authenticated %}<li class="account-greeting">Hola, <strong>{% firstof request.user.first_name request.user.get_username %}</strong></li>{% endif %}
+          <li class="number contact-phone-row"><i class="fa fa-phone" aria-hidden="true"></i><span class="contact-phone-links"><a href="tel:+573222073377">+57 322 2073377</a><a href="tel:+573106472519">+57 310 6472519</a></span></li>
+          <li class="email"><a href="mailto://demo@example.com"><i class="fa fa-envelope"></i>demo@example.com</a></li>
+          <li class="account"><a href="{% if request.user.is_staff %}panel-admin/{% elif request.user.is_authenticated %}account.html{% else %}account-login.html{% endif %}"><i class="fa fa-user"></i>{% if request.user.is_staff %}Panel admin{% elif request.user.is_authenticated %}Mi cuenta{% else %}Cuenta{% endif %}</a></li>
+        </ul>
+      </div>
+      <div class="mobile-menu-items">
+        <ul class="nav-menu">
+          <li><a href="index.html">Inicio</a></li>
+          <li><a href="about-us.html">Nosotros</a></li>
+          <li><a href="shop.html">Tienda</a>
+            <ul class="sub-menu">
+              <li><a href="{% url 'catalog_section' 'hombre' %}">Hombre</a></li>
+              <li><a href="{% url 'catalog_section' 'mujer' %}">Mujer</a></li>
+              {% for store_section in store_navigation_sections %}<li><a href="{% url 'catalog_section' store_section.slug %}">{{ store_section.title }}</a></li>{% endfor %}
+              <li><a href="{% url 'catalog_section' 'ofertas' %}">Ofertas</a></li>
+              <li><a href="{% url 'catalog_section' 'accesorios' %}">Accesorios</a></li>
+            </ul>
+          </li>
+          <li><a href="blog.html">Blog</a></li>
+          <li><a href="contact.html">Contacto</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <!--== End Side Menu ==-->
+</div>
+
+<!--=== Javascript ===-->
+<script src="assets/js/modernizr.js"></script>
+<script src="assets/js/jquery-main.js"></script>
+<script src="assets/js/jquery-migrate.js"></script>
+<script src="assets/js/popper.min.js"></script>
+<script src="assets/js/bootstrap.min.js"></script>
+<script src="assets/js/jquery-ui.min.js"></script>
+<script src="assets/js/swiper.min.js"></script>
+<script src="assets/js/fancybox.min.js"></script>
+<script src="assets/js/waypoint.js"></script>
+<script src="assets/js/parallax.min.js"></script>
+<script src="assets/js/aos.min.js"></script>
+
+<script src="assets/js/catalog-data.js"></script>
+<script src="assets/js/custom.js"></script>
+<script src="assets/js/product-share.js"></script>
+<script src="assets/js/footer-info.js"></script>
+<script src="assets/js/header-info.js"></script>
+<script src="assets/js/payment-methods.js"></script>
+<script src="assets/js/cart.js"></script>
+{% block extra_scripts %}{% endblock %}
+</body>
+
+</html>

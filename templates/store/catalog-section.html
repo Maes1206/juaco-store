@@ -1,0 +1,213 @@
+{% extends "store/base.html" %}
+{% load store_extras %}
+
+{% block title %}{{ catalog_section.title }} | Nexus Luxury Footwear{% endblock %}
+{% block seo %}{% seo_meta title=catalog_section.title description=catalog_section.subtitle image=catalog_section.image %}{% endblock %}
+
+{% block content %}
+<section class="catalog-section-banner" aria-labelledby="catalog-section-title">
+  <img class="catalog-section-banner__image" src="{{ catalog_section.image }}" alt="{{ catalog_section.alt }}">
+  <div class="container catalog-section-banner__content">
+    <div>
+      <p class="catalog-section-banner__eyebrow">Nexus Luxury Footwear</p>
+      <h1 id="catalog-section-title">{{ catalog_section.title }}</h1>
+      <p>{{ catalog_section.subtitle }}</p>
+    </div>
+  </div>
+</section>
+{% if is_dynamic_section %}
+{% if section_has_products %}
+<section class="product-area product-default-area" id="catalog-products">
+  <div class="container">
+    <header class="catalog-offers__heading">
+      <div>
+        <span>{{ catalog_section.selection_label }}</span>
+        <h2 id="catalog-offers-title">{{ catalog_section.products_title }}</h2>
+      </div>
+      <p>{{ catalog_section.products_copy }}</p>
+    </header>
+    <div class="row flex-xl-row-reverse justify-content-between">
+      <div class="col-xl-9">
+        <div class="row">
+          <div class="col-12">
+            <div class="shop-top-bar">
+              <div class="shop-top-left">
+                <p class="pagination-line">{{ catalog_filters.total }} producto{{ catalog_filters.total|pluralize:"s" }} encontrado{{ catalog_filters.total|pluralize:"s" }}</p>
+              </div>
+              <div class="shop-top-right">
+                <div class="shop-sort">
+                  <label for="product-sort">Ordenar por</label>
+                  <select class="form-select" id="product-sort" aria-label="Ordenar productos" data-catalog-sort>
+                    <option value="default"{% if catalog_filters.selected_sort == "default" %} selected{% endif %}>Predeterminado</option>
+                    <option value="price-asc"{% if catalog_filters.selected_sort == "price-asc" %} selected{% endif %}>Precio: menor a mayor</option>
+                    <option value="price-desc"{% if catalog_filters.selected_sort == "price-desc" %} selected{% endif %}>Precio: mayor a menor</option>
+                    <option value="name-asc"{% if catalog_filters.selected_sort == "name-asc" %} selected{% endif %}>Nombre: A a Z</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="catalog-results">
+              <div class="row">
+                {% for product in products %}
+                <div class="col-sm-6 col-lg-4 catalog-product">
+                  <!--== Start Product Item ==-->
+                  <div class="product-item">
+                    <div class="inner-content">
+                      <div class="product-thumb">
+                        <a href="single-product.html?producto={{ product.slug }}">
+                          <img src="{{ product.main_image_source }}" width="270" height="274" alt="{{ product.main_image_alt }}" loading="lazy">
+                        </a>
+                        {% if product.has_discount %}
+                        <div class="product-flag">
+                          <ul>
+                            <li class="discount">-{{ product.discount_percent }}%</li>
+                          </ul>
+                        </div>
+                        {% endif %}
+                        <div class="product-action">
+                          <a class="btn-product-wishlist" href="shop-wishlist.html"><i class="fa fa-heart"></i></a>
+                          <a class="btn-product-cart" href="shop-cart.html"><i class="fa fa-shopping-cart"></i></a>
+                          <button class="btn-product-share" type="button" data-product-share aria-label="Compartir producto" title="Compartir producto"><i class="fa fa-share-alt"></i></button>
+                        </div>
+                      </div>
+                      <div class="product-info">
+                        <h4 class="title"><a href="single-product.html?producto={{ product.slug }}">{{ product.name }}</a></h4>
+                        <div class="prices">
+                          {% if product.has_discount %}<span class="price-old">{{ product.compare_at_price|cop }}</span><span class="sep">-</span>{% endif %}
+                          <span class="price">{{ product.price|cop }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <!--== End Product Item ==-->
+                </div>
+                {% empty %}
+                <div class="col-12">
+                  <p class="catalog-empty-message">No encontramos productos que coincidan con estos filtros.</p>
+                </div>
+                {% endfor %}
+                {% if page_obj.paginator.num_pages > 1 %}
+                <div class="col-12">
+                  <div class="pagination-items">
+                    <ul class="pagination justify-content-end mb--0">
+                      {% if page_obj.has_previous %}
+                      <li><a href="?{% if catalog_filters.querystring %}{{ catalog_filters.querystring }}&amp;{% endif %}pagina={{ page_obj.previous_page_number }}#catalog-products" aria-label="Página anterior"><i class="fa fa-angle-left"></i></a></li>
+                      {% endif %}
+                      {% for number in page_obj.paginator.page_range %}
+                      <li><a{% if number == page_obj.number %} class="active" aria-current="page"{% endif %} href="?{% if catalog_filters.querystring %}{{ catalog_filters.querystring }}&amp;{% endif %}pagina={{ number }}#catalog-products">{{ number }}</a></li>
+                      {% endfor %}
+                      {% if page_obj.has_next %}
+                      <li><a href="?{% if catalog_filters.querystring %}{{ catalog_filters.querystring }}&amp;{% endif %}pagina={{ page_obj.next_page_number }}#catalog-products" aria-label="Página siguiente"><i class="fa fa-angle-right"></i></a></li>
+                      {% endif %}
+                    </ul>
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-xl-3">
+        <div class="shop-sidebar" data-catalog-filters>
+          {% if catalog_filters.sizes %}
+          <div class="shop-sidebar-size shop-sidebar-size-primary">
+            <h4 class="sidebar-title">Filtrar por talla</h4>
+            <div class="sidebar-size">
+              <ul class="size-list sneaker-size-list" aria-label="Filtrar por talla">
+                {% for size in catalog_filters.sizes %}
+                <li><a class="size-filter{% if size == catalog_filters.selected_size %} active{% endif %}" href="?{% catalog_filter_url talla=size %}#catalog-products"{% if size == catalog_filters.selected_size %} aria-current="true"{% endif %}>{{ size }}</a></li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+          {% endif %}
+
+          {% if catalog_filters.price_floor != catalog_filters.price_ceiling %}
+          <div class="shop-sidebar-price-range">
+            <h4 class="sidebar-title">Filtro de precio</h4>
+            <form class="sidebar-price-range" method="get" action="#catalog-products"
+                  data-catalog-price-filter
+                  data-floor="{{ catalog_filters.price_floor|floatformat:"0" }}"
+                  data-ceiling="{{ catalog_filters.price_ceiling|floatformat:"0" }}">
+              {% if catalog_filters.selected_size %}<input type="hidden" name="talla" value="{{ catalog_filters.selected_size }}">{% endif %}
+              {% if catalog_filters.selected_color %}<input type="hidden" name="color" value="{{ catalog_filters.selected_color }}">{% endif %}
+              {% if catalog_filters.selected_sort != "default" %}<input type="hidden" name="orden" value="{{ catalog_filters.selected_sort }}">{% endif %}
+              <div class="price-range-labels" aria-live="polite">
+                <span id="price-min-label">Desde {{ catalog_filters.price_from|cop_short }}</span>
+                <span id="price-max-label">Hasta {{ catalog_filters.price_to|cop_short }}</span>
+              </div>
+              <div id="price-range" aria-label="Rango de precio"></div>
+              <!-- Respaldo sin JavaScript: el deslizador los reemplaza al cargar. -->
+              <div class="price-range-fields">
+                <label for="price-min-input">Desde</label>
+                <input type="number" id="price-min-input" name="precioMin" value="{{ catalog_filters.price_from|floatformat:"0" }}" min="{{ catalog_filters.price_floor|floatformat:"0" }}" max="{{ catalog_filters.price_ceiling|floatformat:"0" }}" step="1000" inputmode="numeric">
+                <label for="price-max-input">Hasta</label>
+                <input type="number" id="price-max-input" name="precioMax" value="{{ catalog_filters.price_to|floatformat:"0" }}" min="{{ catalog_filters.price_floor|floatformat:"0" }}" max="{{ catalog_filters.price_ceiling|floatformat:"0" }}" step="1000" inputmode="numeric">
+                <button type="submit" class="apply-price-filter">Aplicar precio</button>
+              </div>
+            </form>
+          </div>
+          {% endif %}
+
+          {% if catalog_filters.colors %}
+          <div class="shop-sidebar-color">
+            <h4 class="sidebar-title">Color</h4>
+            <div class="sidebar-color">
+              <ul class="color-list" aria-label="Filtrar por color">
+                {% for color in catalog_filters.colors %}
+                <li{% if color.name == catalog_filters.selected_color %} class="active"{% endif %} style="background-color: {{ color.hex }}" title="{{ color.name }}">
+                  <a href="?{% catalog_filter_url color=color.name %}#catalog-products" aria-label="Filtrar por {{ color.name }}"{% if color.name == catalog_filters.selected_color %} aria-current="true"{% endif %}></a>
+                </li>
+                {% endfor %}
+              </ul>
+              {% if catalog_filters.has_filters %}
+              <div class="color-filter-actions">
+                <a class="clear-color-filter" href="?#catalog-products">Limpiar filtros</a>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% else %}
+<section class="catalog-section-blank" aria-labelledby="catalog-dynamic-empty-title">
+  <div class="container catalog-section-empty">
+    <figure class="catalog-section-editorial">
+      <img src="{{ catalog_section.editorial_image }}" alt="{{ catalog_section.editorial_alt }}">
+    </figure>
+    <div class="catalog-section-empty__notice">
+      <span>{{ catalog_section.selection_label }}</span>
+      <h2 id="catalog-dynamic-empty-title">{{ catalog_section.empty_title }}</h2>
+      <p>{{ catalog_section.empty_copy }}</p>
+      <a class="btn-theme" href="shop.html">Explorar toda la tienda</a>
+    </div>
+  </div>
+</section>
+{% endif %}
+{% else %}
+<section class="catalog-section-blank" aria-labelledby="catalog-empty-title">
+  <div class="container catalog-section-empty">
+    <figure class="catalog-section-editorial">
+      <img src="{{ catalog_section.editorial_image }}" alt="{{ catalog_section.editorial_alt }}">
+    </figure>
+    <div class="catalog-section-empty__notice">
+      <span>Catalogo en preparacion</span>
+      <h2 id="catalog-empty-title">Aun no hemos agregado productos</h2>
+      <p>Estamos seleccionando los modelos que formaran parte de esta seccion. Vuelve pronto para descubrirlos.</p>
+      <a class="btn-theme" href="shop.html">Explorar toda la tienda</a>
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="assets/js/section-catalog.js"></script>
+{% endblock %}

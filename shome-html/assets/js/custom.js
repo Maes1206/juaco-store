@@ -10,6 +10,49 @@
       element.css('background-image', 'url(' + bgSource + ')');
     });
 
+  // Parallax suave y reutilizable para todos los banners de cabecera.
+    var parallaxHeaders = document.querySelectorAll('.page-header-area[data-bg-img], .page-header-area[data-parallax-img]');
+    if (parallaxHeaders.length) {
+      parallaxHeaders.forEach(function (header) {
+        var source = header.getAttribute('data-parallax-img') || header.getAttribute('data-bg-img');
+        // Resuelve las imágenes desde el <base> del sitio. Con rutas como
+        // /blog/<slug>/ usar window.location.href convertiría "assets/..."
+        // en /blog/<slug>/assets/..., donde el banner no existe.
+        var imageUrl = new URL(source, document.baseURI).href;
+        var imagePosition = source === 'assets/img/shop/bannerblog.png' ? 'right bottom' : 'center center';
+        header.classList.add('has-parallax-background');
+        header.style.setProperty('--page-parallax-image', 'url("' + imageUrl + '")');
+        header.style.setProperty('--page-parallax-position', imagePosition);
+      });
+
+      if (!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+        var parallaxTicking = false;
+
+        function updatePageHeaderParallax() {
+          parallaxHeaders.forEach(function (header) {
+            var bounds = header.getBoundingClientRect();
+            var progress = Math.max(0, Math.min(1, -bounds.top / bounds.height));
+            var parallaxDistance = header.classList.contains('contact-page-header') ? 32 : 56;
+            header.style.setProperty('--page-parallax-offset', (progress * parallaxDistance).toFixed(1) + 'px');
+            if (header.classList.contains('about-page-header')) {
+              header.style.setProperty('--about-parallax-offset', (progress * 56).toFixed(1) + 'px');
+            }
+          });
+          parallaxTicking = false;
+        }
+
+        function requestPageHeaderParallax() {
+          if (parallaxTicking) return;
+          parallaxTicking = true;
+          window.requestAnimationFrame(updatePageHeaderParallax);
+        }
+
+        updatePageHeaderParallax();
+        window.addEventListener('scroll', requestPageHeaderParallax, { passive: true });
+        window.addEventListener('resize', requestPageHeaderParallax);
+      }
+    }
+
   // Background Color Js
     const Bgcolorcl = $("[data-bg-color]");
     Bgcolorcl.each(function (index, elem) {
@@ -128,9 +171,16 @@
     var productSliderCol4 = new Swiper('.product-slider-col4-container', {
       slidesPerView : 4,
       slidesPerGroup: 1,
-      allowTouchMove: false,
+      allowTouchMove: true,
+      autoplay: {
+        delay: 4200,
+        disableOnInteraction: false,
+        pauseOnMouseEnter: true,
+      },
+      grabCursor: true,
+      loop: true,
       spaceBetween: 30,
-      speed: 600,
+      speed: 800,
       navigation: {
         nextEl: '.product-swiper-btn-next',
         prevEl: '.product-swiper-btn-prev',
@@ -144,34 +194,44 @@
           slidesPerView : 4,
           spaceBetween: 30,
           allowTouchMove: true,
-          autoplay: {
-            delay: 5000,
-          },
         },
         992: {
           slidesPerView : 3,
           spaceBetween: 30,
           allowTouchMove: true,
-          autoplay: {
-            delay: 5000,
-          },
         },
         576: {
           slidesPerView : 2,
           spaceBetween: 30,
           allowTouchMove: true,
-          autoplay: {
-            delay: 5000,
-          },
         },
         0: {
           slidesPerView : 1,
           spaceBetween: 30,
           allowTouchMove: true,
-          autoplay: {
-            delay: 5000,
-          },
         },
+      }
+    });
+
+  // Artículos destacados: navegación táctil y responsive.
+    var featuredProductsSlider = new Swiper('.featured-products-carousel', {
+      slidesPerView: 4,
+      slidesPerGroup: 1,
+      allowTouchMove: true,
+      autoplay: {
+        delay: 5000,
+        disableOnInteraction: true
+      },
+      grabCursor: true,
+      loop: true,
+      simulateTouch: true,
+      spaceBetween: 30,
+      speed: 650,
+      breakpoints: {
+        1400: { slidesPerView: 4, spaceBetween: 30 },
+        992: { slidesPerView: 3, spaceBetween: 30 },
+        576: { slidesPerView: 2, spaceBetween: 24 },
+        0: { slidesPerView: 1, spaceBetween: 18 }
       }
     });
 
@@ -222,7 +282,7 @@
     var proQty = $(".pro-qty");
     proQty.append('<div class= "dec qty-btn">-</div>');
     proQty.append('<div class="inc qty-btn">+</div>');
-    $('.qty-btn').on('click', function (e) {
+  $('.qty-btn').on('click', function (e) {
       e.preventDefault();
       var $button = $(this);
       var oldValue = $button.parent().find('input').val();
@@ -236,10 +296,100 @@
           newVal = 1;
         }
       }
-      $button.parent().find('input').val(newVal);
+      var $quantityInput = $button.parent().find('input');
+      $quantityInput.val(newVal);
+      if ($quantityInput.is('[data-cart-quantity]') && $quantityInput[0]) {
+        $quantityInput[0].dispatchEvent(new Event('change', { bubbles: true }));
+      }
     });
 
+  // Zoom de detalle en la imagen principal de producto.
+  var productZoomSlides = document.querySelectorAll('.product-single-thumb .single-product-thumb .swiper-slide');
+  if (productZoomSlides.length && window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    productZoomSlides.forEach(function (slide) {
+      var image = slide.querySelector('img');
+      if (!image) return;
+
+      slide.addEventListener('mouseenter', function () {
+        slide.classList.add('is-zooming');
+      });
+
+      slide.addEventListener('mousemove', function (event) {
+        var bounds = slide.getBoundingClientRect();
+        var x = ((event.clientX - bounds.left) / bounds.width) * 100;
+        var y = ((event.clientY - bounds.top) / bounds.height) * 100;
+        image.style.transformOrigin = x + '% ' + y + '%';
+      });
+
+      slide.addEventListener('mouseleave', function () {
+        slide.classList.remove('is-zooming');
+        image.style.transformOrigin = 'center center';
+      });
+    });
+  }
+
+  // En móviles, mantener pulsada una imagen muestra las acciones del producto.
+  if (window.matchMedia && window.matchMedia('(hover: none), (pointer: coarse)').matches) {
+    var longPressTimer;
+    var longPressTriggered = false;
+    var suppressProductClickUntil = 0;
+
+    function hideProductActions(except) {
+      document.querySelectorAll('.product-thumb.is-actions-visible').forEach(function (thumb) {
+        if (thumb !== except) thumb.classList.remove('is-actions-visible');
+      });
+    }
+
+    function clearLongPress() {
+      window.clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+
+    document.addEventListener('touchstart', function (event) {
+      var thumb = event.target.closest('.product-item .product-thumb');
+      if (!thumb || event.target.closest('.product-action')) return;
+
+      clearLongPress();
+      longPressTriggered = false;
+      longPressTimer = window.setTimeout(function () {
+        hideProductActions(thumb);
+        thumb.classList.add('is-actions-visible');
+        longPressTriggered = true;
+        suppressProductClickUntil = Date.now() + 700;
+      }, 550);
+    }, { passive: true });
+
+    document.addEventListener('touchmove', clearLongPress, { passive: true });
+    document.addEventListener('touchend', function (event) {
+      clearLongPress();
+      if (longPressTriggered) event.preventDefault();
+    }, { passive: false });
+    document.addEventListener('touchcancel', clearLongPress, { passive: true });
+
+    document.addEventListener('contextmenu', function (event) {
+      if (event.target.closest('.product-item .product-thumb')) {
+        event.preventDefault();
+      }
+    });
+
+    document.addEventListener('click', function (event) {
+      var thumb = event.target.closest('.product-item .product-thumb');
+      if (thumb && Date.now() < suppressProductClickUntil && !event.target.closest('.product-action')) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+
+      if (event.target.closest('.product-action')) {
+        window.setTimeout(function () { hideProductActions(); }, 180);
+      } else if (!thumb) {
+        hideProductActions();
+      }
+    }, true);
+  }
+
   // Slider Range Js
+  if (!document.querySelector('[data-catalog-price-filter]')) {
     $('#price-range').slider({
       range: true,
       min: 0,
@@ -252,6 +402,7 @@
     });
     $('.ui-slider-handle:eq(0)').html( '<span>' + '$' + $( "#price-range" ).slider( "values", 0 ) + '</span>' );
     $('.ui-slider-handle:eq(1)').html( '<span>' + '$' + $( "#price-range" ).slider( "values", 1 ) + '</span>' );
+  }
     
   // Review Form JS
     $(".review-write-btn").on('click', function() {
@@ -296,6 +447,218 @@
     });
 
   // scrollToTop Js
+    var featuredProducts = document.querySelectorAll('.featured-products-section .product-item');
+    if (featuredProducts.length) {
+      var revealProduct = function(product) {
+        product.classList.add('is-visible');
+      };
+
+      if ('IntersectionObserver' in window) {
+        var productObserver = new IntersectionObserver(function(entries, observer) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              revealProduct(entry.target);
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.12 });
+
+        featuredProducts.forEach(function(product, index) {
+          product.classList.add('product-entry');
+          product.style.transitionDelay = Math.min(index * 90, 450) + 'ms';
+          productObserver.observe(product);
+        });
+      } else {
+        featuredProducts.forEach(function(product) {
+          product.classList.add('product-entry');
+          revealProduct(product);
+        });
+      }
+    }
+
+    var bestSellerElements = document.querySelectorAll('.best-seller-section .section-title, .best-seller-section .product-slider-wrap');
+    if (bestSellerElements.length) {
+      var revealBestSeller = function(element) {
+        element.classList.add('is-visible');
+      };
+
+      if ('IntersectionObserver' in window) {
+        var bestSellerObserver = new IntersectionObserver(function(entries, observer) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              revealBestSeller(entry.target);
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.15 });
+
+        bestSellerElements.forEach(function(element, index) {
+          element.classList.add('best-seller-entry');
+          element.style.transitionDelay = (index * 140) + 'ms';
+          bestSellerObserver.observe(element);
+        });
+      } else {
+        bestSellerElements.forEach(function(element) {
+          element.classList.add('best-seller-entry');
+          revealBestSeller(element);
+        });
+      }
+    }
+
+    var categoryPromoItems = document.querySelectorAll('.category-promo-section .divider-thumb-content > .thumb, .category-promo-section .promo-extra-thumb');
+    if (categoryPromoItems.length) {
+      var revealCategoryPromo = function(element) {
+        element.classList.add('is-visible');
+      };
+
+      if ('IntersectionObserver' in window) {
+        var categoryPromoObserver = new IntersectionObserver(function(entries, observer) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              revealCategoryPromo(entry.target);
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.12 });
+
+        categoryPromoItems.forEach(function(element, index) {
+          element.classList.add('category-promo-entry');
+          element.style.transitionDelay = (index * 130) + 'ms';
+          categoryPromoObserver.observe(element);
+        });
+      } else {
+        categoryPromoItems.forEach(function(element) {
+          element.classList.add('category-promo-entry');
+          revealCategoryPromo(element);
+        });
+      }
+    }
+
+    var collectionItems = document.querySelectorAll('.collection-entry-section .product-collection, .collection-feature-section .feature-content-box');
+    if (collectionItems.length) {
+      var revealCollection = function(element) {
+        window.requestAnimationFrame(function() {
+          window.requestAnimationFrame(function() {
+            element.classList.add('is-visible');
+          });
+        });
+      };
+
+      if ('IntersectionObserver' in window) {
+        var collectionObserver = new IntersectionObserver(function(entries, observer) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              revealCollection(entry.target);
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.15 });
+
+        collectionItems.forEach(function(element, index) {
+          element.classList.add('collection-entry');
+          element.style.transitionDelay = (index * 130) + 'ms';
+          collectionObserver.observe(element);
+        });
+      } else {
+        collectionItems.forEach(function(element) {
+          element.classList.add('collection-entry');
+          revealCollection(element);
+        });
+      }
+    }
+
+    var aboutStoreLogo = document.querySelector('.about-store-logo');
+    if (aboutStoreLogo) {
+      var revealAboutLogo = function() {
+        window.requestAnimationFrame(function() {
+          window.requestAnimationFrame(function() {
+            aboutStoreLogo.classList.add('is-visible');
+          });
+        });
+      };
+
+      aboutStoreLogo.classList.add('about-logo-entry');
+      if ('IntersectionObserver' in window) {
+        var aboutLogoObserver = new IntersectionObserver(function(entries, observer) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              revealAboutLogo();
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.2 });
+        aboutLogoObserver.observe(aboutStoreLogo);
+      } else {
+        revealAboutLogo();
+      }
+    }
+
+    var teamElements = document.querySelectorAll('.team-area .section-title, .team-area .team-item');
+    if (teamElements.length) {
+      var revealTeam = function(element) {
+        window.requestAnimationFrame(function() {
+          window.requestAnimationFrame(function() {
+            element.classList.add('is-visible');
+          });
+        });
+      };
+
+      if ('IntersectionObserver' in window) {
+        var teamObserver = new IntersectionObserver(function(entries, observer) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              revealTeam(entry.target);
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.15 });
+
+        teamElements.forEach(function(element, index) {
+          element.classList.add('team-entry');
+          element.style.transitionDelay = (index * 140) + 'ms';
+          teamObserver.observe(element);
+        });
+      } else {
+        teamElements.forEach(function(element) {
+          element.classList.add('team-entry');
+          revealTeam(element);
+        });
+      }
+    }
+
+    var testimonialElements = document.querySelectorAll('.testimonial-area .section-title, .testimonial-area .testimonial-slider-container');
+    if (testimonialElements.length) {
+      var revealTestimonial = function(element) {
+        window.requestAnimationFrame(function() {
+          window.requestAnimationFrame(function() {
+            element.classList.add('is-visible');
+          });
+        });
+      };
+
+      if ('IntersectionObserver' in window) {
+        var testimonialObserver = new IntersectionObserver(function(entries, observer) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              revealTestimonial(entry.target);
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.15 });
+
+        testimonialElements.forEach(function(element, index) {
+          element.classList.add('testimonial-entry');
+          element.style.transitionDelay = (index * 140) + 'ms';
+          testimonialObserver.observe(element);
+        });
+      } else {
+        testimonialElements.forEach(function(element) {
+          element.classList.add('testimonial-entry');
+          revealTestimonial(element);
+        });
+      }
+    }
+
     function scrollToTop() {
       var $scrollUp = $('#scroll-to-top'),
         $lastScrollTop = 0,
@@ -318,6 +681,53 @@
         evt.preventDefault();
       });
     }
-    scrollToTop();
+    function getCookie(name) {
+      var cookieValue = null;
+      document.cookie.split(';').some(function (cookie) {
+        var trimmedCookie = cookie.trim();
+        if (trimmedCookie.indexOf(name + '=') === 0) {
+          cookieValue = decodeURIComponent(trimmedCookie.substring(name.length + 1));
+          return true;
+        }
+        return false;
+      });
+      return cookieValue;
+    }
+
+    var newsletterForm = document.querySelector('[data-newsletter-form]');
+    if (newsletterForm) {
+      newsletterForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        var email = newsletterForm.querySelector('input[type="email"]');
+        var message = document.querySelector('[data-newsletter-message]');
+        var submitButton = newsletterForm.querySelector('button[type="submit"]');
+        if (!email.checkValidity()) {
+          email.reportValidity();
+          return;
+        }
+        submitButton.disabled = true;
+        message.textContent = 'Guardando tu suscripción...';
+        fetch(newsletterForm.action, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+          },
+          body: JSON.stringify({ email: email.value })
+        }).then(function (response) {
+          return response.json().then(function (data) {
+            if (!response.ok) throw new Error(data.message || 'No fue posible registrar el correo.');
+            return data;
+          });
+        }).then(function (data) {
+          message.textContent = data.message;
+          newsletterForm.reset();
+        }).catch(function (error) {
+          message.textContent = error.message || 'No fue posible registrar el correo.';
+        }).finally(function () {
+          submitButton.disabled = false;
+        });
+      });
+    }    scrollToTop();
 
 })(window.jQuery);

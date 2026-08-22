@@ -1,0 +1,13 @@
+.git
+.gitignore
+.venv
+# settings.py lee .env.local en cualquier entorno: si viajara en la imagen, sus
+# valores de desarrollo (y sus llaves) aplicarian dentro del contenedor.
+.env
+.env.*
+!.env.example
+db.sqlite3
+staticfiles
+__pycache__
+*.pyc
+.playwright-mcp

@@ -1,0 +1,65 @@
+{% extends "store/base.html" %}
+{% load store_extras %}
+
+{% block title %}Pedido {{ order.number }} - Nexus Luxury Footwear{% endblock %}
+{% block seo %}{% seo_meta title="Detalle del pedido" robots="noindex, nofollow" %}{% endblock %}
+
+{% block content %}
+<div class="page-header-area login-page-header" data-bg-img="assets/img/shop/bannerlogin.png">
+  <div class="container pt--0 pb--0">
+    <div class="row">
+      <div class="col-12">
+        <div class="page-header-content">
+          <h2 class="title">Pedido {{ order.number }}</h2>
+          <nav class="breadcrumb-area">
+            <ul class="breadcrumb">
+              <li><a href="index.html">Inicio</a></li>
+              <li class="breadcrumb-sep">//</li>
+              <li><a href="account.html?tab=orders">Mis pedidos</a></li>
+              <li class="breadcrumb-sep">//</li>
+              <li>{{ order.number }}</li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="order-confirmation-area">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-10">
+        <div class="order-detail-head">
+          <div class="order-detail-head-info">
+            <h3 class="order-detail-number">{{ order.number }}</h3>
+            <p class="order-detail-date">Realizado el {{ order.created_at|date:"d M Y, H:i" }}</p>
+          </div>
+          <div class="order-detail-statuses">
+            <span class="order-detail-status-label">Pago <span class="order-status order-status--{{ order.status }}">{{ order.get_status_display }}</span></span>
+            <span class="order-detail-status-label">Envío <span class="shipping-status shipping-status--{{ order.fulfillment_status }}">{{ order.get_fulfillment_status_display }}</span></span>
+          </div>
+        </div>
+
+        {% include "store/_payment_result.html" with compact=True %}
+        {% include "store/_shipping_tracking.html" %}
+        {% include "store/_order_history.html" %}
+        {% include "store/_order_summary.html" with show_delivery_map=True %}
+
+        <div class="order-confirmation-actions">
+          {% if order.is_paid %}
+          <div class="order-confirmation-actions__primary">
+            <a class="btn-theme" href="{% url 'order_receipt_pdf' order.number %}"><i class="fa fa-file-pdf-o" aria-hidden="true"></i> Descargar comprobante PDF</a>
+          </div>
+          {% endif %}
+          <div class="order-confirmation-actions__links">
+            <a class="order-link" href="account.html?tab=orders">Volver a mis pedidos</a>
+            <span class="order-confirmation-actions__sep" aria-hidden="true">·</span>
+            <a class="order-link" href="shop.html">Seguir comprando</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

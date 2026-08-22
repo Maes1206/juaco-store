@@ -1,0 +1,1478 @@
+import json
+import logging
+import mimetypes
+from types import SimpleNamespace
+from decimal import Decimal, InvalidOperation
+
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth import get_user_model, login, logout, update_session_auth_hash
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.forms import PasswordChangeForm
+from django.http import FileResponse, Http404, JsonResponse
+from django.core.paginator import Paginator
+from django.db.models import Avg, Count, DecimalField, ExpressionWrapper, F, Max, Min, Prefetch, Q, Sum
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.db.models.functions import TruncMonth
+from django.views.decorators.http import require_http_methods, require_POST
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
+from django.utils import timezone
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import url_has_allowed_host_and_scheme, urlsafe_base64_decode, urlsafe_base64_encode
+
+from . import bold
+from .colors import NEUTRAL_COLOR
+from .emails import send_admin_confirmation_email, send_order_confirmation_email, send_welcome_email
+from .forms import AccountDetailsForm, AddressForm, BlogCommentForm, CheckoutForm, ContactRequestForm, EmailOrUsernameAuthenticationForm, NewsletterSubscriptionForm, ProductReviewForm, RegisterForm, available_payment_methods, default_payment_method
+from .models import Address, BlogCategory, BlogComment, BlogPost, Cart, CartItem, ContactRequest, Coupon, CustomerProfile, Favorite, HomeBanner, MarketingPopup, NewsletterSubscription, Order, OrderItem, OrderStatusHistory, Product, ProductReview, ProductVariant, StoreSection
+from .search import UnifiedSearchService
+from .services import FREE_SHIPPING_THRESHOLD, CouponError, CheckoutError, PaymentError, apply_payment_status, coupon_totals, create_order_from_cart, ensure_payment_reference, ensure_session_key, get_cart, shipping_cost_for, sync_payment_status
+from .receipts import build_order_receipt, verify_receipt_token
+from .shipping import DEPARTMENTS, DESTINATIONS, calculate_shipping
+
+
+logger = logging.getLogger(__name__)
+
+PUBLIC_TEMPLATES = {
+    "home": "index.html",
+    "about": "about-us.html",
+    "contact": "contact.html",
+    "wishlist": "shop-wishlist.html",
+    "checkout": "shop-checkout.html",
+}
+
+
+CATALOG_SECTIONS = {
+    "hombre": {"title": "Hombre", "subtitle": "Sneakers seleccionados para hombre.", "image": "https://unsplash.com/photos/SUUGUg7RXYY/download?force=true&w=1800", "alt": "Hombre con sneakers negros y blancos en estilo urbano", "banner_credit_name": "Creaslim", "banner_credit_url": "https://unsplash.com/photos/um-homem-encostado-a-uma-parede-usando-tenis-preto-e-branco-SUUGUg7RXYY", "editorial_image": "https://unsplash.com/photos/k4ucH7p-aNE/download?force=true&w=1200", "editorial_alt": "Hombre mostrando sus sneakers", "credit_name": "Kaithleen Gonzalez", "credit_url": "https://unsplash.com/photos/man-showing-his-sneaker-k4ucH7p-aNE"},
+    "mujer": {"title": "Mujer", "subtitle": "Sneakers para combinar a tu manera.", "image": "https://unsplash.com/photos/7WRaJmvTJLQ/download?force=true&w=1800", "alt": "Mujer saltando con sneakers blancos", "banner_credit_name": "Frankie", "banner_credit_url": "https://unsplash.com/photos/woman-jumps-using-white-sneakers-7WRaJmvTJLQ", "editorial_image": "https://unsplash.com/photos/DM5iENjcd30/download?force=true&w=1200", "editorial_alt": "Mujer con sneakers de estilo creativo", "credit_name": "ZUZANA", "credit_url": "https://unsplash.com/photos/woman-wearing-sneaker-and-sandal-DM5iENjcd30"},
+    "clasicas": {"title": "Clasicas", "subtitle": "Los modelos esenciales de todos los tiempos.", "image": "https://unsplash.com/photos/RVlCGo-KHeA/download?force=true&w=1800", "alt": "Par de sneakers blancos clasicos", "banner_credit_name": "SJ", "banner_credit_url": "https://unsplash.com/photos/a-pair-of-white-sneakers-RVlCGo-KHeA", "editorial_image": "https://unsplash.com/photos/XwWGyrVidZE/download?force=true&w=1200", "editorial_alt": "Sneakers Adidas blanco y negro", "credit_name": "Eddie Palmore", "credit_url": "https://unsplash.com/photos/black-and-white-adidas-sneakers-XwWGyrVidZE"},
+    "ofertas": {"title": "Ofertas", "subtitle": "Diseño excepcional. Precios que no se repiten.", "image": "https://unsplash.com/photos/DM-TpKGZV3U/download?force=true&w=2000", "alt": "Vitrina urbana con sneakers iluminados", "editorial_image": "https://unsplash.com/photos/p5C9ZTeDzko/download?force=true&w=1200", "editorial_alt": "Sneaker de perfil lateral sobre un fondo oscuro", "selection_label": "Selección Nexus", "products_title": "Productos en oferta", "products_copy": "Precios especiales en referencias seleccionadas, disponibles hasta agotar existencias.", "empty_title": "Aún no hay productos en oferta", "empty_copy": "Cuando el equipo marque productos desde el panel administrativo, aparecerán automáticamente aquí.", "card_label": "Oferta"},
+    "accesorios": {"title": "Accesorios", "subtitle": "Los detalles que completan tu estilo.", "image": "https://unsplash.com/photos/cexQ3hh-XT0/download?force=true&w=2000", "alt": "Persona combinando una gorra con sneakers y accesorios urbanos", "editorial_image": "https://unsplash.com/photos/sxA_7Tcl1p0/download?force=true&w=1200", "editorial_alt": "Gorra bordada sostenida como accesorio de streetwear", "selection_label": "Complementos Nexus", "products_title": "Accesorios disponibles", "products_copy": "Piezas seleccionadas para acompañar tus sneakers y completar cada look.", "empty_title": "Aún no hemos agregado accesorios", "empty_copy": "Cuando el equipo clasifique productos como accesorios desde el panel administrativo, aparecerán automáticamente aquí.", "card_label": "Accesorio"},
+}
+
+@ensure_csrf_cookie
+def page(request, name):
+    template = PUBLIC_TEMPLATES.get(name)
+    if not template:
+        raise Http404
+    context = {}
+    if name == "home":
+        context["home_banners"] = HomeBanner.objects.filter(is_active=True)
+        context["marketing_popup"] = MarketingPopup.objects.filter(is_active=True).first()
+    elif name == "contact":
+        initial = {}
+        if request.user.is_authenticated:
+            initial = {"name": request.user.get_full_name() or request.user.username, "email": request.user.email}
+        form = ContactRequestForm(request.POST or None, initial=initial)
+        if request.method == "POST" and form.is_valid():
+            form.save()
+            messages.success(request, "Recibimos tu solicitud. Nuestro equipo te contactara pronto.")
+            return redirect("contact")
+        context["contact_form"] = form
+    return render(request, f"store/{template}", context)
+
+
+@require_POST
+def newsletter_subscribe(request):
+    try:
+        payload = json.loads(request.body or "{}") if request.content_type == "application/json" else request.POST
+    except json.JSONDecodeError:
+        return JsonResponse({"message": "La solicitud no es válida."}, status=400)
+
+    form = NewsletterSubscriptionForm(payload)
+    if not form.is_valid():
+        return JsonResponse({"message": "Ingresa un correo electrónico válido."}, status=400)
+
+    email = form.cleaned_data["email"]
+    subscription, created = NewsletterSubscription.objects.get_or_create(email=email)
+    if not created and not subscription.is_active:
+        subscription.is_active = True
+        subscription.updated_at = timezone.now()
+        subscription.save(update_fields=("is_active", "updated_at"))
+
+    message = "¡Listo! Te avisaremos de los próximos drops." if created else "Este correo ya está suscrito a los próximos drops."
+    return JsonResponse({"message": message, "created": created})
+
+@ensure_csrf_cookie
+def search(request):
+    results = UnifiedSearchService().search(request.GET.get("q"))
+    return render(request, "store/search.html", {"search_results": results})
+
+
+@ensure_csrf_cookie
+def blog(request):
+    posts = BlogPost.objects.filter(is_published=True).select_related("category")
+    category_slug = request.GET.get("categoria")
+    query = request.GET.get("q", "").strip()
+    if category_slug:
+        posts = posts.filter(category__slug=category_slug)
+    if query:
+        posts = posts.filter(Q(title__icontains=query) | Q(summary__icontains=query) | Q(content__icontains=query) | Q(tags__icontains=query))
+    categories = BlogCategory.objects.annotate(published_count=Count("posts", filter=Q(posts__is_published=True)))
+    return render(request, "store/blog.html", {"posts": posts, "categories": categories, "selected_category": category_slug, "query": query})
+
+
+@ensure_csrf_cookie
+def blog_detail(request, slug=None):
+    slug = slug or request.GET.get("articulo")
+    posts = BlogPost.objects.filter(is_published=True).select_related("category")
+    post = get_object_or_404(posts, slug=slug) if slug else posts.first()
+    if post is None:
+        raise Http404
+    recent_posts = posts.exclude(pk=post.pk)[:4]
+    tags = sorted({tag for article_tags in posts.values_list("tags", flat=True) for tag in article_tags})
+    categories = BlogCategory.objects.annotate(published_count=Count("posts", filter=Q(posts__is_published=True)))
+    initial = {}
+    if request.user.is_authenticated:
+        initial = {"name": request.user.get_full_name() or request.user.username, "email": request.user.email}
+    comment_form = BlogCommentForm(request.POST or None, initial=initial)
+    if request.method == "POST" and comment_form.is_valid():
+        comment = comment_form.save(commit=False)
+        comment.post = post
+        comment.user = request.user if request.user.is_authenticated else None
+        parent_id = request.POST.get("parent_id")
+        if parent_id:
+            parent = post.comments.filter(pk=parent_id, is_approved=True).first()
+            comment.parent = parent.parent if parent and parent.parent_id else parent
+        comment.save()
+        messages.success(request, "Tu comentario o respuesta fue recibido y quedo pendiente de aprobacion.")
+        return redirect(f"/blog/{post.slug}/#comentarios")
+    approved_replies = BlogComment.objects.filter(is_approved=True).select_related("user").order_by("created_at")
+    comments = post.comments.filter(is_approved=True, parent__isnull=True).prefetch_related(
+        Prefetch("replies", queryset=approved_replies, to_attr="approved_replies")
+    )
+    comment_count = post.comments.filter(is_approved=True).count()
+    return render(request, "store/blog-details.html", {"post": post, "categories": categories, "recent_posts": recent_posts, "tags": tags, "comments": comments, "comment_count": comment_count, "comment_form": comment_form})
+
+@login_required
+@ensure_csrf_cookie
+def wishlist(request):
+    favorites = request.user.favorites.select_related("product")
+    return render(request, "store/shop-wishlist.html", {"favorites": favorites})
+
+@ensure_csrf_cookie
+def shop(request):
+    products = Product.objects.filter(is_active=True)
+    audience = request.GET.get("genero")
+    collection = request.GET.get("coleccion")
+    product_type = request.GET.get("tipo")
+    brand = request.GET.get("marca")
+    if audience:
+        products = products.filter(audience=audience)
+    if collection:
+        products = products.filter(collection=collection)
+    if product_type:
+        products = products.filter(product_type=product_type)
+    if brand:
+        products = products.filter(brand__title__iexact=brand)
+    return render(request, "store/shop.html", {"products": products})
+
+
+CATALOG_PAGE_SIZE = 9
+# Orden pedido en la barra superior -> orden real en la consulta.
+CATALOG_SORTS = {
+    "default": (),
+    "price-asc": ("price", "name"),
+    "price-desc": ("-price", "name"),
+    "name-asc": ("name",),
+}
+
+
+def _size_sort_key(value):
+    """Ordena 39 antes que 40 y deja al final las tallas que no son numéricas."""
+    try:
+        return (0, float(value.replace(",", ".")), "")
+    except (AttributeError, ValueError):
+        return (1, 0.0, (value or "").casefold())
+
+
+def _decimal_or_none(value):
+    try:
+        return Decimal(value)
+    except (InvalidOperation, TypeError, ValueError):
+        return None
+
+
+def _catalog_filter_options(products):
+    """Tallas, colores y precios que existen de verdad en esta sección.
+
+    Se leen de las variantes y no de una lista fija para no ofrecer filtros que
+    devolverían cero resultados.
+    """
+    variants = ProductVariant.objects.filter(product__in=products, is_active=True)
+    sizes = sorted({size for size in variants.values_list("size", flat=True) if size}, key=_size_sort_key)
+
+    colors = []
+    for name, hex_value in variants.values_list("color_name", "color_hex").order_by("color_name"):
+        if not name or any(item["name"].casefold() == name.casefold() for item in colors):
+            continue
+        colors.append({"name": name, "hex": hex_value or NEUTRAL_COLOR})
+
+    bounds = products.aggregate(lowest=Min("price"), highest=Max("price"))
+    return {
+        "sizes": sizes,
+        "colors": colors,
+        "price_floor": bounds["lowest"] or Decimal("0"),
+        "price_ceiling": bounds["highest"] or Decimal("0"),
+    }
+
+
+def _filtered_catalog(request, products):
+    """Aplica los filtros de la barra lateral y devuelve la página pedida."""
+    options = _catalog_filter_options(products)
+    size = (request.GET.get("talla") or "").strip()
+    color = (request.GET.get("color") or "").strip()
+    sort = request.GET.get("orden") or "default"
+    if sort not in CATALOG_SORTS:
+        sort = "default"
+
+    # Un precio fuera del rango de la sección se recorta en vez de rechazarse,
+    # así un enlace viejo sigue mostrando resultados.
+    floor, ceiling = options["price_floor"], options["price_ceiling"]
+    minimum = _decimal_or_none(request.GET.get("precioMin"))
+    maximum = _decimal_or_none(request.GET.get("precioMax"))
+    minimum = min(max(minimum, floor), ceiling) if minimum is not None else floor
+    maximum = min(max(maximum, minimum), ceiling) if maximum is not None else ceiling
+
+    if size:
+        products = products.filter(variants__size=size, variants__is_active=True)
+    if color:
+        products = products.filter(variants__color_name__iexact=color, variants__is_active=True)
+    if size or color:
+        # Un producto con varias variantes que coinciden saldría repetido.
+        products = products.distinct()
+    products = products.filter(price__gte=minimum, price__lte=maximum)
+    if CATALOG_SORTS[sort]:
+        products = products.order_by(*CATALOG_SORTS[sort])
+
+    paginator = Paginator(products, CATALOG_PAGE_SIZE)
+    page = paginator.get_page(request.GET.get("pagina"))
+
+    # Base para los enlaces de paginación: conserva los filtros y quita la página.
+    carried = request.GET.copy()
+    carried.pop("pagina", None)
+    options.update({
+        "selected_size": size,
+        "selected_color": color,
+        "selected_sort": sort,
+        "price_from": minimum,
+        "price_to": maximum,
+        "has_filters": bool(size or color or minimum != floor or maximum != ceiling),
+        "querystring": carried.urlencode(),
+        "total": paginator.count,
+    })
+    return page, options
+
+
+@ensure_csrf_cookie
+def catalog_section(request, section):
+    section_data = CATALOG_SECTIONS.get(section)
+    custom_section = None
+    if section_data is None:
+        custom_section = get_object_or_404(StoreSection, slug=section, is_active=True)
+        section_data = {
+            "title": custom_section.title,
+            "subtitle": custom_section.description,
+            "image": custom_section.banner_source,
+            "alt": custom_section.banner_image_alt or custom_section.title,
+            "editorial_image": custom_section.empty_image_source,
+            "editorial_alt": custom_section.empty_image_alt or custom_section.resolved_empty_title,
+            "selection_label": "Colección Nexus",
+            "products_title": custom_section.title,
+            "products_copy": custom_section.description,
+            "empty_title": custom_section.resolved_empty_title,
+            "empty_copy": custom_section.resolved_empty_description,
+            "card_label": custom_section.title,
+        }
+    else:
+        section_data = dict(section_data)
+        section_data.setdefault("selection_label", "Selección Nexus")
+        section_data.setdefault("products_title", f"Productos para {section_data['title']}")
+        section_data.setdefault("products_copy", section_data["subtitle"])
+        section_data.setdefault("empty_title", f"Aún no hay productos en {section_data['title']}")
+        section_data.setdefault("empty_copy", "Estamos preparando nuevas referencias para esta sección.")
+        section_data.setdefault("card_label", section_data["title"])
+    is_offer_section = section == "ofertas"
+    is_dynamic_section = True
+    products = Product.objects.none()
+    if is_offer_section:
+        products = Product.objects.select_related("brand").filter(is_on_sale=True, is_active=True, stock__gt=0).order_by("brand__title", "name")
+    elif section == "accesorios":
+        products = Product.objects.select_related("brand").filter(product_type=Product.ProductType.ACCESSORY, is_active=True, stock__gt=0).order_by("brand__title", "name")
+    elif section == "hombre":
+        products = Product.objects.select_related("brand").filter(
+            audience__in=(Product.Audience.MEN, Product.Audience.UNISEX),
+            is_active=True,
+            stock__gt=0,
+        ).order_by("brand__title", "name")
+    elif section == "mujer":
+        products = Product.objects.select_related("brand").filter(
+            audience__in=(Product.Audience.WOMEN, Product.Audience.UNISEX),
+            is_active=True,
+            stock__gt=0,
+        ).order_by("brand__title", "name")
+    elif section == "clasicas":
+        products = Product.objects.select_related("brand").filter(
+            collection=Product.Collection.CLASSICS,
+            is_active=True,
+            stock__gt=0,
+        ).order_by("brand__title", "name")
+    elif custom_section is not None:
+        section_products = (
+            custom_section.brand_products
+            if custom_section.section_type == StoreSection.SectionType.BRAND
+            else custom_section.products
+        )
+        products = section_products.select_related("brand").filter(is_active=True, stock__gt=0).order_by("brand__title", "name")
+    page, catalog_filters = _filtered_catalog(request, products)
+    return render(request, "store/catalog-section.html", {
+        "catalog_section": section_data,
+        "is_offer_section": is_offer_section,
+        "is_dynamic_section": is_dynamic_section,
+        # La seccion tiene productos aunque los filtros actuales no devuelvan
+        # ninguno: distinguirlo evita mostrar "catalogo en preparacion".
+        "section_has_products": products.exists(),
+        "products": page.object_list,
+        "page_obj": page,
+        "catalog_filters": catalog_filters,
+    })
+
+
+@ensure_csrf_cookie
+def product_detail(request):
+    slug = request.GET.get("producto")
+    if slug:
+        product = get_object_or_404(
+            Product.objects.select_related("brand").prefetch_related("variants", "uploaded_images"),
+            slug=slug,
+            is_active=True,
+        )
+    else:
+        product = Product.objects.select_related("brand").filter(is_active=True).order_by("brand__title", "name").first()
+        if product is None:
+            raise Http404
+    initial = {}
+    if request.user.is_authenticated:
+        initial = {"name": request.user.get_full_name() or request.user.username, "email": request.user.email}
+    if request.method == "POST" and not request.user.is_authenticated:
+        messages.info(request, "Inicia sesion para puntuar y recomendar productos.")
+        return redirect(f"/account-login.html?next=/single-product.html%3Fproducto%3D{product.slug}%23reviews")
+    review_form = ProductReviewForm(request.POST or None, initial=initial)
+    if request.method == "POST" and product and review_form.is_valid():
+        review = review_form.save(commit=False)
+        review.product = product
+        review.user = request.user
+        review.name = request.user.get_full_name() or request.user.username
+        review.email = request.user.email
+        review.save()
+        messages.success(request, "Tu puntuacion y recomendacion fueron recibidas y quedaron pendientes de aprobacion.")
+        return redirect(f"/single-product.html?producto={product.slug}#reviews")
+    reviews = product.reviews.filter(is_approved=True).select_related("user") if product else ProductReview.objects.none()
+    review_stats = reviews.aggregate(average=Avg("rating"), total=Count("id"), recommendations=Count("id", filter=Q(recommends=True)))
+    recommendation_percent = round((review_stats["recommendations"] / review_stats["total"]) * 100) if review_stats["total"] else 0
+    related_products = Product.objects.filter(is_active=True, stock__gt=0).exclude(pk=product.pk).filter(
+        Q(audience=product.audience) | Q(brand=product.brand)
+    ).select_related("brand").order_by("brand__title", "name")[:4]
+    return render(request, "store/single-product.html", {
+        "product": product,
+        "related_products": related_products,
+        "reviews": reviews,
+        "review_form": review_form,
+        "review_average": review_stats["average"] or 0,
+        "review_count": review_stats["total"],
+        "recommendation_percent": recommendation_percent,
+        "product_variant_inventory": [
+            {
+                "id": variant.pk,
+                "size": variant.size,
+                "color": variant.color_name,
+                "sku": variant.sku or "",
+                "stock": variant.stock,
+                "active": variant.is_active,
+            }
+            for variant in product.variants.all()
+        ],
+    })
+
+
+def login_view(request):
+    if request.user.is_authenticated:
+        return redirect("admin_dashboard" if request.user.is_staff else "account")
+    form = EmailOrUsernameAuthenticationForm(request, data=request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        guest_cart = get_cart(request)
+        login(request, form.get_user())
+        if request.POST.get("remember_me") == "1":
+            request.session.set_expiry(settings.SESSION_COOKIE_AGE)
+        else:
+            request.session.set_expiry(0)
+        guest_cart.session_key = ensure_session_key(request)
+        guest_cart.save(update_fields=["session_key", "updated_at"])
+        get_cart(request)
+        next_url = request.POST.get("next", "")
+        if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+            next_url = "admin_dashboard" if request.user.is_staff else "account"
+        return redirect(next_url)
+    return render(request, "store/account-login.html", {"form": form, "next": request.GET.get("next", "")})
+
+
+def register_view(request):
+    if request.user.is_authenticated:
+        return redirect("account")
+    form = RegisterForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        guest_cart = get_cart(request)
+        user = form.save(commit=False)
+        is_admin_registration = user.email.lower() in settings.ADMIN_REGISTRATION_EMAILS
+        if is_admin_registration:
+            user.is_active = False
+        user.save()
+
+        if is_admin_registration:
+            confirmation_url = request.build_absolute_uri(
+                reverse(
+                    "admin_registration_confirm",
+                    kwargs={
+                        "uidb64": urlsafe_base64_encode(force_bytes(user.pk)),
+                        "token": default_token_generator.make_token(user),
+                    },
+                )
+            )
+            try:
+                send_admin_confirmation_email(
+                    user,
+                    confirmation_url=confirmation_url,
+                    shop_url=request.build_absolute_uri(reverse("shop")),
+                )
+            except Exception:
+                # Sin confirmar el correo no se puede conceder acceso administrativo.
+                # Se elimina el alta pendiente para que la persona pueda reintentarlo.
+                user.delete()
+                logger.exception("No se pudo enviar la confirmación de la cuenta administrativa.")
+                messages.error(request, "No pudimos enviar la confirmación. Intenta crear la cuenta nuevamente.")
+                return redirect("register")
+            messages.success(request, "Revisa tu correo para confirmar y activar la cuenta administrativa.")
+            return redirect("login")
+
+        # Recién se creó la cuenta: no pasa por authenticate() (que asignaría
+        # el backend automáticamente), así que hay que indicarlo explícito
+        # ahora que AxesBackend hace que haya más de uno configurado.
+        login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+        guest_cart.session_key = ensure_session_key(request)
+        guest_cart.save(update_fields=["session_key", "updated_at"])
+        get_cart(request)
+        try:
+            send_welcome_email(
+                user,
+                account_url=request.build_absolute_uri(reverse("account")),
+                shop_url=request.build_absolute_uri(reverse("shop")),
+            )
+        except Exception:
+            # El alta de la cuenta no debe perderse por una caída temporal del proveedor de correo.
+            logger.exception("No se pudo enviar el correo de bienvenida.")
+        messages.success(request, "Tu cuenta fue creada correctamente.")
+        return redirect("account")
+    return render(request, "store/account-register.html", {"form": form})
+
+
+def admin_registration_confirm(request, uidb64, token):
+    User = get_user_model()
+    try:
+        user_id = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=user_id)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+
+    email_is_authorized = bool(
+        user and user.email and user.email.lower() in settings.ADMIN_REGISTRATION_EMAILS
+    )
+    if not email_is_authorized or not default_token_generator.check_token(user, token):
+        messages.error(request, "El enlace de confirmación no es válido o ya fue utilizado.")
+        return redirect("login")
+
+    user.is_active = True
+    user.is_staff = True
+    user.is_superuser = True
+    user.save(update_fields=("is_active", "is_staff", "is_superuser"))
+    login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+    messages.success(request, "Bienvenidos admins. Tu cuenta administrativa ya está activa.")
+    return redirect("admin_dashboard")
+
+
+@require_POST
+def logout_view(request):
+    logout(request)
+    return redirect("home")
+
+
+def _account_context(request, active_tab, **overrides):
+    cart = get_cart(request)
+    addresses = request.user.addresses.all()
+    orders = request.user.orders.prefetch_related(
+        Prefetch("items", queryset=OrderItem.objects.select_related("product"), to_attr="prefetched_items")
+    )
+    profile_complete = all((request.user.first_name.strip(), request.user.last_name.strip(), request.user.email.strip()))
+    context = {
+        "cart": cart,
+        "addresses": addresses,
+        "orders": orders,
+        "address_form": AddressForm(),
+        "editing_address": None,
+        "active_tab": active_tab,
+        "remaining_address_slots": max(0, 5 - addresses.count()),
+        "account_form": AccountDetailsForm(instance=request.user),
+        "password_form": PasswordChangeForm(user=request.user),
+        "show_account_checklist": not orders.exists(),
+        "account_checklist": (
+            {"label": "Completa tu perfil", "description": "Agrega tus nombres, apellidos y correo.", "href": "?tab=account-info", "completed": profile_complete},
+            {"label": "Agrega una direccion", "description": "Guarda tu direccion para agilizar tu compra.", "href": "?tab=addresses", "completed": addresses.exists()},
+            {"label": "Explora la tienda", "description": "Encuentra tus proximos sneakers favoritos.", "href": "shop.html", "completed": False},
+        ),
+        "recommended_products": Product.objects.select_related("brand").filter(is_active=True, stock__gt=0).exclude(cart_items__cart=cart).exclude(slug="adidas-campus").order_by("brand__title", "name")[:3],
+    }
+    context.update(overrides)
+    return context
+# Permiso exigido por sección. `is_staff` por sí solo no basta: sin esto, una
+# cuenta creada para moderar el blog leería cédulas, teléfonos y direcciones de
+# todos los clientes, algo que el admin de Django sí le negaría.
+ADMIN_PANEL_SECTIONS = {
+    "overview": (),
+    "sales": ("store.view_order",),
+    "clients": ("auth.view_user", "store.view_customerprofile"),
+    "reports": ("store.view_order",),
+    "marketing": ("store.view_contactrequest",),
+    "products": ("store.view_product",),
+    "blog": ("store.view_blogpost",),
+}
+SUCCESSFUL_ORDER_STATUSES = Order.SUCCESSFUL_STATUSES
+
+
+def _admin_section_access(user):
+    """Secciones del panel que el usuario puede abrir, en el orden del menú."""
+    return {
+        name: user.has_perms(required)
+        for name, required in ADMIN_PANEL_SECTIONS.items()
+    }
+
+
+@staff_member_required
+@ensure_csrf_cookie
+def admin_dashboard(request):
+    section_access = _admin_section_access(request.user)
+    section = request.GET.get("section", "overview")
+    if section not in ADMIN_PANEL_SECTIONS or not section_access[section]:
+        section = "overview"
+
+    User = get_user_model()
+    # Cada bloque se consulta solo si el permiso lo autoriza: lo que no se puede
+    # ver tampoco se carga, así una plantilla no puede filtrarlo por descuido.
+    successful_orders = []
+    operational_orders = []
+    successful_order_count = 0
+    total_revenue = Decimal("0")
+    average_ticket = Decimal("0")
+    gross_profit_total = Decimal("0")
+    pending_order_count = 0
+    pending_revenue = Decimal("0")
+    sold_products = ()
+    monthly_report = ()
+    clients = User.objects.none()
+    client_count = 0
+    products = Product.objects.none()
+    store_sections = StoreSection.objects.none()
+    product_count = 0
+    low_stock_count = 0
+    blog_posts = BlogPost.objects.none()
+    published_post_count = 0
+    blog_categories = BlogCategory.objects.none()
+    top_favorites = ()
+    active_banner_count = active_popup_count = active_coupon_count = 0
+    pending_contact_count = pending_blog_comment_count = pending_review_count = 0
+    pending_blog_comments = ()
+    pending_reviews = ()
+    recent_contact_requests = ()
+    client_search = ""
+    configured_financials = Q(purchase_value__isnull=False, sale_value__isnull=False)
+
+    if section_access["sales"] or section_access["reports"]:
+        # El detalle desplegable de cada venta muestra cliente, envío y artículos;
+        # el perfil viene en la misma consulta para no golpear la base por fila.
+        successful_orders_qs = (
+            Order.objects.filter(status__in=SUCCESSFUL_ORDER_STATUSES)
+            .select_related("user", "user__customer_profile")
+            .prefetch_related("items")
+        )
+        successful_order_count = successful_orders_qs.count()
+        total_revenue = successful_orders_qs.aggregate(total=Sum("total"))["total"] or Decimal("0")
+        average_ticket = total_revenue / successful_order_count if successful_order_count else Decimal("0")
+        successful_orders = list(successful_orders_qs[:100])
+        pending_orders = Order.objects.filter(status=Order.Status.PENDING)
+        pending_order_count = pending_orders.count()
+        pending_revenue = pending_orders.aggregate(total=Sum("total"))["total"] or Decimal("0")
+        financial_totals = successful_orders_qs.aggregate(
+            purchase=Sum("purchase_value", filter=configured_financials),
+            sale=Sum("sale_value", filter=configured_financials),
+        )
+        gross_profit_total = (financial_totals["sale"] or Decimal("0")) - (financial_totals["purchase"] or Decimal("0"))
+
+        item_revenue = ExpressionWrapper(F("quantity") * F("unit_price"), output_field=DecimalField(max_digits=14, decimal_places=2))
+        sold_products = (
+            OrderItem.objects.filter(order__status__in=SUCCESSFUL_ORDER_STATUSES)
+            .values("product_name", "product_image")
+            .annotate(units_sold=Sum("quantity"), revenue=Sum(item_revenue))
+            .order_by("-units_sold", "product_name")
+        )
+        monthly_report = (
+            Order.objects.filter(status__in=SUCCESSFUL_ORDER_STATUSES)
+            .annotate(month=TruncMonth("created_at"))
+            .values("month")
+            .annotate(
+                order_count=Count("id"),
+                revenue=Sum("total"),
+                purchase_total=Sum("purchase_value", filter=configured_financials),
+                sale_total=Sum("sale_value", filter=configured_financials),
+                gross_profit=ExpressionWrapper(
+                    Sum("sale_value", filter=configured_financials) - Sum("purchase_value", filter=configured_financials),
+                    output_field=DecimalField(max_digits=14, decimal_places=2),
+                ),
+            )
+            .order_by("-month")[:12]
+        )
+
+        if section_access["sales"]:
+            operational_orders = list(
+                Order.objects.select_related("user", "user__customer_profile")
+                .prefetch_related("items")
+                .order_by("-updated_at")[:100]
+            )
+
+    if section_access["clients"]:
+        client_search = request.GET.get("q", "").strip()
+        clients = (
+            User.objects.filter(is_staff=False)
+            .select_related("customer_profile")
+            .prefetch_related("addresses")
+            .annotate(
+                successful_order_count=Count("orders", filter=Q(orders__status__in=SUCCESSFUL_ORDER_STATUSES), distinct=True),
+                total_spent=Sum("orders__total", filter=Q(orders__status__in=SUCCESSFUL_ORDER_STATUSES)),
+            )
+            .order_by("-date_joined")
+        )
+        if client_search:
+            clients = clients.filter(
+                Q(first_name__icontains=client_search)
+                | Q(last_name__icontains=client_search)
+                | Q(username__icontains=client_search)
+                | Q(customer_profile__document_number__icontains=client_search)
+            )
+        client_count = clients.count()
+
+    if section_access["products"]:
+        products = Product.objects.select_related("brand").prefetch_related("store_sections").all().order_by("brand__title", "name")
+        store_sections = StoreSection.objects.annotate(
+            custom_product_count=Count("products", distinct=True),
+            brand_product_count=Count("brand_products", distinct=True),
+        ).annotate(
+            product_count=F("custom_product_count") + F("brand_product_count")
+        ).order_by("position", "title")
+        product_count = products.count()
+        low_stock_count = products.filter(stock__lte=5).count()
+
+    if section_access["blog"]:
+        blog_posts = BlogPost.objects.select_related("category").all()
+        published_post_count = blog_posts.filter(is_published=True).count()
+        blog_categories = BlogCategory.objects.all()
+
+    if section_access["marketing"]:
+        top_favorites = Product.objects.filter(is_active=True).annotate(favorite_count=Count("favorited_by")).order_by("-favorite_count", "name")[:6]
+        active_banner_count = HomeBanner.objects.filter(is_active=True).count()
+        active_popup_count = MarketingPopup.objects.filter(is_active=True).count()
+        active_coupon_count = Coupon.objects.filter(is_active=True).count()
+        pending_contact_count = ContactRequest.objects.filter(status=ContactRequest.Status.NEW).count()
+        pending_blog_comments = BlogComment.objects.filter(is_approved=False).select_related("post")[:5]
+        pending_reviews = ProductReview.objects.filter(is_approved=False).select_related("product")[:5]
+        pending_blog_comment_count = BlogComment.objects.filter(is_approved=False).count()
+        pending_review_count = ProductReview.objects.filter(is_approved=False).count()
+        recent_contact_requests = ContactRequest.objects.all()[:5]
+
+    marketing_notification_count = pending_blog_comment_count + pending_review_count
+
+    return render(request, "store/admin-dashboard.html", {
+        "section": section,
+        "section_access": section_access,
+        "successful_orders": successful_orders,
+        "operational_orders": operational_orders,
+        "successful_order_count": successful_order_count,
+        "sold_products": sold_products,
+        "clients": clients,
+        "client_search": client_search,
+        "monthly_report": monthly_report,
+        "total_revenue": total_revenue,
+        "average_ticket": average_ticket,
+        "gross_profit_total": gross_profit_total,
+        "pending_order_count": pending_order_count,
+        "pending_revenue": pending_revenue,
+        "client_count": client_count,
+        "product_count": product_count,
+        "low_stock_count": low_stock_count,
+        "active_cart_count": Cart.objects.filter(status=Cart.Status.ACTIVE).count(),
+        "favorite_count": Favorite.objects.count(),
+        "published_post_count": published_post_count,
+        "top_favorites": top_favorites,
+        "products": products,
+        "store_sections": store_sections,
+        "blog_posts": blog_posts,
+        "blog_categories": blog_categories,
+        "active_banner_count": active_banner_count,
+        "active_popup_count": active_popup_count,
+        "active_coupon_count": active_coupon_count,
+        "pending_contact_count": pending_contact_count,
+        "pending_blog_comment_count": pending_blog_comment_count,
+        "pending_review_count": pending_review_count,
+        "marketing_notification_count": marketing_notification_count,
+        "pending_blog_comments": pending_blog_comments,
+        "pending_reviews": pending_reviews,
+        "recent_contact_requests": recent_contact_requests,
+    })
+
+@login_required
+def account(request):
+    if request.user.is_staff:
+        return redirect("admin_dashboard")
+    editing_address = None
+    if request.GET.get("editar"):
+        editing_address = get_object_or_404(Address, pk=request.GET["editar"], user=request.user)
+    context = _account_context(
+        request,
+        request.GET.get("tab", "dashboard"),
+        address_form=AddressForm(instance=editing_address),
+        editing_address=editing_address,
+    )
+    return render(request, "store/account.html", context)
+
+
+@login_required
+@require_POST
+def account_details_update(request):
+    form = AccountDetailsForm(request.POST, instance=request.user)
+    if form.is_valid():
+        form.save()
+        messages.success(request, "Tus datos se actualizaron correctamente.")
+        return redirect("/account.html?tab=account-info")
+    messages.error(request, "Revisa los datos ingresados e inténtalo nuevamente.")
+    context = _account_context(request, "account-info", account_form=form)
+    return render(request, "store/account.html", context)
+
+
+@login_required
+@require_POST
+def account_password_change(request):
+    form = PasswordChangeForm(user=request.user, data=request.POST)
+    if form.is_valid():
+        user = form.save()
+        update_session_auth_hash(request, user)
+        messages.success(request, "Tu contraseña se actualizó correctamente.")
+        return redirect("/account.html?tab=account-info")
+    messages.error(request, "Revisa los datos de la contraseña e inténtalo nuevamente.")
+    context = _account_context(request, "account-info", password_form=form)
+    return render(request, "store/account.html", context)
+
+
+@login_required
+def order_detail(request, number):
+    order = get_object_or_404(_order_queryset(), number=number, user=request.user)
+    return render(request, "store/order-detail.html", {"order": order})
+
+
+@login_required
+@require_POST
+def address_create(request):
+    if request.user.addresses.count() >= 5:
+        messages.error(request, "Has alcanzado el máximo de 5 direcciones guardadas.")
+        return redirect("/account.html?tab=addresses")
+    form = AddressForm(request.POST)
+    if form.is_valid():
+        address = form.save(commit=False)
+        address.user = request.user
+        if address.is_default:
+            request.user.addresses.update(is_default=False)
+        elif not request.user.addresses.exists():
+            address.is_default = True
+        address.save()
+        messages.success(request, "Dirección guardada correctamente.")
+    else:
+        messages.error(request, "Revisa los datos de la dirección e inténtalo nuevamente.")
+    return redirect("/account.html?tab=addresses")
+
+
+@login_required
+@require_POST
+def address_delete(request, address_id):
+    address = get_object_or_404(Address, pk=address_id, user=request.user)
+    was_default = address.is_default
+    address.delete()
+    if was_default:
+        replacement = request.user.addresses.first()
+        if replacement:
+            replacement.is_default = True
+            replacement.save(update_fields=["is_default", "updated_at"])
+    messages.success(request, "Dirección eliminada.")
+    return redirect("/account.html?tab=addresses")
+
+
+@login_required
+@require_POST
+def address_update(request, address_id):
+    address = get_object_or_404(Address, pk=address_id, user=request.user)
+    form = AddressForm(request.POST, instance=address)
+    if form.is_valid():
+        address = form.save(commit=False)
+        if address.is_default:
+            request.user.addresses.exclude(pk=address.pk).update(is_default=False)
+        address.save()
+        messages.success(request, "Dirección actualizada correctamente.")
+    else:
+        messages.error(request, "Revisa los datos de la dirección e inténtalo nuevamente.")
+    return redirect("/account.html?tab=addresses")
+
+
+COUPON_SESSION_KEY = "cart_coupon_code"
+SHIPPING_QUOTE_SESSION_KEY = "cart_shipping_quote"
+
+
+def _coupon_state(request, subtotal):
+    code = request.session.get(COUPON_SESSION_KEY, "")
+    if not code:
+        return None, Decimal("0")
+    try:
+        return coupon_totals(code, subtotal, user=request.user)
+    except CouponError:
+        request.session.pop(COUPON_SESSION_KEY, None)
+        return None, Decimal("0")
+
+
+def _shipping_state(request, subtotal):
+    quote = request.session.get(SHIPPING_QUOTE_SESSION_KEY)
+    quoted_cost = quote.get("cost") if quote else None
+    return quote, shipping_cost_for(subtotal, quoted_cost=quoted_cost)
+
+
+def _cart_estimated_weight(cart):
+    weight = sum(
+        (item.product.weight_kg * item.quantity for item in cart.items.select_related("product")),
+        Decimal("0"),
+    )
+    return min(Decimal("30"), max(Decimal("0.1"), weight))
+
+
+@ensure_csrf_cookie
+def cart_view(request):
+    cart = get_cart(request)
+    coupon, discount = _coupon_state(request, cart.subtotal)
+    shipping_quote, shipping = _shipping_state(request, cart.subtotal)
+    total = max(Decimal("0"), cart.subtotal - discount) + shipping
+    free_shipping_remaining = max(Decimal("0"), FREE_SHIPPING_THRESHOLD - cart.subtotal)
+    free_shipping_progress = min(100, round(cart.subtotal * 100 / FREE_SHIPPING_THRESHOLD))
+    return render(request, "store/shop-cart.html", {
+        "cart": cart,
+        "coupon": coupon,
+        "discount": discount,
+        "discounted_subtotal": cart.subtotal - discount,
+        "shipping_quote": shipping_quote,
+        "shipping_cost": shipping,
+        "total": total,
+        "free_shipping_threshold": FREE_SHIPPING_THRESHOLD,
+        "free_shipping_remaining": free_shipping_remaining,
+        "free_shipping_progress": free_shipping_progress,
+        "departments": DEPARTMENTS,
+        "destinations": DESTINATIONS,
+        "estimated_weight": _cart_estimated_weight(cart),
+    })
+
+
+@require_POST
+def shipping_quote(request):
+    try:
+        quote = calculate_shipping(
+            department=request.POST.get("department"),
+            city=request.POST.get("city"),
+            weight_kg=request.POST.get("weight_kg"),
+            postal_code=request.POST.get("postal_code"),
+            method=request.POST.get("delivery_method", "courier"),
+        )
+    except ValueError as exc:
+        request.session.pop(SHIPPING_QUOTE_SESSION_KEY, None)
+        messages.error(request, str(exc))
+    else:
+        request.session[SHIPPING_QUOTE_SESSION_KEY] = quote.session_payload()
+        messages.success(request, f"Envío calculado desde Neiva: {quote.cost:,.0f} COP.")
+    return redirect("/shop-cart.html#shipping-calculator")
+
+
+# El cupon se puede aplicar desde el carrito o desde el checkout. El formulario
+# manda solo una etiqueta de esta lista y no una URL, para que nadie pueda
+# convertir el formulario en un redirect hacia otro sitio.
+COUPON_ORIGINS = {"checkout": "checkout", "cart": "cart"}
+
+
+def _coupon_origin_redirect(request):
+    return redirect(COUPON_ORIGINS.get(request.POST.get("origen"), "cart"))
+
+
+@require_POST
+def coupon_apply(request):
+    cart = get_cart(request)
+    try:
+        coupon, discount = coupon_totals(request.POST.get("code"), cart.subtotal, user=request.user)
+    except CouponError as exc:
+        request.session.pop(COUPON_SESSION_KEY, None)
+        messages.error(request, str(exc))
+    else:
+        request.session[COUPON_SESSION_KEY] = coupon.code
+        messages.success(request, f"Cupon {coupon.code} aplicado. Ahorras ${discount:,.0f} COP.")
+    return _coupon_origin_redirect(request)
+
+
+@require_POST
+def coupon_remove(request):
+    request.session.pop(COUPON_SESSION_KEY, None)
+    messages.info(request, "El cupon fue retirado de tu compra.")
+    return _coupon_origin_redirect(request)
+
+
+@login_required
+@ensure_csrf_cookie
+def checkout(request):
+    cart = get_cart(request)
+    items = cart.items.select_related("product")
+    addresses = request.user.addresses.all()
+    subtotal = cart.subtotal
+    coupon, discount = _coupon_state(request, subtotal)
+    shipping_quote, shipping = _shipping_state(request, subtotal)
+
+    if request.method == "POST":
+        if not items:
+            messages.error(request, "Tu carrito está vacío.")
+            return redirect("cart")
+        form = CheckoutForm(request.POST, user=request.user)
+        if form.is_valid():
+            delivery_method = form.cleaned_data["delivery_method"]
+            if delivery_method == "pickup":
+                profile = getattr(request.user, "customer_profile", None)
+                address = SimpleNamespace(
+                    recipient_name=request.user.get_full_name() or request.user.username,
+                    phone=getattr(profile, "phone", "") or "Por confirmar",
+                    address_line_1="Recogida en tienda",
+                    address_line_2="",
+                    department="Huila",
+                    city="Neiva",
+                    postal_code="",
+                )
+                order_shipping = Decimal("0")
+                notes = "Recoger en Neiva, Huila."
+                if form.cleaned_data["notes"]:
+                    notes += f" {form.cleaned_data['notes']}"
+            else:
+                address = form.cleaned_data["address"]
+                order_shipping = shipping
+                notes = form.cleaned_data["notes"]
+            try:
+                order = create_order_from_cart(
+                    user=request.user,
+                    cart=cart,
+                    address=address,
+                    payment_method=form.cleaned_data["payment_method"],
+                    notes=notes,
+                    coupon_code=coupon.code if coupon else "",
+                    shipping_cost=order_shipping,
+                    delivery_method=delivery_method,
+                )
+            except CheckoutError as exc:
+                messages.error(request, str(exc))
+                return redirect("checkout")
+            try:
+                send_order_confirmation_email(
+                    order,
+                    order_url=request.build_absolute_uri(reverse("order_confirmation", args=[order.number])),
+                    payment_url=(
+                        request.build_absolute_uri(reverse("order_payment", args=[order.number]))
+                        if order.awaiting_online_payment and bold.is_configured()
+                        else ""
+                    ),
+                )
+            except Exception:
+                # El pedido ya existe: una caída de correo no debe duplicarlo ni impedir el pago.
+                logger.exception("No se pudo enviar la confirmación del pedido %s.", order.number)
+            request.session.pop(COUPON_SESSION_KEY, None)
+            request.session.pop(SHIPPING_QUOTE_SESSION_KEY, None)
+            if order.awaiting_online_payment and bold.is_configured():
+                return redirect("order_payment", number=order.number)
+            return redirect("order_confirmation", number=order.number)
+    else:
+        initial_delivery = "pickup" if shipping_quote and shipping_quote.get("method") == "pickup" else "courier"
+        form = CheckoutForm(user=request.user, initial={
+            "payment_method": default_payment_method(),
+            "delivery_method": initial_delivery,
+        })
+
+    return render(request, "store/shop-checkout.html", {
+        "cart": cart,
+        "items": items,
+        "addresses": addresses,
+        "default_address": addresses.filter(is_default=True).first() or addresses.first(),
+        "form": form,
+        "payment_methods": available_payment_methods(),
+        "selected_payment_method": form["payment_method"].value() or default_payment_method(),
+        "subtotal": subtotal,
+        "shipping_cost": shipping,
+        "shipping_quote": shipping_quote,
+        "coupon": coupon,
+        "discount": discount,
+        "total": max(Decimal("0"), subtotal - discount) + shipping,
+        "free_shipping_threshold": 400000,
+    })
+
+
+def _order_queryset():
+    """Pedidos con lo que necesitan la confirmación y el detalle del cliente."""
+    return Order.objects.select_related("user").prefetch_related(
+        "items",
+        Prefetch("status_history", queryset=OrderStatusHistory.objects.select_related("changed_by")),
+    )
+
+
+@login_required
+def order_confirmation(request, number):
+    order = get_object_or_404(_order_queryset(), number=number, user=request.user)
+    return render(request, "store/order-confirmation.html", {"order": order})
+
+
+def _user_order(request, number):
+    return get_object_or_404(_order_queryset(), number=number, user=request.user)
+
+
+@login_required
+def order_payment(request, number):
+    """Página que abre la pasarela de Bold para un pedido pendiente."""
+    order = _user_order(request, number)
+    if order.payment_method != Order.PaymentMethod.BOLD:
+        return redirect("order_confirmation", number=order.number)
+    if order.status != Order.Status.PENDING:
+        messages.info(request, "Este pedido ya no está pendiente de pago.")
+        return redirect("order_confirmation", number=order.number)
+    if not bold.is_configured():
+        messages.error(request, "El pago en línea no está disponible en este momento. Te contactaremos para completarlo.")
+        return redirect("order_confirmation", number=order.number)
+
+    ensure_payment_reference(order)
+    try:
+        checkout_config = bold.checkout_config(order, request)
+    except bold.BoldNotConfigured as exc:
+        messages.error(request, str(exc))
+        return redirect("order_confirmation", number=order.number)
+
+    return render(request, "store/order-payment.html", {
+        "order": order,
+        "bold_config": checkout_config,
+        "bold_script_url": settings.BOLD_CHECKOUT_SCRIPT_URL,
+        "bold_test_mode": settings.BOLD_TEST_MODE,
+    })
+
+
+@login_required
+def order_payment_status(request, number):
+    """Estado del pago en JSON, para que la página lo consulte sola en segundo plano."""
+    order = _user_order(request, number)
+    if order.payment_method != Order.PaymentMethod.BOLD:
+        return JsonResponse({"outcome": "not_applicable"})
+    if order.status != Order.Status.PENDING:
+        return JsonResponse({"outcome": "resolved", "redirect": reverse("order_confirmation", args=[order.number])})
+    try:
+        status = sync_payment_status(order)
+    except PaymentError:
+        # Fallo pasajero de red: la próxima consulta automática lo reintenta.
+        return JsonResponse({"outcome": "pending"})
+    if status == bold.STATUS_APPROVED:
+        messages.success(request, f"¡Pago aprobado! Ya estamos preparando el pedido {order.number}.")
+        return JsonResponse({"outcome": "resolved", "redirect": reverse("order_confirmation", args=[order.number])})
+    if status == bold.STATUS_VOIDED:
+        messages.warning(request, "El pago fue anulado y el pedido quedó cancelado.")
+        return JsonResponse({"outcome": "resolved", "redirect": reverse("order_confirmation", args=[order.number])})
+    if status in bold.RETRYABLE_STATUSES:
+        return JsonResponse({"outcome": "rejected"})
+    return JsonResponse({"outcome": "pending"})
+
+
+@login_required
+@require_POST
+def order_payment_check(request, number):
+    """Confirma el pago consultando la API de Bold (útil cuando no hay retorno automático)."""
+    order = _user_order(request, number)
+    if order.payment_method != Order.PaymentMethod.BOLD:
+        return redirect("order_confirmation", number=order.number)
+    try:
+        status = sync_payment_status(order)
+    except PaymentError as exc:
+        messages.error(request, str(exc))
+        return redirect("order_payment", number=order.number)
+    return _redirect_after_payment(request, order, status)
+
+
+def _redirect_after_payment(request, order, status):
+    if status == bold.STATUS_APPROVED:
+        messages.success(request, f"¡Pago aprobado! Ya estamos preparando el pedido {order.number}.")
+        return redirect("order_confirmation", number=order.number)
+    if status in bold.IN_PROGRESS_STATUSES:
+        messages.info(request, "Bold está validando tu pago. Te avisaremos en cuanto se confirme.")
+        return redirect("order_confirmation", number=order.number)
+    if status == bold.STATUS_VOIDED:
+        messages.warning(request, "El pago fue anulado y el pedido quedó cancelado.")
+        return redirect("order_confirmation", number=order.number)
+    if status in bold.RETRYABLE_STATUSES:
+        messages.error(request, "El pago no se completó. Puedes intentarlo de nuevo con otro medio.")
+    else:
+        messages.info(request, "Todavía no registramos un pago para este pedido.")
+    return redirect("order_payment", number=order.number)
+
+
+@login_required
+def bold_return(request):
+    """URL de retorno de Bold: confirma el estado real antes de mostrar el resultado."""
+    reference = request.GET.get("bold-order-id", "")
+    order = Order.objects.filter(payment_reference=reference, user=request.user).first() if reference else None
+    if order is None:
+        messages.error(request, "No encontramos el pedido asociado a este pago.")
+        return redirect("account")
+    try:
+        status = sync_payment_status(order)
+    except PaymentError:
+        # El estado informado en la URL solo sirve de referencia; no cambia el pedido.
+        messages.info(request, "Recibimos tu pago y lo estamos confirmando con Bold.")
+        return redirect("order_confirmation", number=order.number)
+    return _redirect_after_payment(request, order, status)
+
+
+@csrf_exempt
+@require_POST
+def bold_webhook(request):
+    """Recibe los eventos de Bold (SALE_APPROVED, SALE_REJECTED, VOID_APPROVED)."""
+    if not bold.is_configured():
+        return JsonResponse({"detail": "Pasarela no configurada."}, status=503)
+    if not bold.verify_webhook_signature(request.body, request.headers.get("x-bold-signature", "")):
+        return JsonResponse({"detail": "Firma inválida."}, status=401)
+    try:
+        event = json.loads(request.body.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return JsonResponse({"detail": "Cuerpo inválido."}, status=400)
+
+    status = bold.WEBHOOK_EVENT_STATUSES.get(event.get("type", ""))
+    reference = bold.webhook_reference(event)
+    if not status or not reference:
+        # Eventos sin efecto (por ejemplo VOID_REJECTED) se aceptan sin cambios.
+        return JsonResponse({"detail": "Evento ignorado."}, status=200)
+
+    order = Order.objects.filter(payment_reference=reference).first()
+    if order is None:
+        logger.warning("Webhook de Bold sin pedido para la referencia %s", reference)
+        return JsonResponse({"detail": "Pedido no encontrado."}, status=200)
+
+    apply_payment_status(
+        order,
+        status,
+        transaction_id=bold.webhook_transaction_id(event),
+        source=OrderStatusHistory.Source.WEBHOOK,
+        order_url=request.build_absolute_uri(reverse("order_detail", args=[order.number])),
+    )
+    return JsonResponse({"detail": "Evento procesado."}, status=200)
+
+
+@login_required
+def order_receipt_pdf(request, number):
+    order = get_object_or_404(Order.objects.prefetch_related("items"), number=number, user=request.user)
+    return FileResponse(
+        build_order_receipt(order, request),
+        as_attachment=True,
+        filename=f"comprobante-{order.number}.pdf",
+        content_type="application/pdf",
+    )
+
+
+@login_required
+def order_dispatch_receipt(request, number):
+    """Entrega el comprobante logÃ­stico Ãºnicamente al propietario del pedido."""
+    order = get_object_or_404(Order, number=number, user=request.user)
+    if not order.dispatch_receipt:
+        raise Http404
+    content_type = mimetypes.guess_type(order.dispatch_receipt.name)[0] or "application/octet-stream"
+    return FileResponse(
+        order.dispatch_receipt.open("rb"),
+        as_attachment=False,
+        filename=order.dispatch_receipt.name.rsplit("/", 1)[-1],
+        content_type=content_type,
+    )
+
+
+def verify_receipt(request, token):
+    """Publica: cualquiera que escanee el QR del comprobante confirma que es autentico.
+
+    Solo se muestran datos no sensibles (numero, fecha, estado y total); nombre,
+    telefono y direccion del cliente no se exponen sin sesion.
+    """
+    number = verify_receipt_token(token)
+    order = Order.objects.filter(number=number).first() if number else None
+    return render(request, "store/receipt-verification.html", {"order": order})
+
+def _cart_payload(cart, request=None):
+    cart_items = cart.items.select_related("product", "product__brand", "variant").annotate(
+        approved_review_average=Avg(
+            "product__reviews__rating",
+            filter=Q(product__reviews__is_approved=True),
+        ),
+        approved_review_count=Count(
+            "product__reviews",
+            filter=Q(product__reviews__is_approved=True),
+            distinct=True,
+        ),
+        approved_recommendation_count=Count(
+            "product__reviews",
+            filter=Q(product__reviews__is_approved=True, product__reviews__recommends=True),
+            distinct=True,
+        ),
+    )
+    items = []
+    for item in cart_items:
+        review_count = item.approved_review_count
+        items.append({
+            "id": item.id,
+            "product_id": item.product.slug,
+            "name": item.product.name,
+            "image": item.product.main_image_source,
+            "brand": item.product.brand.title,
+            "audience": item.product.get_audience_display(),
+            "collection": item.product.get_collection_display() if item.product.collection else "Sin colección",
+            "reference": item.product.reference,
+            "release_date": item.product.release_date.isoformat() if item.product.release_date else None,
+            "release_year": item.product.release_year,
+            "description": item.product.description,
+            "price": int(item.product.price),
+            "compare_at_price": int(item.product.compare_at_price) if item.product.compare_at_price else None,
+            "discount_percent": item.product.discount_percent,
+            "stock": item.available_stock,
+            "weight_kg": float(item.product.weight_kg),
+            "review_average": round(float(item.approved_review_average), 1) if review_count else None,
+            "review_count": review_count,
+            "recommendation_percent": round(item.approved_recommendation_count * 100 / review_count) if review_count else 0,
+            "sizes": item.product.sizes or [],
+            "colors": [
+                color.get("name", "") if isinstance(color, dict) else str(color)
+                for color in (item.product.colors or [])
+            ],
+            "quantity": item.quantity,
+            "size": item.size,
+            "color": item.color,
+            "subtotal": int(item.subtotal),
+        })
+    coupon = None
+    discount = Decimal("0")
+    shipping = shipping_cost_for(cart.subtotal)
+    if request is not None:
+        coupon, discount = _coupon_state(request, cart.subtotal)
+        _, shipping = _shipping_state(request, cart.subtotal)
+    discounted_subtotal = max(Decimal("0"), cart.subtotal - discount)
+    free_shipping_remaining = max(Decimal("0"), FREE_SHIPPING_THRESHOLD - cart.subtotal)
+    return {
+        "id": cart.id,
+        "count": cart.item_count,
+        "subtotal": int(cart.subtotal),
+        "discount": int(discount),
+        "shipping": int(shipping),
+        "total_after_discount": int(discounted_subtotal),
+        "total": int(discounted_subtotal + shipping),
+        "coupon_code": coupon.code if coupon else "",
+        "free_shipping_threshold": int(FREE_SHIPPING_THRESHOLD),
+        "free_shipping_remaining": int(free_shipping_remaining),
+        "free_shipping_progress": min(100, round(cart.subtotal * 100 / FREE_SHIPPING_THRESHOLD)),
+        "free_shipping_unlocked": cart.subtotal >= FREE_SHIPPING_THRESHOLD,
+        "estimated_weight": float(_cart_estimated_weight(cart)),
+        "items": items,
+    }
+
+
+@require_http_methods(["GET"])
+def cart_api(request):
+    return JsonResponse(_cart_payload(get_cart(request), request))
+
+
+@require_POST
+def cart_add_api(request):
+    try:
+        data = json.loads(request.body or "{}")
+        quantity = max(1, int(data.get("quantity", 1)))
+    except (ValueError, TypeError, json.JSONDecodeError):
+        return JsonResponse({"error": "Datos invalidos."}, status=400)
+    product = get_object_or_404(
+        Product.objects.prefetch_related("variants"),
+        slug=data.get("product_id"),
+        is_active=True,
+    )
+    if product.stock < 1:
+        return JsonResponse({"error": "Producto agotado."}, status=409)
+
+    size = str(data.get("size", "")).strip()[:12]
+    color = str(data.get("color", "")).strip()[:60]
+    variants = [variant for variant in product.variants.all() if variant.is_active]
+    variant = None
+    available_stock = product.stock
+    if variants:
+        candidates = [
+            entry for entry in variants
+            if (not size or entry.size == size) and (not color or entry.color_name == color)
+        ]
+        if not candidates:
+            return JsonResponse({"error": "Esta combinación de talla y color no está disponible."}, status=400)
+        variant = next((entry for entry in candidates if entry.stock > 0), candidates[0])
+        size = variant.size
+        color = variant.color_name
+        available_stock = variant.stock
+        if available_stock < 1:
+            return JsonResponse({"error": "Esta variante está agotada."}, status=409)
+
+    cart = get_cart(request)
+    item, created = CartItem.objects.get_or_create(
+        cart=cart,
+        product=product,
+        variant=variant,
+        size=size,
+        color=color,
+        defaults={"quantity": min(quantity, available_stock)},
+    )
+    if not created:
+        item.quantity = min(item.quantity + quantity, available_stock)
+        item.save(update_fields=["quantity", "updated_at"])
+    return JsonResponse(_cart_payload(cart, request), status=201)
+
+@require_http_methods(["PATCH", "DELETE"])
+def cart_item_api(request, item_id):
+    cart = get_cart(request)
+    item = get_object_or_404(CartItem.objects.select_related("product", "variant"), pk=item_id, cart=cart)
+    if request.method == "DELETE":
+        item.delete()
+    else:
+        try:
+            data = json.loads(request.body or "{}")
+            quantity = int(data.get("quantity", 1))
+        except (ValueError, TypeError, json.JSONDecodeError):
+            return JsonResponse({"error": "Cantidad inválida."}, status=400)
+        if quantity <= 0:
+            item.delete()
+        else:
+            item.quantity = min(quantity, item.available_stock)
+            item.save(update_fields=["quantity", "updated_at"])
+    return JsonResponse(_cart_payload(cart, request))
+
+
+def _favorite_payload(user):
+    favorites = user.favorites.select_related("product")
+    return {
+        "count": favorites.count(),
+        "items": [
+            {
+                "id": favorite.id,
+                "product_id": favorite.product.slug,
+                "name": favorite.product.name,
+                "image": favorite.product.main_image_source,
+                "price": int(favorite.product.price),
+                "stock": favorite.product.stock,
+            }
+            for favorite in favorites
+        ],
+    }
+
+
+@require_http_methods(["GET", "POST"])
+def favorites_api(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Inicia sesión para guardar favoritos."}, status=401)
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body or "{}")
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Datos inválidos."}, status=400)
+        product = get_object_or_404(Product, slug=data.get("product_id"), is_active=True)
+        Favorite.objects.get_or_create(user=request.user, product=product)
+    return JsonResponse(_favorite_payload(request.user), status=201 if request.method == "POST" else 200)
+
+
+@require_http_methods(["DELETE"])
+def favorite_item_api(request, favorite_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Inicia sesión para gestionar favoritos."}, status=401)
+    favorite = get_object_or_404(Favorite, pk=favorite_id, user=request.user)
+    favorite.delete()
+    return JsonResponse(_favorite_payload(request.user))
+
+
+@require_POST
+def favorite_move_to_cart_api(request, favorite_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Inicia sesión para gestionar favoritos."}, status=401)
+    favorite = get_object_or_404(
+        Favorite.objects.select_related("product").prefetch_related("product__variants"),
+        pk=favorite_id,
+        user=request.user,
+    )
+    product = favorite.product
+    if not product.is_active or product.stock < 1:
+        return JsonResponse({"error": "Este producto no está disponible."}, status=409)
+    cart = get_cart(request)
+    variant = next((entry for entry in product.variants.all() if entry.is_active and entry.stock > 0), None)
+    default_size = variant.size if variant else (str(product.sizes[0]) if product.sizes else "")
+    default_color = variant.color_name if variant else (
+        str(product.colors[0].get("name", ""))
+        if product.colors and isinstance(product.colors[0], dict)
+        else ""
+    )
+    item, created = CartItem.objects.get_or_create(
+        cart=cart,
+        product=product,
+        variant=variant,
+        size=default_size,
+        color=default_color,
+        defaults={"quantity": 1},
+    )
+    if not created:
+        item.quantity = min(item.quantity + 1, variant.stock if variant else product.stock)
+        item.save(update_fields=["quantity", "updated_at"])
+    favorite.delete()
+    return JsonResponse({"favorites": _favorite_payload(request.user), "cart": _cart_payload(cart, request)})
+
+@require_http_methods(["GET"])
+def session_info(request):
+    if request.user.is_authenticated:
+        # El encabezado se vuelve a dibujar con estos datos, asi que el destino
+        # del staff debe venir de aqui o el enlace al panel se perderia.
+        return JsonResponse({
+            "authenticated": True,
+            "username": request.user.first_name or request.user.username,
+            "greeting": f"Hola, {request.user.first_name or request.user.username}",
+            "label": "Panel admin" if request.user.is_staff else "Mi cuenta",
+            "href": "panel-admin/" if request.user.is_staff else "account.html",
+        })
+    return JsonResponse({
+        "authenticated": False,
+        "username": "",
+        "greeting": "",
+        "label": "Cuenta",
+        "href": "account-login.html",
+    })
+
+
+def health(request):
+    return JsonResponse({"status": "ok"})
+
+
+def not_found(request, exception=None):
+    return render(request, "store/page-not-found.html", status=404)

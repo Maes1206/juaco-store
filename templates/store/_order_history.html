@@ -1,0 +1,20 @@
+<section class="order-history-timeline" aria-labelledby="order-history-title">
+  <div class="order-history-timeline__heading">
+    <span>Seguimiento verificable</span>
+    <h4 id="order-history-title">Historial del pedido</h4>
+  </div>
+  <ol>
+    {% for change in order.status_history.all %}
+    <li class="order-history-timeline__item order-history-timeline__item--{{ change.to_status }}">
+      <span class="order-history-timeline__marker" aria-hidden="true"><i class="fa {% if change.to_status == 'delivered' %}fa-check{% elif change.to_status == 'shipped' %}fa-truck{% elif change.to_status == 'refunded' %}fa-undo{% elif change.to_status == 'cancelled' %}fa-times{% else %}fa-circle{% endif %}"></i></span>
+      <div>
+        <strong>{{ change.get_to_status_display }}</strong>
+        <time datetime="{{ change.created_at|date:'c' }}">{{ change.created_at|date:"d M Y, H:i" }}</time>
+        {% if change.note %}<p>{{ change.note }}</p>{% endif %}
+      </div>
+    </li>
+    {% empty %}
+    <li class="order-history-timeline__empty">El historial operativo empezará con el próximo cambio de estado.</li>
+    {% endfor %}
+  </ol>
+</section>

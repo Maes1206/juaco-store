@@ -1,0 +1,65 @@
+{% extends "store/base.html" %}
+{% load store_extras %}
+
+{% block title %}{% if order %}Comprobante válido{% else %}Comprobante no encontrado{% endif %} - Nexus Luxury Footwear{% endblock %}
+{% block seo %}{% seo_meta title="Verificación de comprobante" robots="noindex, nofollow" %}{% endblock %}
+
+{% block content %}
+<div class="page-header-area login-page-header" data-bg-img="assets/img/shop/bannerlogin.png">
+  <div class="container pt--0 pb--0">
+    <div class="row">
+      <div class="col-12">
+        <div class="page-header-content">
+          <h2 class="title">Validación de comprobante</h2>
+          <nav class="breadcrumb-area">
+            <ul class="breadcrumb">
+              <li><a href="index.html">Inicio</a></li>
+              <li class="breadcrumb-sep">//</li>
+              <li>Validación</li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="order-confirmation-area">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-7">
+        {% if order %}
+        <section class="payment-result payment-result--approved" aria-live="polite">
+          <span class="payment-result__icon" aria-hidden="true"><i class="fa fa-check"></i></span>
+          <div class="payment-result__body">
+            <h3 class="payment-result__title">Comprobante autentico</h3>
+            <p class="payment-result__desc">Este comprobante fue emitido por nuestro sistema y corresponde a una compra real de <strong>Nexus Luxury Footwear</strong>.</p>
+            <dl class="payment-result__facts">
+              <div><dt>Numero de pedido</dt><dd>{{ order.number }}</dd></div>
+              <div><dt>Fecha de emision</dt><dd>{{ order.created_at|date:"d M Y, H:i" }}</dd></div>
+              <div><dt>Estado del pago</dt><dd>{{ order.get_status_display }}</dd></div>
+              <div><dt>Total</dt><dd>{{ order.total|cop }}</dd></div>
+            </dl>
+          </div>
+        </section>
+        {% else %}
+        <section class="payment-result payment-result--rejected" aria-live="polite">
+          <span class="payment-result__icon" aria-hidden="true"><i class="fa fa-times"></i></span>
+          <div class="payment-result__body">
+            <h3 class="payment-result__title">No pudimos validar este comprobante</h3>
+            <p class="payment-result__desc">El codigo escaneado no corresponde a un comprobante emitido por nuestro sistema, o el enlace fue alterado. Si tienes dudas sobre una compra, contactanos.</p>
+          </div>
+        </section>
+        {% endif %}
+        <div class="order-confirmation-actions">
+          <div class="order-confirmation-actions__links">
+            <a class="order-link" href="index.html">Ir al inicio</a>
+            <span class="order-confirmation-actions__sep" aria-hidden="true">·</span>
+            <a class="order-link" href="contact.html">Contactar a Nexus Luxury Footwear</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

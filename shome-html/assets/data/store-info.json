@@ -1,0 +1,6 @@
+{
+  "headerItems": [
+    { "kind": "support", "icon": "fa-comments", "label": "Canales de atención", "href": "contact.html" },
+    { "kind": "account", "icon": "fa-user", "label": "Cuenta", "href": "account-login.html" }
+  ]
+}

@@ -1,0 +1,566 @@
+{% load store_extras %}<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <base href="/">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {% seo_meta title="Iniciar sesión" description="Accede a tu cuenta de Nexus Luxury Footwear." robots="noindex, nofollow" %}
+
+    <title>Iniciar sesi&oacute;n - Nexus Luxury Footwear</title>
+
+    <!--== Favicon ==-->
+    <link rel="icon" type="image/png" href="assets/img/favicon.png" />
+
+    <!--== Google Fonts ==-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,600;0,700;0,800;1,400;1,500&display=swap" rel="stylesheet">
+
+    <!--== Bootstrap CSS ==-->
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet" />
+    <!--== Font Awesome Min Icon CSS ==-->
+    <link href="assets/css/font-awesome.min.css" rel="stylesheet" />
+    <!--== Pe7 Stroke Icon CSS ==-->
+    <link href="assets/css/pe-icon-7-stroke.css" rel="stylesheet" />
+    <!--== Swiper CSS ==-->
+    <link href="assets/css/swiper.min.css" rel="stylesheet" />
+    <!--== Fancybox Min CSS ==-->
+    <link href="assets/css/fancybox.min.css" rel="stylesheet" />
+    <!--== Aos Min CSS ==-->
+    <link href="assets/css/aos.min.css" rel="stylesheet" />
+
+    <!--== Main Style CSS ==-->
+    <link href="assets/css/style.css" rel="stylesheet" />
+    <link href="assets/css/juaco-ux.css?v=20260801-7" rel="stylesheet" />
+
+    <!--[if lt IE 9]>
+    <script src="//oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <script src="//oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+
+<body>
+
+<!--wrapper start-->
+<div class="wrapper">
+
+  <!--== Start Header Wrapper ==-->
+  <header class="main-header-wrapper position-relative">
+    <div class="header-top">
+      <div class="container pt--0 pb--0">
+        <div class="row">
+          <div class="col-12">
+            <div class="header-top-align">
+              <div class="header-top-align-start">
+                <div class="desc">
+                  <p>Envios nacionales por compras superiores a $400.000 COP</p>
+                </div>
+              </div>
+              <div class="header-top-align-end">
+                <div class="header-info-items">
+                  <div class="info-items">
+                    <ul>
+                      <li class="support"><i class="fa fa-comments"></i><a href="contact.html">Canales de atención</a></li>
+                      <li class="account"><i class="fa fa-user"></i><a href="account-login.html">Cuenta</a></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="header-middle">
+      <div class="container pt--0 pb--0">
+        <div class="row align-items-center">
+          <div class="col-12">
+            <div class="header-middle-align">
+              <div class="header-middle-align-start">
+                <div class="header-logo-area">
+                  <a href="index.html">
+                    <img class="logo-main" src="assets/img/shop/nexus-logo-horizontal.png" srcset="assets/img/shop/nexus-logo-horizontal.png 1x, assets/img/shop/nexus-logo-horizontal@2x.png 2x" width="199" height="55" alt="Nexus Luxury Footwear" />
+                    <img class="logo-light" src="assets/img/shop/nexus-logo-horizontal.png" srcset="assets/img/shop/nexus-logo-horizontal.png 1x, assets/img/shop/nexus-logo-horizontal@2x.png 2x" width="199" height="55" alt="Nexus Luxury Footwear" />
+                  </a>
+                </div>
+              </div>
+              <div class="header-middle-align-center">
+                <div class="header-search-area">
+                  <form class="header-searchbox" action="buscar/" method="get" role="search">
+                    <input type="search" name="q" class="form-control" placeholder="Buscar productos y artículos" aria-label="Buscar productos y artículos" maxlength="100" required>
+                    <button class="btn-submit" type="submit"><i class="pe-7s-search"></i></button>
+                  </form>
+                </div>
+              </div>
+              <div class="header-middle-align-end">
+                <div class="header-action-area">
+                  <div class="shopping-search">
+                    <button class="shopping-search-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#AsideOffcanvasSearch" aria-controls="AsideOffcanvasSearch"><i class="pe-7s-search icon"></i></button>
+                  </div>
+                  <div class="shopping-wishlist">
+                    <a class="shopping-wishlist-btn" href="shop-wishlist.html">
+                      <i class="pe-7s-like icon"></i>
+                    </a>
+                  </div>
+                  <div class="shopping-cart">
+                    <button class="shopping-cart-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#AsideOffcanvasCart" aria-controls="offcanvasRightLabel">
+                      <i class="pe-7s-shopbag icon"></i>
+                      <sup class="shop-count" aria-label="{{ global_cart_count }} artículos en el carrito">{{ global_cart_count }}</sup>
+                    </button>
+                  </div>
+                  <button class="btn-menu" type="button" data-bs-toggle="offcanvas" data-bs-target="#AsideOffcanvasMenu" aria-controls="AsideOffcanvasMenu">
+                    <i class="pe-7s-menu"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="header-area header-default">
+      <div class="container">
+        <div class="row no-gutter align-items-center position-relative">
+          <div class="col-12">
+            <div class="header-align">
+              <div class="header-navigation-area position-relative">
+                <ul class="main-menu nav">
+                  <li><a href="index.html"><span>Inicio</span></a></li>
+                  <li><a href="about-us.html"><span>Nosotros</span></a></li>
+                  <li class="has-submenu"><a href="shop.html"><span>Tienda</span></a>
+                    <ul class="submenu-nav">
+                      <li><a href="{% url 'catalog_section' 'hombre' %}"><span>Hombre</span></a></li>
+                      <li><a href="{% url 'catalog_section' 'mujer' %}"><span>Mujer</span></a></li>
+                      {% for store_section in store_navigation_sections %}<li><a href="{% url 'catalog_section' store_section.slug %}"><span>{{ store_section.title }}</span></a></li>{% endfor %}
+                      <li><a href="{% url 'catalog_section' 'ofertas' %}"><span>Ofertas</span></a></li>
+                      <li><a href="{% url 'catalog_section' 'accesorios' %}"><span>Accesorios</span></a></li>
+                    </ul>
+                  </li>
+                  <li><a href="blog.html"><span>Blog</span></a></li>
+                  <li><a href="contact.html"><span>Contacto</span></a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+  <!--== End Header Wrapper ==-->
+
+  <main class="main-content">
+    <!--== Start Page Header Area Wrapper ==-->
+    <div class="page-header-area login-page-header" data-bg-img="assets/img/shop/bannerlogin.png">
+      <div class="container pt--0 pb--0">
+        <div class="row">
+          <div class="col-12">
+            <div class="page-header-content">
+              <h2 class="title" data-aos="fade-down" data-aos-duration="1000">Iniciar sesi&oacute;n</h2>
+              <nav class="breadcrumb-area" data-aos="fade-down" data-aos-duration="1200">
+                <ul class="breadcrumb">
+                  <li><a href="index.html">Inicio</a></li>
+                  <li class="breadcrumb-sep">//</li>
+                  <li>Iniciar sesi&oacute;n</li>
+                </ul>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!--== End Page Header Area Wrapper ==-->
+
+    <!--== Start My Account Area Wrapper ==-->
+    <section class="account-area">
+      <div class="container">
+        <div class="row">
+          <div class="col-sm-8 m-auto">
+            <div class="section-title text-center">
+              <h2 class="title">Iniciar sesi&oacute;n</h2>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-12">
+            <div class="login-form-content">
+              <form action="{% url 'login' %}" method="post" target="_self">
+                {% csrf_token %}
+                {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+                {% if form.errors %}<div class="alert alert-danger">Usuario, correo o contraseña incorrectos.</div>{% endif %}
+                <div class="row">
+                  <div class="col-12">
+                    <div class="form-group">
+                      <label for="username">Usuario o correo electr&oacute;nico <span class="required">*</span></label>
+                      <input id="username" name="username" class="form-control" type="text" value="{{ form.username.value|default:'' }}" autocomplete="username" required>
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <div class="form-group">
+                      <label for="password">Contrase&ntilde;a <span class="required">*</span></label>
+                      <input id="password" name="password" class="form-control" type="password" autocomplete="current-password" required>
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <div class="form-group">
+                      <button class="btn-login" type="submit">Iniciar sesi&oacute;n</button>
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <div class="form-group account-info-group mb--0">
+                      <div class="rememberme-account">
+                        <div class="form-check">
+                          <input class="form-check-input" type="checkbox" name="remember_me" value="1" id="remember-me"{% if request.POST.remember_me == '1' %} checked{% endif %}>
+                          <label class="form-check-label" for="remember-me">Recordarme</label>
+                        </div>
+                      </div>
+                      <a class="lost-password" href="#recover-password" data-bs-toggle="modal" data-bs-target="#recoverPasswordModal">&iquest;Olvidaste tu contrase&ntilde;a?</a>
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <p class="register-account-link">&iquest;No tienes cuenta? / <a href="account-register.html">Registrarse</a></p>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!--== End My Account Area Wrapper ==-->
+  </main>
+
+  <!--== Start Password Recovery Modal ==-->
+  <div class="modal fade recover-password-modal" id="recoverPasswordModal" tabindex="-1" aria-labelledby="recoverPasswordTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title" id="recoverPasswordTitle">Recupera tu contrase&ntilde;a</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <form id="recover-password-form" action="{% url 'password_reset' %}" method="post">
+          {% csrf_token %}
+          <div class="modal-body">
+            <p>Ingresa el correo asociado a tu cuenta y te enviaremos las instrucciones para restablecer tu contrase&ntilde;a.</p>
+            <label for="recover-email">Correo electr&oacute;nico</label>
+            <input id="recover-email" name="email" class="form-control" type="email" autocomplete="email" required>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn-recover-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn-recover-submit">Enviar instrucciones</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <!--== End Password Recovery Modal ==-->
+
+  <!--== Start Footer Area Wrapper ==-->
+  <footer class="footer-area">
+    <!--== Start Footer Main ==-->
+    <div class="footer-main">
+      <div class="container pt--0 pb--0">
+        <div class="row">
+          <div class="col-md-6 col-lg-3">
+            <!--== Start widget Item ==-->
+            <div class="widget-item">
+              <div class="about-widget-wrap">
+                <div class="widget-logo-area">
+                  <a href="index.html">
+                    <img class="footer-logo-horizontal" src="assets/img/shop/nexus-logo-horizontal-dark.png" srcset="assets/img/shop/nexus-logo-horizontal-dark.png 1x, assets/img/shop/nexus-logo-horizontal-dark@2x.png 2x" width="240" height="66" alt="Nexus Luxury Footwear" />
+                  </a>
+                </div>
+                <p class="desc">Encuentra zapatillas para todos los estilos, con modelos seleccionados y atenci&oacute;n personalizada.</p>
+                <div class="social-icons">
+                  <a href="https://www.facebook.com/" target="_blank" rel="noopener" aria-label="Facebook"><i class="fa fa-facebook"></i></a>
+                  <a href="https://www.instagram.com/" target="_blank" rel="noopener" aria-label="Instagram"><i class="fa fa-instagram"></i></a>
+                  <a href="https://www.tiktok.com/" target="_blank" rel="noopener" aria-label="TikTok"><svg class="tiktok-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.5 6.4c-1.3-.9-2.2-2.3-2.4-4h-3.4v12.4c0 1.6-1.3 2.9-2.9 2.9s-2.9-1.3-2.9-2.9 1.3-2.9 2.9-2.9c.3 0 .6 0 .9.1V8.6c-.3 0-.6-.1-.9-.1-3.5 0-6.3 2.8-6.3 6.3s2.8 6.3 6.3 6.3 6.3-2.8 6.3-6.3V8.8c1.3.9 2.9 1.4 4.5 1.4V6.8c-.7 0-1.4-.1-2.1-.4z"/></svg></a>
+                  <a href="https://wa.me/" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="fa fa-whatsapp"></i></a>
+                </div>
+              </div>
+            </div>
+            <!--== End widget Item ==-->
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <!--== Start widget Item ==-->
+            <div class="widget-item widget-services-item">
+              <h4 class="widget-title">Servicios</h4>
+              <h4 class="widget-collapsed-title collapsed" data-bs-toggle="collapse" data-bs-target="#widgetId-1">Servicios</h4>
+              <div id="widgetId-1" class="collapse widget-collapse-body">
+                <div class="collapse-body">
+                  <div class="widget-menu-wrap">
+                    <ul class="nav-menu">
+                      <li><a href="contact.html">Seguimiento de pedidos</a></li>
+                      <li><a href="contact.html">Cambios y devoluciones</a></li>
+                      <li><a href="contact.html">Asesor&iacute;a personalizada</a></li>
+                      <li><a href="contact.html">Env&iacute;os nacionales</a></li>
+                      <li><a href="contact.html">Ventas al por mayor</a></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!--== End widget Item ==-->
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <!--== Start widget Item ==-->
+            <div class="widget-item widget-account-item">
+              <h4 class="widget-title">Mi Cuenta</h4>
+              <h4 class="widget-collapsed-title collapsed" data-bs-toggle="collapse" data-bs-target="#widgetId-2">Mi Cuenta</h4>
+              <div id="widgetId-2" class="collapse widget-collapse-body">
+                <div class="collapse-body">
+                  <div class="widget-menu-wrap">
+                    <ul class="nav-menu">
+                      <li><a href="account-login.html">Mi Cuenta</a></li>
+                      <li><a href="contact.html">Contacto</a></li>
+                      <li><a href="shop-cart.html">Carrito de compras</a></li>
+                      <li><a href="shop.html">Tienda</a></li>
+                      <li><a href="account-login.html">Iniciar sesi&oacute;n</a></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!--== End widget Item ==-->
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <!--== Start widget Item ==-->
+            <div class="widget-item">
+              <h4 class="widget-title">Informaci&oacute;n de Contacto</h4>
+              <h4 class="widget-collapsed-title collapsed" data-bs-toggle="collapse" data-bs-target="#widgetId-3">Informaci&oacute;n de Contacto</h4>
+              <div id="widgetId-3" class="collapse widget-collapse-body">
+                <div class="collapse-body">
+                  <div class="widget-contact-wrap">
+                    <ul>
+                      <li><span>Direcci&oacute;n:</span> Tu direcci&oacute;n va aqu&iacute;.</li>
+                      <li><span>Tel&eacute;fono:</span> <a href="tel://0123456789">0123456789</a></li>
+                      <li><span>Correo:</span> <a href="mailto://demo@example.com">demo@example.com</a></li>
+                      <li><a target="_blank" href="https://www.hasthemes.com">www.example.com</a></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!--== End widget Item ==-->
+          </div>
+        </div>
+      </div>
+    </div>
+    <!--== End Footer Main ==-->
+
+    <!--== Start Footer Bottom ==-->
+    <div class="footer-bottom">
+      <div class="container pt--0 pb--0">
+        <div class="row">
+          <div class="col-md-7 col-lg-6">
+            <p class="copyright">&copy; 2026. Nexus Luxury Footwear. Hecho con amor por <a class="digital-brain-link" href="#" aria-label="Digital Brain"><img class="digital-brain-icon" src="assets/img/logdb.png" width="20" height="20" alt=""><span class="digital-brain-text">Digital Brain.</span></a></p>
+          </div>
+          <div class="col-md-5 col-lg-6">
+            <div class="payment">
+              <a class="payment-card payment-card-amex" href="account-login.html" aria-label="American Express">AMERICAN<br>EXPRESS</a>
+              <a class="payment-card payment-card-paypal" href="account-login.html" aria-label="PayPal">PayPal</a>
+              <a class="payment-card payment-card-mastercard" href="account-login.html" aria-label="Mastercard"><span></span><span></span></a>
+              <a class="payment-card payment-card-bold" href="account-login.html" aria-label="Pago con Bold"><span>Bold</span></a>
+              <a class="payment-card payment-card-visa" href="account-login.html" aria-label="Visa">VISA</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!--== End Footer Bottom ==-->
+  </footer>
+  <!--== End Footer Area Wrapper ==-->
+
+  <!--== Scroll Top Button ==-->
+  <div id="scroll-to-top" class="scroll-to-top"><span class="fa fa-angle-up"></span></div>
+
+  <!--== Start Quick View Menu ==-->
+  <aside class="product-quick-view-modal">
+    <div class="product-quick-view-inner">
+      <div class="product-quick-view-content">
+        <button type="button" class="btn-close">
+          <span class="close-icon"><i class="fa fa-close"></i></span>
+        </button>
+        <div class="row align-items-center">
+          <div class="col-lg-6 col-md-6 col-12">
+            <div class="thumb">
+              <img src="assets/img/shop/product-single/1.webp" width="570" height="541" alt="Alan-Shop">
+            </div>
+          </div>
+          <div class="col-lg-6 col-md-6 col-12">
+            <div class="content">
+              <h4 class="title">Space X Bag For Office</h4>
+              <div class="prices">
+                <del class="price-old">$85.00</del>
+                <span class="price">$70.00</span>
+              </div>
+              <p>Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia,</p>
+              <div class="quick-view-select">
+                <div class="quick-view-select-item">
+                  <label for="forSize" class="form-label">Size:</label>
+                  <select class="form-select" id="forSize" required>
+                    <option selected value="">s</option>
+                    <option>m</option>
+                    <option>l</option>
+                    <option>xl</option>
+                  </select>
+                </div>
+                <div class="quick-view-select-item">
+                  <label for="forColor" class="form-label">Color:</label>
+                  <select class="form-select" id="forColor" required>
+                    <option selected value="">red</option>
+                    <option>green</option>
+                    <option>blue</option>
+                    <option>yellow</option>
+                    <option>white</option>
+                  </select>
+                </div>
+              </div>
+              <div class="action-top">
+                <div class="pro-qty">
+                  <input type="text" id="quantity20" title="Quantity" value="1" />
+                </div>
+                <button class="btn btn-black">Add to cart</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="canvas-overlay"></div>
+  </aside>
+  <!--== End Quick View Menu ==-->
+
+  <!--== Start Aside Cart Menu ==-->
+  <div class="aside-cart-wrapper offcanvas offcanvas-end" tabindex="-1" id="AsideOffcanvasCart" aria-labelledby="offcanvasRightLabel">
+    <div class="offcanvas-header">
+      <h1 id="offcanvasRightLabel"></h1>
+      <button class="btn-aside-cart-close" data-bs-dismiss="offcanvas" aria-label="Cerrar">Carrito de compras <i class="fa fa-chevron-right"></i></button>
+    </div>
+    <div class="offcanvas-body">
+      <ul class="aside-cart-product-list">
+        <li class="product-list-item">
+          <a href="#/" class="remove">×</a>
+          <a href="single-product.html">
+            <img src="assets/img/shop/27734.png" width="90" height="110" alt="Image-HasTech">
+            <span class="product-title">Leather Mens Slipper</span>
+          </a>
+          <span class="product-price">1 x $240.000 COP</span>
+        </li>
+        <li class="product-list-item">
+          <a href="#/" class="remove">×</a>
+          <a href="single-product.html">
+            <img src="assets/img/shop/727340.png" width="90" height="110" alt="Image-HasTech">
+            <span class="product-title">Quickiin Mens shoes</span>
+          </a>
+          <span class="product-price">1 x $190.000 COP</span>
+        </li>
+      </ul>
+      <p class="cart-total"><span>Subtotal:</span><span class="amount">$430.000 COP</span></p>
+      <a class="btn-theme" data-margin-bottom="10" href="shop-cart.html">Ver carrito</a>
+      <a class="btn-theme" href="shop-checkout.html">Finalizar compra</a>
+      <a class="bold-checkout-btn" href="shop-checkout.html" aria-label="Pagar con Bold">Pagar con <span>Bold</span></a>
+    </div>
+  </div>
+  <!--== End Aside Cart Menu ==-->
+
+  <!--== Start Aside Search Menu ==-->
+  <aside class="aside-search-box-wrapper offcanvas offcanvas-top" tabindex="-1" id="AsideOffcanvasSearch" aria-labelledby="offcanvasTopLabel">
+    <div class="offcanvas-header">
+      <h5 class="d-none" id="offcanvasTopLabel">Aside Search</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"><i class="pe-7s-close"></i></button>
+    </div>
+    <div class="offcanvas-body">
+      <div class="container pt--0 pb--0">
+        <div class="search-box-form-wrap">
+          <div class="search-note">
+            <p>Escribe y presiona Enter para buscar</p>
+          </div>
+          <form action="buscar/" method="get" role="search">
+            <div class="search-form position-relative">
+              <label for="search-input" class="visually-hidden">Buscar</label>
+              <input id="search-input" name="q" type="search" class="form-control" placeholder="Buscar productos y artículos" aria-label="Buscar productos y artículos" maxlength="100" required>
+              <button class="search-button"><i class="fa fa-search"></i></button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <!--== End Aside Search Menu ==-->
+
+  <!--== Start Side Menu ==-->
+  <div class="off-canvas-wrapper offcanvas offcanvas-start" tabindex="-1" id="AsideOffcanvasMenu" aria-labelledby="offcanvasExampleLabel">
+    <div class="offcanvas-header">
+      <h1 id="offcanvasExampleLabel"></h1>
+      <button class="btn-menu-close" data-bs-dismiss="offcanvas" aria-label="Cerrar">menu <i class="fa fa-chevron-left"></i></button>
+    </div>
+    <div class="offcanvas-body">
+      <div class="info-items">
+        <ul>
+          <li class="number contact-phone-row"><i class="fa fa-phone" aria-hidden="true"></i><span class="contact-phone-links"><a href="tel:+573222073377">+57 322 2073377</a><a href="tel:+573106472519">+57 310 6472519</a></span></li>
+          <li class="email"><a href="mailto://demo@example.com"><i class="fa fa-envelope"></i>demo@example.com</a></li>
+          <li class="account"><a href="account-login.html"><i class="fa fa-user"></i>Cuenta</a></li>
+        </ul>
+      </div>
+      <!-- Mobile Menu Start -->
+      <div class="mobile-menu-items">
+        <ul class="nav-menu">
+          <li><a href="index.html">Inicio</a></li>
+          <li><a href="about-us.html">Nosotros</a></li>
+          <li><a href="shop.html">Tienda</a>
+            <ul class="sub-menu">
+              <li><a href="{% url 'catalog_section' 'hombre' %}">Hombre</a></li>
+              <li><a href="{% url 'catalog_section' 'mujer' %}">Mujer</a></li>
+              {% for store_section in store_navigation_sections %}<li><a href="{% url 'catalog_section' store_section.slug %}">{{ store_section.title }}</a></li>{% endfor %}
+              <li><a href="{% url 'catalog_section' 'ofertas' %}">Ofertas</a></li>
+              <li><a href="{% url 'catalog_section' 'accesorios' %}">Accesorios</a></li>
+            </ul>
+          </li>
+          <li><a href="blog.html">Blog</a></li>
+          <li><a href="contact.html">Contacto</a></li>
+        </ul>
+      </div>
+      <!-- Mobile Menu End -->
+    </div>
+  </div>
+  <!--== End Side Menu ==-->
+</div>
+
+<!--=======================Javascript============================-->
+
+<!--=== jQuery Modernizr Min Js ===-->
+<script src="assets/js/modernizr.js"></script>
+<!--=== jQuery Min Js ===-->
+<script src="assets/js/jquery-main.js"></script>
+<!--=== jQuery Migration Min Js ===-->
+<script src="assets/js/jquery-migrate.js"></script>
+<!--=== jQuery Popper Min Js ===-->
+<script src="assets/js/popper.min.js"></script>
+<!--=== jQuery Bootstrap Min Js ===-->
+<script src="assets/js/bootstrap.min.js"></script>
+<!--=== jQuery Ui Min Js ===-->
+<script src="assets/js/jquery-ui.min.js"></script>
+<!--=== jQuery Swiper Min Js ===-->
+<script src="assets/js/swiper.min.js"></script>
+<!--=== jQuery Fancybox Min Js ===-->
+<script src="assets/js/fancybox.min.js"></script>
+<!--=== jQuery Waypoint Js ===-->
+<script src="assets/js/waypoint.js"></script>
+<!--=== jQuery Parallax Min Js ===-->
+<script src="assets/js/parallax.min.js"></script>
+<!--=== jQuery Aos Min Js ===-->
+<script src="assets/js/aos.min.js"></script>
+
+<!--=== jQuery Custom Js ===-->
+<script src="assets/js/catalog-data.js"></script>
+<script src="assets/js/custom.js"></script>
+<script src="assets/js/product-share.js"></script>
+<script src="assets/js/footer-info.js"></script>
+<script src="assets/js/header-info.js"></script>
+<script src="assets/js/payment-methods.js"></script>
+<script src="assets/js/cart.js"></script>
+</body>
+
+</html>

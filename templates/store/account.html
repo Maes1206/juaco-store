@@ -1,0 +1,778 @@
+{% load store_extras %}<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <base href="/">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {% seo_meta title="Mi cuenta" description="Gestiona tu cuenta de Nexus Luxury Footwear." robots="noindex, nofollow" %}
+
+    <title>Mi cuenta | Nexus Luxury Footwear</title>
+
+    <!--== Favicon ==-->
+    <link rel="icon" type="image/png" href="assets/img/favicon.png" />
+
+    <!--== Google Fonts ==-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,600;0,700;0,800;1,400;1,500&display=swap" rel="stylesheet">
+
+    <!--== Bootstrap CSS ==-->
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet" />
+    <!--== Font Awesome Min Icon CSS ==-->
+    <link href="assets/css/font-awesome.min.css" rel="stylesheet" />
+    <!--== Pe7 Stroke Icon CSS ==-->
+    <link href="assets/css/pe-icon-7-stroke.css" rel="stylesheet" />
+    <!--== Swiper CSS ==-->
+    <link href="assets/css/swiper.min.css" rel="stylesheet" />
+    <!--== Fancybox Min CSS ==-->
+    <link href="assets/css/fancybox.min.css" rel="stylesheet" />
+    <!--== Aos Min CSS ==-->
+    <link href="assets/css/aos.min.css" rel="stylesheet" />
+
+    <!--== Main Style CSS ==-->
+    <link href="assets/css/style.css" rel="stylesheet" />
+    <link href="assets/css/juaco-ux.css?v=20260801-10" rel="stylesheet" />
+
+    <!--[if lt IE 9]>
+    <script src="//oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <script src="//oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+
+<body>
+
+<!--wrapper start-->
+<div class="wrapper">
+
+  <!--== Start Header Wrapper ==-->
+  <header class="main-header-wrapper position-relative">
+    <div class="header-top">
+      <div class="container pt--0 pb--0">
+        <div class="row">
+          <div class="col-12">
+            <div class="header-top-align">
+              <div class="header-top-align-start">
+                <div class="desc">
+                  <p>Envíos nacionales gratis por compras superiores a $400.000 COP</p>
+                </div>
+              </div>
+              <div class="header-top-align-end">
+                <div class="header-info-items">
+                  <div class="info-items">
+                    <ul>
+                      <li class="support"><i class="fa fa-comments"></i><a href="contact.html">Canales de atención</a></li>
+                      <li class="account"><i class="fa fa-user"></i><a href="account-login.html">Cuenta</a></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="header-middle">
+      <div class="container pt--0 pb--0">
+        <div class="row align-items-center">
+          <div class="col-12">
+            <div class="header-middle-align">
+              <div class="header-middle-align-start">
+                <div class="header-logo-area">
+                  <a href="index.html">
+                    <img class="logo-main" src="assets/img/shop/nexus-logo-horizontal.png" srcset="assets/img/shop/nexus-logo-horizontal.png 1x, assets/img/shop/nexus-logo-horizontal@2x.png 2x" width="199" height="55" alt="Nexus Luxury Footwear" />
+                    <img class="logo-light" src="assets/img/shop/nexus-logo-horizontal.png" srcset="assets/img/shop/nexus-logo-horizontal.png 1x, assets/img/shop/nexus-logo-horizontal@2x.png 2x" width="199" height="55" alt="Nexus Luxury Footwear" />
+                  </a>
+                </div>
+              </div>
+              <div class="header-middle-align-center">
+                <div class="header-search-area">
+                  <form class="header-searchbox" action="buscar/" method="get" role="search">
+                    <input type="search" name="q" class="form-control" placeholder="Buscar productos y artículos" aria-label="Buscar productos y artículos" maxlength="100" required>
+                    <button class="btn-submit" type="submit"><i class="pe-7s-search"></i></button>
+                  </form>
+                </div>
+              </div>
+              <div class="header-middle-align-end">
+                <div class="header-action-area">
+                  <div class="shopping-search">
+                    <button class="shopping-search-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#AsideOffcanvasSearch" aria-controls="AsideOffcanvasSearch"><i class="pe-7s-search icon"></i></button>
+                  </div>
+                  <div class="shopping-wishlist">
+                    <a class="shopping-wishlist-btn" href="shop-wishlist.html">
+                      <i class="pe-7s-like icon"></i>
+                    </a>
+                  </div>
+                  <div class="shopping-cart">
+                    <button class="shopping-cart-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#AsideOffcanvasCart" aria-controls="offcanvasRightLabel">
+                      <i class="pe-7s-shopbag icon"></i>
+                      <sup class="shop-count" aria-label="{{ global_cart_count }} artículos en el carrito">{{ global_cart_count }}</sup>
+                    </button>
+                  </div>
+                  <button class="btn-menu" type="button" data-bs-toggle="offcanvas" data-bs-target="#AsideOffcanvasMenu" aria-controls="AsideOffcanvasMenu">
+                    <i class="pe-7s-menu"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="header-area header-default">
+      <div class="container">
+        <div class="row no-gutter align-items-center position-relative">
+          <div class="col-12">
+            <div class="header-align">
+              <div class="header-navigation-area position-relative">
+                <ul class="main-menu nav">
+                  <li><a href="index.html"><span>Inicio</span></a></li>
+                  <li><a href="about-us.html"><span>Nosotros</span></a></li>
+                  <li class="has-submenu"><a href="shop.html"><span>Tienda</span></a>
+                    <ul class="submenu-nav">
+                      <li><a href="{% url 'catalog_section' 'hombre' %}"><span>Hombre</span></a></li>
+                      <li><a href="{% url 'catalog_section' 'mujer' %}"><span>Mujer</span></a></li>
+                      {% for store_section in store_navigation_sections %}<li><a href="{% url 'catalog_section' store_section.slug %}"><span>{{ store_section.title }}</span></a></li>{% endfor %}
+                      <li><a href="{% url 'catalog_section' 'ofertas' %}"><span>Ofertas</span></a></li>
+                      <li><a href="{% url 'catalog_section' 'accesorios' %}"><span>Accesorios</span></a></li>
+                    </ul>
+                  </li>
+                  <li><a href="blog.html"><span>Blog</span></a></li>
+                  <li><a href="contact.html"><span>Contacto</span></a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+  <!--== End Header Wrapper ==-->
+
+  <main class="main-content">
+    <!--== Start Page Header Area Wrapper ==-->
+    <div class="page-header-area login-page-header" data-bg-img="assets/img/shop/bannerlogin.png">
+      <div class="container pt--0 pb--0">
+        <div class="row">
+          <div class="col-12">
+            <div class="page-header-content">
+              <h2 class="title" data-aos="fade-down" data-aos-duration="1000">Bienvenido, {{ request.user.first_name|default:request.user.username }}</h2>
+              <nav class="breadcrumb-area" data-aos="fade-down" data-aos-duration="1200">
+                <ul class="breadcrumb">
+                  <li><a href="index.html">Inicio</a></li>
+                  <li class="breadcrumb-sep">//</li>
+                  <li>Mi cuenta</li>
+                </ul>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!--== End Page Header Area Wrapper ==-->
+
+    <!--== Start My Account Wrapper ==-->
+    <section class="my-account-area">
+      <div class="container pt--0 pb--0">
+        <div class="row">
+        <div class="col-lg-12">
+          <div class="myaccount-page-wrapper">
+            <div class="row">
+              <div class="col-lg-3 col-md-4">
+                <nav>
+                  <div class="myaccount-tab-menu nav nav-tabs" id="nav-tab" role="tablist">
+                    <button class="nav-link{% if active_tab == 'dashboard' %} active{% endif %}" id="dashboad-tab" data-bs-toggle="tab" data-bs-target="#dashboad" type="button" role="tab" aria-controls="dashboad" aria-selected="true">Resumen</button>
+                    <button class="nav-link{% if active_tab == 'orders' %} active{% endif %}" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders" type="button" role="tab" aria-controls="orders" aria-selected="false">Mis pedidos</button>
+                    <button class="nav-link{% if active_tab == 'cart' %} active{% endif %}" id="cart-tab" data-bs-toggle="tab" data-bs-target="#cart" type="button" role="tab" aria-controls="cart" aria-selected="false">Mi carrito</button>
+                    <button class="nav-link{% if active_tab == 'addresses' %} active{% endif %}" id="addresses-tab" data-bs-toggle="tab" data-bs-target="#addresses" type="button" role="tab" aria-controls="addresses" aria-selected="false">Direcciones</button>
+                    <button class="nav-link{% if active_tab == 'account-info' %} active{% endif %}" id="account-info-tab" data-bs-toggle="tab" data-bs-target="#account-info" type="button" role="tab" aria-controls="account-info" aria-selected="false">Datos de la cuenta</button>
+                    <form action="{% url 'logout' %}" method="post" target="_self">{% csrf_token %}<button class="nav-link" type="submit">Cerrar sesión</button></form>
+                  </div>
+                </nav>
+              </div>
+              <div class="col-lg-9 col-md-8">
+                <div class="tab-content" id="nav-tabContent">
+                  <div class="tab-pane fade{% if active_tab == 'dashboard' %} show active{% endif %}" id="dashboad" role="tabpanel" aria-labelledby="dashboad-tab">
+                    <div class="myaccount-content">
+                      <h3>Resumen</h3>
+                      <div class="welcome">
+                        <p>Hola, <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>.</p>
+                      </div>
+                      <p>Desde aquí puedes revisar tus pedidos, tu carrito y administrar los datos de tu cuenta.</p>
+                      <div class="account-stats">
+                        <a class="account-stat account-stat--link" href="?tab=orders" aria-label="Ver mis pedidos">
+                          <span class="account-stat-icon" aria-hidden="true"><i class="fa fa-shopping-bag"></i></span>
+                          <span class="account-stat-value">{{ orders|length }}</span>
+                          <span class="account-stat-label">Pedidos realizados</span>
+                        </a>
+                        <a class="account-stat account-stat--link" href="?tab=cart" aria-label="Ver mi carrito">
+                          <span class="account-stat-icon" aria-hidden="true"><i class="fa fa-shopping-cart"></i></span>
+                          <span class="account-stat-value">{{ cart.item_count }}</span>
+                          <span class="account-stat-label">Art&iacute;culos en el carrito</span>
+                        </a>
+                        <a class="account-stat account-stat--link" href="?tab=addresses" aria-label="Ver mis direcciones">
+                          <span class="account-stat-icon" aria-hidden="true"><i class="fa fa-map-marker"></i></span>
+                          <span class="account-stat-value">{{ addresses|length }}</span>
+                          <span class="account-stat-label">Direcciones guardadas</span>
+                        </a>
+                      </div>
+                      {% if show_account_checklist %}
+                      <section class="account-checklist" aria-labelledby="account-checklist-title">
+                        <div class="account-checklist__heading">
+                          <h4 id="account-checklist-title">Completa tu cuenta</h4>
+                          <p>Estos pasos te ayudan a comprar m&aacute;s r&aacute;pido.</p>
+                        </div>
+                        <ul class="account-checklist__items">
+                          {% for step in account_checklist %}
+                          <li class="account-checklist__item{% if step.completed %} is-complete{% endif %}">
+                            <span class="account-checklist__status" aria-hidden="true"><i class="fa {% if step.completed %}fa-check{% else %}fa-circle-o{% endif %}"></i></span>
+                            <span class="account-checklist__body"><strong>{{ step.label }}</strong><small>{{ step.description }}</small></span>
+                            <a href="{{ step.href }}">{% if step.completed %}Ver{% else %}Empezar{% endif %}</a>
+                          </li>
+                          {% endfor %}
+                        </ul>
+                      </section>
+                      {% endif %}                      {% with last_order=orders.first %}
+                      {% if last_order %}
+                      <div class="account-recent-order">
+                        <h4>Tu pedido más reciente</h4>
+                        <div class="account-recent-order-card">
+                          <div class="account-recent-order-info">
+                            <span class="num">{{ last_order.number }}</span>
+                            <span class="date">{{ last_order.created_at|date:"d M Y" }}</span>
+                            <span class="order-status order-status--{{ last_order.status }}" title="Estado del pago">Pago: {{ last_order.get_status_display }}</span>
+                            <span class="account-shipping-method"><i class="fa fa-truck" aria-hidden="true"></i> {{ last_order.get_delivery_method_display }}</span>
+                            <span class="shipping-status shipping-status--{{ last_order.fulfillment_status }}">{{ last_order.get_fulfillment_status_display }}</span>
+                            {% if last_order.tracking_number %}<span class="order-tracking-inline">GuÃ­a {{ last_order.tracking_number }}</span>{% endif %}
+                          </div>
+                          <div class="account-recent-order-total">{{ last_order.total|cop }}</div>
+                          {% if last_order.awaiting_online_payment %}<a class="check-btn sqr-btn" href="{% url 'order_payment' last_order.number %}">{% if last_order.payment_state == 'rejected' %}Reintentar pago{% else %}Completar pago{% endif %}</a>{% endif %}
+                          <a class="check-btn sqr-btn" href="{% url 'order_detail' last_order.number %}">Ver detalle</a>
+                        </div>
+                      </div>
+                      {% endif %}
+                      {% endwith %}
+                      {% if recommended_products %}
+                      <section class="account-recommendations" aria-labelledby="account-recommendations-title">
+                        <div class="account-recommendations__heading">
+                          <div>
+                            <h4 id="account-recommendations-title">Productos recomendados</h4>
+                            <p>Una selecci&oacute;n para tu pr&oacute;ximo par.</p>
+                          </div>
+                          <a href="shop.html">Ver tienda <i class="fa fa-arrow-right" aria-hidden="true"></i></a>
+                        </div>
+                        <div class="account-recommendations__grid">
+                          {% for product in recommended_products %}
+                          <a class="account-recommendation" href="single-product.html?producto={{ product.slug }}">
+                            <span class="account-recommendation__image"><img src="{{ product.main_image_source }}" alt="{{ product.name }}" loading="lazy"></span>
+                            <span class="account-recommendation__body"><small>{{ product.brand }}</small><strong>{{ product.name }}</strong><b>{{ product.price|cop }}</b></span>
+                          </a>
+                          {% endfor %}
+                        </div>
+                      </section>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="tab-pane fade{% if active_tab == 'orders' %} show active{% endif %}" id="orders" role="tabpanel" aria-labelledby="orders-tab">
+                    <div class="myaccount-content">
+                      <h3>Mis pedidos</h3>
+                      {% if orders %}
+                      <div class="myaccount-table table-responsive orders-history">
+                        <table class="table orders-table">
+                          <colgroup>
+                            <col class="orders-table__product-col">
+                            <col class="orders-table__order-col">
+                            <col class="orders-table__status-col">
+                            <col class="orders-table__total-col">
+                          </colgroup>
+                          <thead class="thead-light">
+                            <tr>
+                              <th>Producto</th>
+                              <th>Pedido</th>
+                              <th>Estado</th>
+                              <th>Total</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {% for order in orders %}
+                            <tr>
+                              <td data-label="Producto" class="order-product-cell">
+                                {% with item=order.prefetched_items.0 %}
+                                {% if item %}
+                                {% if item.product %}<a class="order-product-preview" href="single-product.html?producto={{ item.product.slug }}" aria-label="Ver {{ item.product_name }}">{% else %}<div class="order-product-preview">{% endif %}
+                                  {% if item.product_image %}<img src="{{ item.product_image }}" width="64" height="64" alt="{{ item.product_name }}" onerror="this.style.display='none'">{% endif %}
+                                  <span class="order-product-preview__body">
+                                    <strong>{{ item.product_name }}</strong>
+                                    <small>{{ order.prefetched_items|length }} producto{{ order.prefetched_items|length|pluralize }}</small>
+                                  </span>
+                                {% if item.product %}</a>{% else %}</div>{% endif %}
+                                {% else %}<span class="order-product-unavailable">Producto no disponible</span>{% endif %}
+                                {% endwith %}
+                              </td>
+                              <td data-label="Pedido" class="order-reference-cell">
+                                <strong>{{ order.number }}</strong>
+                                <span>{{ order.created_at|date:"d M Y" }}</span>
+                              </td>
+                              <td data-label="Estado" class="order-state-cell">
+                                <span class="order-state-group">
+                                  <small>Pago</small>
+                                  <span class="order-status order-status--{{ order.status }}">{{ order.get_status_display }}</span>
+                                </span>
+                                <span class="order-state-group">
+                                  <small>Envío · {{ order.get_delivery_method_display }}</small>
+                                  <span class="shipping-status shipping-status--{{ order.fulfillment_status }}">{{ order.get_fulfillment_status_display }}</span>
+                                  {% if order.tracking_number %}<span class="order-tracking-inline">GuÃ­a {{ order.tracking_number }}</span>{% endif %}
+                                </span>
+                              </td>
+                              <td data-label="Total" class="order-total-cell">
+                                <strong>{{ order.total|cop }}</strong>
+                                {% if order.awaiting_online_payment %}<a href="{% url 'order_payment' order.number %}" class="order-pay-link">{% if order.payment_state == 'rejected' %}Reintentar pago{% else %}Completar pago{% endif %}</a>{% endif %}
+                                <a href="{% url 'order_detail' order.number %}" class="order-detail-link">Ver detalle <i class="fa fa-arrow-right" aria-hidden="true"></i></a>
+                              </td>
+                            </tr>
+                            {% endfor %}
+                          </tbody>
+                        </table>
+                      </div>
+                      {% else %}
+                      <p class="saved-message">Aún no has realizado ningún pedido.</p>
+                      <a class="btn-theme" href="shop.html">Explorar la tienda</a>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="tab-pane fade{% if active_tab == 'cart' %} show active{% endif %}" id="cart" role="tabpanel" aria-labelledby="cart-tab">
+                    <div class="myaccount-content">
+                      <h3>Mi carrito</h3>
+                      <div class="myaccount-table table-responsive text-center">
+                        <table class="table table-bordered">
+                          <thead class="thead-light">
+                            <tr>
+                              <th>Producto</th>
+                              <th>Talla</th>
+                              <th>Cantidad</th>
+                              <th>Total</th>
+                              <th>Acción</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {% for item in cart.items.all %}
+                            <tr>
+                              <td>{{ item.product.name }}</td>
+                              <td>{{ item.size|default:"—" }}</td>
+                              <td>{{ item.quantity }}</td>
+                              <td>{{ item.subtotal|cop }}</td>
+                              <td><a href="shop-cart.html" class="check-btn sqr-btn">Ver</a></td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="5">Tu carrito está vacío.</td></tr>
+                            {% endfor %}
+                          </tbody>
+                        </table>
+                      </div>
+                      {% if cart.items.all %}
+                      <a class="btn-theme" href="shop-checkout.html">Finalizar compra</a>
+                      {% endif %}
+                    </div>
+                  </div>
+                  {% include "store/_address_tab.html" %}
+                  <div class="tab-pane fade{% if active_tab == 'account-info' %} show active{% endif %}" id="account-info" role="tabpanel" aria-labelledby="account-info-tab">
+                    <div class="myaccount-content">
+                      <h3>Datos de la Cuenta</h3>
+                      {% for message in messages %}<p class="saved-message">{{ message }}</p>{% endfor %}
+                      <div class="account-details-form">
+                        <form action="account-details/" method="post">
+                          {% csrf_token %}
+                          <div class="row">
+                            <div class="col-lg-6">
+                              <div class="single-input-item">
+                                <label for="{{ account_form.first_name.id_for_label }}" class="required">{{ account_form.first_name.label }}</label>
+                                {{ account_form.first_name }}
+                                {% for error in account_form.first_name.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
+                              </div>
+                            </div>
+                            <div class="col-lg-6">
+                              <div class="single-input-item">
+                                <label for="{{ account_form.last_name.id_for_label }}" class="required">{{ account_form.last_name.label }}</label>
+                                {{ account_form.last_name }}
+                                {% for error in account_form.last_name.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
+                              </div>
+                            </div>
+                          </div>
+                          <div class="single-input-item">
+                            <label for="{{ account_form.username.id_for_label }}" class="required">{{ account_form.username.label }}</label>
+                            {{ account_form.username }}
+                            {% for error in account_form.username.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
+                          </div>
+                          <div class="single-input-item">
+                            <label for="{{ account_form.email.id_for_label }}" class="required">{{ account_form.email.label }}</label>
+                            {{ account_form.email }}
+                            {% for error in account_form.email.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
+                          </div>
+                          <div class="row">
+                            <div class="col-lg-6">
+                              <div class="single-input-item">
+                                <label for="{{ account_form.document_number.id_for_label }}">{{ account_form.document_number.label }}</label>
+                                {{ account_form.document_number }}
+                                {% for error in account_form.document_number.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
+                              </div>
+                            </div>
+                            <div class="col-lg-6">
+                              <div class="single-input-item">
+                                <label for="{{ account_form.phone.id_for_label }}">{{ account_form.phone.label }}</label>
+                                {{ account_form.phone }}
+                                {% for error in account_form.phone.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
+                              </div>
+                            </div>
+                          </div>
+                          <div class="single-input-item">
+                            <button class="check-btn sqr-btn" type="submit">Guardar Cambios</button>
+                          </div>
+                        </form>
+                      </div>
+                      <div class="account-details-form">
+                        <form action="account-password/" method="post">
+                          {% csrf_token %}
+                          <fieldset>
+                            <legend>Cambio de Contraseña</legend>
+                            <div class="single-input-item">
+                              <label for="{{ password_form.old_password.id_for_label }}" class="required">Contraseña Actual</label>
+                              {{ password_form.old_password }}
+                              {% for error in password_form.old_password.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
+                            </div>
+                            <div class="row">
+                              <div class="col-lg-6">
+                                <div class="single-input-item">
+                                  <label for="{{ password_form.new_password1.id_for_label }}" class="required">Nueva Contraseña</label>
+                                  {{ password_form.new_password1 }}
+                                  {% for error in password_form.new_password1.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
+                                </div>
+                              </div>
+                              <div class="col-lg-6">
+                                <div class="single-input-item">
+                                  <label for="{{ password_form.new_password2.id_for_label }}" class="required">Confirmar Contraseña</label>
+                                  {{ password_form.new_password2 }}
+                                  {% for error in password_form.new_password2.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
+                                </div>
+                              </div>
+                            </div>
+                          </fieldset>
+                          {% for error in password_form.non_field_errors %}<small class="text-danger d-block mb-3">{{ error }}</small>{% endfor %}
+                          <div class="single-input-item">
+                            <button class="check-btn sqr-btn" type="submit">Guardar Cambios</button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      </div>
+    </section>
+    <!--== End My Account Wrapper ==-->
+  </main>
+
+  <!--== Start Footer Area Wrapper ==-->
+  <footer class="footer-area">
+    <!--== Start Footer Main ==-->
+    <div class="footer-main">
+      <div class="container pt--0 pb--0">
+        <div class="row">
+          <div class="col-md-6 col-lg-3">
+            <!--== Start widget Item ==-->
+            <div class="widget-item">
+              <div class="about-widget-wrap">
+                <div class="widget-logo-area">
+                  <a href="index.html">
+                    <img class="footer-logo-horizontal" src="assets/img/shop/nexus-logo-horizontal-dark.png" srcset="assets/img/shop/nexus-logo-horizontal-dark.png 1x, assets/img/shop/nexus-logo-horizontal-dark@2x.png 2x" width="240" height="66" alt="Nexus Luxury Footwear" />
+                  </a>
+                </div>
+                <p class="desc">Sneakers seleccionados para todos los estilos, con envíos nacionales y atención personalizada.</p>
+
+              </div>
+            </div>
+            <!--== End widget Item ==-->
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <!--== Start widget Item ==-->
+            <div class="widget-item widget-services-item">
+              <h4 class="widget-title">Servicios</h4>
+              <h4 class="widget-collapsed-title collapsed" data-bs-toggle="collapse" data-bs-target="#widgetId-1">Servicios</h4>
+              <div id="widgetId-1" class="collapse widget-collapse-body">
+                <div class="collapse-body">
+                  <div class="widget-menu-wrap">
+                    <ul class="nav-menu">
+                      <li><a href="contact.html">Seguimiento de pedidos</a></li>
+                      <li><a href="contact.html">Cambios y devoluciones</a></li>
+                      <li><a href="contact.html">Asesoría personalizada</a></li>
+                      <li><a href="contact.html">Envíos nacionales</a></li>
+                      <li><a href="contact.html">Ventas al por mayor</a></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!--== End widget Item ==-->
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <!--== Start widget Item ==-->
+            <div class="widget-item widget-account-item">
+              <h4 class="widget-title">Mi cuenta</h4>
+              <h4 class="widget-collapsed-title collapsed" data-bs-toggle="collapse" data-bs-target="#widgetId-2">Mi cuenta</h4>
+              <div id="widgetId-2" class="collapse widget-collapse-body">
+                <div class="collapse-body">
+                  <div class="widget-menu-wrap">
+                    <ul class="nav-menu">
+                      <li><a href="account-login.html">Mi cuenta</a></li>
+                      <li><a href="contact.html">Contacto</a></li>
+                      <li><a href="shop-cart.html">Carrito de compras</a></li>
+                      <li><a href="shop.html">Tienda</a></li>
+                      <li><a href="account-login.html">Iniciar sesión</a></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!--== End widget Item ==-->
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <!--== Start widget Item ==-->
+            <div class="widget-item">
+              <h4 class="widget-title">Información de compra</h4>
+              <h4 class="widget-collapsed-title collapsed" data-bs-toggle="collapse" data-bs-target="#widgetId-3">Información de compra</h4>
+              <div id="widgetId-3" class="collapse widget-collapse-body">
+                <div class="collapse-body">
+                  <div class="widget-contact-wrap">
+                    <ul>
+                      <li><span>Cobertura:</span> Envíos a toda Colombia.</li>
+                      <li><span>Envío gratis:</span> Desde $400.000 COP.</li>
+                      <li><span>Asesoría:</span> <a href="contact.html">Contáctanos aquí</a></li>
+                      <li><a href="contact.html">Ver canales de atención</a></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!--== End widget Item ==-->
+          </div>
+        </div>
+      </div>
+    </div>
+    <!--== End Footer Main ==-->
+
+    <!--== Start Footer Bottom ==-->
+    <div class="footer-bottom">
+      <div class="container pt--0 pb--0">
+        <div class="row">
+          <div class="col-md-7 col-lg-6">
+            <p class="copyright">&copy; 2026. Nexus Luxury Footwear. Hecho con amor por <a class="digital-brain-link" href="#" aria-label="Digital Brain"><img class="digital-brain-icon" src="assets/img/logdb.png" width="20" height="20" alt=""><span class="digital-brain-text">Digital Brain.</span></a></p>
+          </div>
+          <div class="col-md-5 col-lg-6">
+            <div class="payment">
+              <a href="account-login.html"><img src="assets/img/photos/payment-card.webp" width="192" height="21" alt="Payment Logo"></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!--== End Footer Bottom ==-->
+  </footer>
+  <!--== End Footer Area Wrapper ==-->
+
+  <!--== Scroll Top Button ==-->
+  <div id="scroll-to-top" class="scroll-to-top"><span class="fa fa-angle-up"></span></div>
+
+  <!--== Start Quick View Menu ==-->
+  <aside class="product-quick-view-modal">
+    <div class="product-quick-view-inner">
+      <div class="product-quick-view-content">
+        <button type="button" class="btn-close">
+          <span class="close-icon"><i class="fa fa-close"></i></span>
+        </button>
+        <div class="row align-items-center">
+          <div class="col-lg-6 col-md-6 col-12">
+            <div class="thumb">
+              <img src="assets/img/shop/product-single/1.webp" width="570" height="541" alt="Alan-Shop">
+            </div>
+          </div>
+          <div class="col-lg-6 col-md-6 col-12">
+            <div class="content">
+              <h4 class="title">Space X Bag For Office</h4>
+              <div class="prices">
+                <del class="price-old">$85.00</del>
+                <span class="price">$70.00</span>
+              </div>
+              <p>Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia,</p>
+              <div class="quick-view-select">
+                <div class="quick-view-select-item">
+                  <label for="forSize" class="form-label">Size:</label>
+                  <select class="form-select" id="forSize" required>
+                    <option selected value="">s</option>
+                    <option>m</option>
+                    <option>l</option>
+                    <option>xl</option>
+                  </select>
+                </div>
+                <div class="quick-view-select-item">
+                  <label for="forColor" class="form-label">Color:</label>
+                  <select class="form-select" id="forColor" required>
+                    <option selected value="">red</option>
+                    <option>green</option>
+                    <option>blue</option>
+                    <option>yellow</option>
+                    <option>white</option>
+                  </select>
+                </div>
+              </div>
+              <div class="action-top">
+                <div class="pro-qty">
+                  <input type="text" id="quantity20" title="Quantity" value="1" />
+                </div>
+                <button class="btn btn-black">Add to cart</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="canvas-overlay"></div>
+  </aside>
+  <!--== End Quick View Menu ==-->
+
+  <!--== Start Aside Cart Menu ==-->
+  <div class="aside-cart-wrapper offcanvas offcanvas-end" tabindex="-1" id="AsideOffcanvasCart" aria-labelledby="offcanvasRightLabel">
+    <div class="offcanvas-header">
+      <h1 id="offcanvasRightLabel"></h1>
+      <button class="btn-aside-cart-close" data-bs-dismiss="offcanvas" aria-label="Cerrar">Carrito de compras <i class="fa fa-chevron-right"></i></button>
+    </div>
+    <div class="offcanvas-body">
+      <ul class="aside-cart-product-list">
+        <li class="product-list-item">
+          <a href="#/" class="remove">×</a>
+          <a href="single-product.html">
+            <img src="assets/img/shop/27734.png" width="90" height="110" alt="Image-HasTech">
+            <span class="product-title">Leather Mens Slipper</span>
+          </a>
+          <span class="product-price">1 x $240.000 COP</span>
+        </li>
+        <li class="product-list-item">
+          <a href="#/" class="remove">×</a>
+          <a href="single-product.html">
+            <img src="assets/img/shop/727340.png" width="90" height="110" alt="Image-HasTech">
+            <span class="product-title">Quickiin Mens shoes</span>
+          </a>
+          <span class="product-price">1 x $190.000 COP</span>
+        </li>
+      </ul>
+      <p class="cart-total"><span>Subtotal:</span><span class="amount">$430.000 COP</span></p>
+      <a class="btn-theme" data-margin-bottom="10" href="shop-cart.html">Ver carrito</a>
+      <a class="btn-theme" href="shop-checkout.html">Finalizar compra</a>
+      <a class="bold-checkout-btn" href="shop-checkout.html" aria-label="Pagar con Bold">Pagar con <span>Bold</span></a>
+    </div>
+  </div>
+  <!--== End Aside Cart Menu ==-->
+
+  <!--== Start Aside Search Menu ==-->
+  <aside class="aside-search-box-wrapper offcanvas offcanvas-top" tabindex="-1" id="AsideOffcanvasSearch" aria-labelledby="offcanvasTopLabel">
+    <div class="offcanvas-header">
+      <h5 class="d-none" id="offcanvasTopLabel">Aside Search</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"><i class="pe-7s-close"></i></button>
+    </div>
+    <div class="offcanvas-body">
+      <div class="container pt--0 pb--0">
+        <div class="search-box-form-wrap">
+          <div class="search-note">
+            <p>Escribe y presiona Enter para buscar</p>
+          </div>
+          <form action="buscar/" method="get" role="search">
+            <div class="search-form position-relative">
+              <label for="search-input" class="visually-hidden">Buscar</label>
+              <input id="search-input" name="q" type="search" class="form-control" placeholder="Buscar productos y artículos" aria-label="Buscar productos y artículos" maxlength="100" required>
+              <button class="search-button"><i class="fa fa-search"></i></button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <!--== End Aside Search Menu ==-->
+
+  <!--== Start Side Menu ==-->
+  <div class="off-canvas-wrapper offcanvas offcanvas-start" tabindex="-1" id="AsideOffcanvasMenu" aria-labelledby="offcanvasExampleLabel">
+    <div class="offcanvas-header">
+      <h1 id="offcanvasExampleLabel"></h1>
+      <button class="btn-menu-close" data-bs-dismiss="offcanvas" aria-label="Cerrar">menu <i class="fa fa-chevron-left"></i></button>
+    </div>
+    <div class="offcanvas-body">
+      <div class="info-items">
+        <ul>
+          <li class="number contact-phone-row"><i class="fa fa-phone" aria-hidden="true"></i><span class="contact-phone-links"><a href="tel:+573222073377">+57 322 2073377</a><a href="tel:+573106472519">+57 310 6472519</a></span></li>
+          <li class="email"><a href="mailto://demo@example.com"><i class="fa fa-envelope"></i>demo@example.com</a></li>
+          <li class="account"><a href="account-login.html"><i class="fa fa-user"></i>Cuenta</a></li>
+        </ul>
+      </div>
+      <!-- Mobile Menu Start -->
+      <div class="mobile-menu-items">
+        <ul class="nav-menu">
+          <li><a href="index.html">Inicio</a></li>
+          <li><a href="about-us.html">Nosotros</a></li>
+          <li><a href="shop.html">Tienda</a>
+            <ul class="sub-menu">
+              <li><a href="{% url 'catalog_section' 'hombre' %}">Hombre</a></li>
+              <li><a href="{% url 'catalog_section' 'mujer' %}">Mujer</a></li>
+              {% for store_section in store_navigation_sections %}<li><a href="{% url 'catalog_section' store_section.slug %}">{{ store_section.title }}</a></li>{% endfor %}
+              <li><a href="{% url 'catalog_section' 'ofertas' %}">Ofertas</a></li>
+              <li><a href="{% url 'catalog_section' 'accesorios' %}">Accesorios</a></li>
+            </ul>
+          </li>
+          <li><a href="blog.html">Blog</a></li>
+          <li><a href="contact.html">Contacto</a></li>
+        </ul>
+      </div>
+      <!-- Mobile Menu End -->
+    </div>
+  </div>
+  <!--== End Side Menu ==-->
+</div>
+
+<!--=======================Javascript============================-->
+
+<!--=== jQuery Modernizr Min Js ===-->
+<script src="assets/js/modernizr.js"></script>
+<!--=== jQuery Min Js ===-->
+<script src="assets/js/jquery-main.js"></script>
+<!--=== jQuery Migration Min Js ===-->
+<script src="assets/js/jquery-migrate.js"></script>
+<!--=== jQuery Popper Min Js ===-->
+<script src="assets/js/popper.min.js"></script>
+<!--=== jQuery Bootstrap Min Js ===-->
+<script src="assets/js/bootstrap.min.js"></script>
+<!--=== jQuery Ui Min Js ===-->
+<script src="assets/js/jquery-ui.min.js"></script>
+<!--=== jQuery Swiper Min Js ===-->
+<script src="assets/js/swiper.min.js"></script>
+<!--=== jQuery Fancybox Min Js ===-->
+<script src="assets/js/fancybox.min.js"></script>
+<!--=== jQuery Waypoint Js ===-->
+<script src="assets/js/waypoint.js"></script>
+<!--=== jQuery Parallax Min Js ===-->
+<script src="assets/js/parallax.min.js"></script>
+<!--=== jQuery Aos Min Js ===-->
+<script src="assets/js/aos.min.js"></script>
+
+<!--=== jQuery Custom Js ===-->
+<script src="assets/js/catalog-data.js"></script>
+<script src="assets/js/custom.js"></script>
+<script src="assets/js/product-share.js"></script>
+<script src="assets/js/footer-info.js"></script>
+<script src="assets/js/header-info.js"></script>
+
+<script src="assets/js/payment-methods.js"></script>
+<script src="assets/js/cart.js"></script>
+</body>
+
+</html>

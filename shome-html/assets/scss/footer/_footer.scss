@@ -191,6 +191,12 @@
         color: $white;
       }
     }
+    .tiktok-icon {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
+      vertical-align: -2px;
+    }
   }
   .widget-item {
     @media #{$sm-device} {
@@ -218,8 +224,76 @@
     padding: 19px 0 27px;
   }
   .payment {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
     text-align: right;
+    .payment-card {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 22px;
+      border-radius: 3px;
+      background-color: #fff;
+      color: #172033;
+      font-size: 9px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: 0;
+      text-decoration: none;
+      overflow: hidden;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+      &:hover {
+        border-color: #38bdf8;
+        color: #172033;
+        transform: translateY(-1px);
+        box-shadow: 0 10px 22px rgba(56, 189, 248, 0.22);
+      }
+    }
+    .payment-card-amex {
+      background-color: #2f8ecf;
+      color: #fff;
+      font-size: 5px;
+      letter-spacing: -0.1px;
+      text-align: center;
+    }
+    .payment-card-paypal {
+      color: #1f5ea8;
+      font-size: 8px;
+      font-style: italic;
+    }
+    .payment-card-mastercard {
+      position: relative;
+      background-color: #172033;
+      span {
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+        &:first-child {
+          margin-right: -4px;
+          background-color: #eb001b;
+        }
+        &:last-child {
+          background-color: #f79e1b;
+        }
+      }
+    }
+    .payment-card-bold {
+      border: 1px solid #e6edf5;
+      color: #172033;
+      font-size: 10px;
+      font-weight: 900;
+    }
+    .payment-card-visa {
+      color: #1a4f9f;
+      font-size: 9px;
+      font-style: italic;
+    }
     @media #{$sm-device} {
+      justify-content: center;
       text-align: center;
     }
   }
@@ -241,6 +315,21 @@
       color: #cacaca;
       &:hover {
         color: $white;
+      }
+    }
+    .digital-brain-link {
+      color: #cacaca;
+      font-weight: 600;
+      text-decoration: none;
+      background-image: linear-gradient(90deg, #38bdf8, #7dd3fc);
+      background-position: 0 100%;
+      background-repeat: no-repeat;
+      background-size: 0 2px;
+      transition: color 0.25s ease, background-size 0.25s ease, text-shadow 0.25s ease;
+      &:hover {
+        color: #38bdf8;
+        background-size: 100% 2px;
+        text-shadow: 0 0 14px rgba(56, 189, 248, 0.35);
       }
     }
     i {

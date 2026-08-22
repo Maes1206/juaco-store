@@ -1,0 +1,13 @@
+Hola {{ display_name }},
+
+Bienvenido a Nexus Luxury Footwear.
+
+Tu cuenta ya está lista. Desde ahora puedes guardar tus sneakers favoritos, conservar tu carrito y consultar el estado de tus pedidos.
+
+Explora la tienda:
+{{ shop_url }}
+
+Administra tu cuenta:
+{{ account_url }}
+
+Gracias por hacer parte de Nexus Luxury Footwear.

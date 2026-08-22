@@ -1,0 +1,107 @@
+{% load store_extras %}
+<div class="order-summary-card">
+  <div class="row">
+    <div class="col-lg-7">
+      <div class="order-summary-block">
+        <h5 class="order-summary-title">Artículos del pedido</h5>
+        <div class="order-items-table table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Talla</th>
+                <th>Cant.</th>
+                <th class="text-end">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in order.items.all %}
+              <tr>
+                <td class="order-item-name">
+                  {% if item.product_image %}<img src="{{ item.product_image }}" width="54" height="54" alt="{{ item.product_name }}" onerror="this.style.display='none'">{% endif %}
+                  <span>{{ item.product_name }}</span>
+                </td>
+                <td>{% if item.size %}{{ item.size }}{% endif %}{% if item.color %}<small class="admin-table-note">Color: {{ item.color }}</small>{% endif %}{% if not item.size and not item.color %}—{% endif %}</td>
+                <td>{{ item.quantity }}</td>
+                <td class="text-end">{{ item.subtotal|cop }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot>
+              <tr>
+                <th colspan="3">Subtotal</th>
+                <td class="text-end">{{ order.subtotal|cop }}</td>
+              </tr>
+              {% if order.discount_amount > 0 %}<tr class="order-discount-row"><th colspan="3">Cupon {{ order.coupon_code }}</th><td class="text-end">-{{ order.discount_amount|cop }}</td></tr>{% endif %}
+              <tr>
+                <th colspan="3">Envío</th>
+                <td class="text-end">{% if order.shipping_cost > 0 %}{{ order.shipping_cost|cop }}{% else %}Gratis{% endif %}</td>
+              </tr>
+              <tr class="order-total-row">
+                <th colspan="3">Total</th>
+                <td class="text-end">{{ order.total|cop }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="order-summary-block">
+        <h5 class="order-summary-title">Envío · {{ order.get_delivery_method_display }}</h5>
+        <p class="order-address">
+          <strong>{{ order.recipient_name }}</strong><br>
+          {{ order.address_line_1 }}{% if order.address_line_2 %}, {{ order.address_line_2 }}{% endif %}<br>
+          {{ order.city }}, {{ order.department }}{% if order.postal_code %} · {{ order.postal_code }}{% endif %}<br>
+          Tel. {{ order.phone }}
+        </p>
+        {% if show_delivery_map and order.delivery_method == 'courier' %}
+        <div class="order-delivery-map">
+          <iframe
+            src="https://www.google.com/maps?q={{ order.map_query|urlencode }}&amp;output=embed"
+            title="Ubicación de entrega: {{ order.full_address }}"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            allowfullscreen
+          ></iframe>
+        </div>
+        {% endif %}
+      </div>
+      <div class="order-summary-block">
+        <h5 class="order-summary-title">Pago</h5>
+        <p class="order-payment">{{ order.get_payment_method_display }}</p>
+        {% if order.status == 'pending' %}
+          {% if order.payment_method == 'bank_transfer' %}
+          <div class="order-payment-note">
+            <p>Realiza la transferencia a nuestra cuenta y usa tu número de pedido <strong>{{ order.number }}</strong> como referencia. Procesaremos tu envío al confirmar el pago.</p>
+          </div>
+          {% elif order.payment_method == 'cash_on_delivery' %}
+          <div class="order-payment-note">
+            <p>Pagarás <strong>{{ order.total|cop }}</strong> en efectivo al recibir tu pedido.</p>
+          </div>
+          {% elif order.payment_method == 'bold' %}
+          <div class="order-payment-note">
+            {% if order.payment_in_progress %}
+            <p>Bold está validando tu pago de <strong>{{ order.total|cop }}</strong>. Te confirmamos en cuanto el banco responda.</p>
+            {% elif order.payment_failed %}
+            <p>El pago fue rechazado y el pedido sigue reservado. Puedes reintentarlo con otro medio.</p>
+            {% else %}
+            <p>Completa el pago seguro con Bold para que preparemos tu envío.</p>
+            {% endif %}
+          </div>
+          {% endif %}
+        {% elif order.paid_at %}
+        <div class="order-payment-note">
+          <p>Pago aprobado el {{ order.paid_at|date:"d M Y, H:i" }}.{% if order.payment_transaction_id %} Transacción <strong>{{ order.payment_transaction_id }}</strong>.{% endif %}</p>
+        </div>
+        {% endif %}
+      </div>
+      {% if order.notes %}
+      <div class="order-summary-block">
+        <h5 class="order-summary-title">Notas</h5>
+        <p class="order-notes">{{ order.notes }}</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>

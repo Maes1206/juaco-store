@@ -1,0 +1,32 @@
+<section class="shipping-tracking" aria-labelledby="shipping-tracking-title">
+  <div class="shipping-tracking__heading">
+    <div>
+      <span class="shipping-tracking__eyebrow">Tipo de envío: {{ order.get_delivery_method_display }}</span>
+      <h4 id="shipping-tracking-title">Estado de tu producto</h4>
+    </div>
+  </div>
+  {% if order.is_closed %}
+  <div class="shipping-tracking__closed shipping-tracking__closed--{{ order.status }}">
+    <i class="fa {% if order.status == 'refunded' %}fa-undo{% else %}fa-times-circle{% endif %}" aria-hidden="true"></i>
+    <div><strong>{{ order.get_status_display }}</strong><span>Este pedido ya no continúa en el flujo de entrega.</span></div>
+  </div>
+  {% else %}
+  <ol class="shipping-tracking__steps">
+    {% for step in order.fulfillment_steps %}
+    <li class="shipping-tracking__step{% if step.completed %} is-complete{% endif %}{% if step.current %} is-current{% endif %}">
+      <span class="shipping-tracking__marker" aria-hidden="true">
+        {% if step.completed %}<i class="fa fa-check"></i>{% else %}{{ forloop.counter }}{% endif %}
+      </span>
+      <span>{{ step.label }}</span>
+    </li>
+    {% endfor %}
+  </ol>
+  {% endif %}
+  {% if order.carrier or order.tracking_number or order.dispatch_receipt %}
+  <div class="shipping-tracking__logistics">
+    <div><small>Transportadora</small><strong>{{ order.carrier|default:"Por confirmar" }}</strong></div>
+    <div><small>Número de guía</small><strong>{{ order.tracking_number|default:"Por confirmar" }}</strong></div>
+    {% if order.dispatch_receipt %}<a href="{% url 'order_dispatch_receipt' order.number %}" target="_blank" rel="noopener"><i class="fa fa-file-text-o" aria-hidden="true"></i> Ver comprobante de despacho</a>{% endif %}
+  </div>
+  {% endif %}
+</section>
