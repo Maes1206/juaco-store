@@ -1,0 +1,37 @@
+<section class="cart-comparison" data-cart-comparison aria-labelledby="cartComparisonTitle">
+  <button type="button" class="cart-comparison__heading" data-comparison-open aria-haspopup="dialog" aria-controls="cartComparisonDialog" aria-expanded="false">
+    <span class="cart-comparison__icon" aria-hidden="true"><i class="fa fa-random"></i></span>
+    <div>
+      <h6 id="cartComparisonTitle">Compara antes de elegir</h6>
+      <p>Revisa las diferencias entre dos productos de tu carrito.</p>
+    </div>
+    <i class="fa fa-chevron-right cart-comparison__open-hint" aria-hidden="true"></i>
+  </button>
+  <div class="cart-comparison-modal" data-comparison-modal hidden>
+    <button type="button" class="cart-comparison-modal__backdrop" data-comparison-close tabindex="-1" aria-label="Cerrar comparación"></button>
+    <div class="cart-comparison-modal__dialog" id="cartComparisonDialog" role="dialog" aria-modal="true" aria-labelledby="cartComparisonDialogTitle">
+      <div class="cart-comparison-modal__header">
+        <div>
+          <span>Herramienta de compra</span>
+          <h5 id="cartComparisonDialogTitle">Comparación de productos</h5>
+        </div>
+        <button type="button" class="cart-comparison-modal__close" data-comparison-close aria-label="Cerrar comparación"><i class="fa fa-close"></i></button>
+      </div>
+      <div class="cart-comparison-modal__body">
+        <div class="cart-comparison__empty" data-comparison-empty>
+          <strong>Necesitas dos productos diferentes</strong>
+          <span>Agrega otro modelo para activar la comparación.</span>
+          <a href="shop.html">Explorar productos <i class="fa fa-arrow-right"></i></a>
+        </div>
+        <div class="cart-comparison__tool" data-comparison-tool hidden>
+          <div class="cart-comparison__selectors">
+            <label>Producto A<select data-comparison-select="a" aria-label="Primer producto para comparar"></select></label>
+            <span aria-hidden="true">VS</span>
+            <label>Producto B<select data-comparison-select="b" aria-label="Segundo producto para comparar"></select></label>
+          </div>
+          <div data-comparison-result aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

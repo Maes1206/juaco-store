@@ -41,6 +41,10 @@
             display: flex;
             height: 748px;
             position: relative;
+            &[data-bg-img="assets/img/shape/1.webp"] {
+              background-color: var(--hero-bg-start);
+              background-image: linear-gradient(135deg, var(--hero-bg-start) 0%, var(--hero-bg-middle) 55%, var(--hero-bg-end) 100%) !important;
+            }
             @media #{$lg-device} {
               height: 600px;
             }
@@ -65,7 +69,7 @@
               font-weight: 800;
               -webkit-text-fill-color: transparent;
               -webkit-text-stroke-width: 1px;
-              -webkit-text-stroke-color: #5aa0f2;
+              -webkit-text-stroke-color: rgba(199, 162, 106, 0.25);
               line-height: 1;
               margin: 0;
               writing-mode: vertical-lr;
@@ -121,7 +125,7 @@
               }
 
               .title {
-                color: $white;
+                color: var(--hero-text) !important;
                 font-size: 80px;
                 line-height: 1.1375;
                 margin-bottom: 17px;
@@ -144,7 +148,7 @@
                 }
               }
               .desc {
-                color: $white;
+                color: var(--hero-text-secondary) !important;
                 font-size: 24px;
                 text-transform: uppercase;
                 margin-bottom: 54px;
@@ -165,8 +169,8 @@
               }
               .btn-slider {
                 background-color: transparent;
-                border: 2px solid $white;
-                color: $white;
+                border: 2px solid var(--hero-accent-light);
+                color: var(--hero-text);
                 display: inline-block;
                 font-weight: $font-weight-semi-bold;
                 font-size: 18px;
@@ -184,9 +188,11 @@
                   font-size: 14px;
                   padding: 13px 24px 14px;
                 }
-                &:hover {
-                  background-color: $theme-color;
-                  border-color: $theme-color;
+                &:hover,
+                &:focus {
+                  background-color: var(--hero-accent);
+                  border-color: var(--hero-accent);
+                  color: var(--color-on-primary);
                 }
               }
             }
@@ -251,6 +257,8 @@
                 height: 100%;
                 z-index: -1;
                 &-one {
+                  background-color: var(--hero-circle-start);
+                  background-image: linear-gradient(135deg, var(--hero-circle-start) 0%, var(--hero-circle-end) 100%) !important;
                   background-repeat: no-repeat;
                   background-size: cover;
                   left: 0;

@@ -1,0 +1,14 @@
+{{ title }}, {{ display_name }}
+
+Pedido: {{ order.number }}
+Estado: {{ order.get_status_display }}
+{{ description }}
+{% if order.tracking_number %}
+Transportadora: {{ order.carrier }}
+Número de guía: {{ order.tracking_number }}
+{% endif %}{% if dispatch_receipt_url %}
+Comprobante de despacho: {{ dispatch_receipt_url }}
+{% endif %}
+Consulta el historial completo: {{ order_url }}
+
+Nexus Luxury Footwear

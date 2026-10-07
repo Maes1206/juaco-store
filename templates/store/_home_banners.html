@@ -1,0 +1,98 @@
+{% if home_banners %}
+  {% for banner in home_banners %}
+  <div class="swiper-slide">
+    <div class="slider-content-area marketing-home-banner marketing-home-banner--{{ banner.layout }}"{% if banner.background_url and banner.layout == 'editorial' %} data-bg-img="{{ banner.background_url }}"{% endif %}>
+      {% if banner.layout == 'flat' %}<div class="marketing-home-banner__media">{% if banner.media_type == 'video' %}<video src="{{ banner.media_source }}" autoplay muted loop playsinline preload="metadata" ontimeupdate="if(this.currentTime >= 10){this.currentTime=0;this.play();}"></video>{% else %}<img src="{{ banner.media_source }}" alt="{{ banner.title|default:banner.name }}">{% endif %}</div>{% endif %}
+      <div class="container">
+        <div class="slider-container">
+          <div class="row justify-content-between align-items-center">
+            <div class="{% if banner.layout == 'flat' %}col-lg-7{% else %}col-sm-6 col-md-5{% endif %}">
+              <div class="slider-content"><div class="content">
+                {% if banner.title %}<div class="title-box"><h2 class="title">{{ banner.title }}</h2></div>{% endif %}
+                {% if banner.subtitle %}<div class="desc-box"><p class="desc">{{ banner.subtitle }}</p></div>{% endif %}
+                {% if banner.button_label and banner.button_url %}<div class="btn-box"><a class="btn-slider" href="{{ banner.button_url }}">{{ banner.button_label }}</a></div>{% endif %}
+              </div></div>
+            </div>
+            {% if banner.layout == 'editorial' %}<div class="col-sm-6 col-md-6"><div class="slider-thumb"><div class="thumb marketing-home-banner__product">{% if banner.media_type == 'video' %}<video src="{{ banner.media_source }}" autoplay muted loop playsinline preload="metadata" ontimeupdate="if(this.currentTime >= 10){this.currentTime=0;this.play();}"></video>{% else %}<img src="{{ banner.media_source }}" width="548" height="649" alt="{{ banner.title|default:banner.name }}">{% endif %}</div></div></div>{% endif %}
+          </div>
+        </div>
+      </div>
+      {% if banner.eyebrow %}<h2 class="slider-text-shape">{{ banner.eyebrow }}</h2>{% endif %}
+    </div>
+  </div>
+  {% endfor %}
+{% else %}          <div class="swiper-slide">
+            <div class="slider-content-area" data-bg-img="assets/img/shape/1.webp">
+              <div class="container">
+                <div class="slider-container">
+                  <div class="row justify-content-between align-items-center">
+                    <div class="col-sm-6 col-md-5">
+                      <div class="slider-content">
+                        <div class="content">
+                          <div class="title-box">
+                            <h2 class="title">Sneakers urbanos <span class="text-nowrap">exclusivos</span></h2>
+                          </div>
+                          <div class="desc-box">
+                            <p class="desc">Estilo, comodidad y actitud en cada paso</p>
+                          </div>
+                          <div class="btn-box">
+                            <a class="btn-slider" href="shop.html">Comprar ahora</a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-sm-6 col-md-6">
+                      <div class="slider-thumb">
+                        <div class="thumb scene">
+                          <span class="scene-layer" data-depth=".3"><img src="assets/img/shop/juacostore2.png" width="548" height="649" alt="Sneakers rojas y blancas"></span>
+                        </div>
+                        <div class="shape-group mousemove">
+                          <div class="shape-group-one mousemove-layer" data-speed=".8" data-bg-img="assets/img/shape/2.webp"></div>
+                          <div class="shape-group-two scene"><span class="scene-layer" data-depth=".6"><img src="assets/img/shape/3.webp" width="471" height="462" alt="Image-HasTech"></span></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <h2 class="slider-text-shape">NUEVO 2026</h2>
+            </div>
+          </div>
+          <div class="swiper-slide">
+            <div class="slider-content-area" data-bg-img="assets/img/shape/1.webp">
+              <div class="container">
+                <div class="slider-container">
+                  <div class="row justify-content-between align-items-center">
+                    <div class="col-sm-6 col-md-5">
+                      <div class="slider-content">
+                        <div class="content">
+                          <div class="title-box">
+                            <h2 class="title">Eleva tu flow <span class="text-nowrap">urbano</span></h2>
+                          </div>
+                          <div class="desc-box">
+                            <p class="desc">Sneakers que destacan en cada paso</p>
+                          </div>
+                          <div class="btn-box">
+                            <a class="btn-slider" href="shop.html">Comprar ahora</a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-sm-6 col-md-6">
+                      <div class="slider-thumb">
+                        <div class="thumb scene">
+                          <span class="scene-layer" data-depth=".3"><img src="assets/img/shop/JUACO%20STORE.png" width="548" height="649" alt="Sneakers blancas con detalles negros y rojos"></span>
+                        </div>
+                        <div class="shape-group mousemove">
+                          <div class="shape-group-one mousemove-layer" data-speed=".8" data-bg-img="assets/img/shape/2.webp"></div>
+                          <div class="shape-group-two scene"><span class="scene-layer" data-depth=".6"><img src="assets/img/shape/3.webp" width="471" height="462" alt="Image-HasTech"></span></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <h2 class="slider-text-shape">Lo nuevo del 2026</h2>
+            </div>
+          </div>
+{% endif %}

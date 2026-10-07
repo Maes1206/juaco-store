@@ -1,0 +1,73 @@
+{% extends "store/base.html" %}
+{% load store_extras %}
+
+{% block title %}{% if search_results.query.raw %}Buscar {{ search_results.query.raw }} | {% endif %}Nexus Luxury Footwear{% endblock %}
+{% block seo %}{% seo_meta title="Resultados de búsqueda" description="Resultados de búsqueda en Nexus Luxury Footwear." robots="noindex, follow" %}{% endblock %}
+
+{% block content %}
+<div class="page-header-area search-page-header" data-bg-img="assets/img/shop/bannerblog.png">
+  <div class="container pt--0 pb--0">
+    <div class="row"><div class="col-12"><div class="page-header-content">
+      <h1 class="title">Resultados de búsqueda</h1>
+      <nav class="breadcrumb-area" aria-label="Ruta de navegación"><ul class="breadcrumb">
+        <li><a href="index.html">Inicio</a></li><li class="breadcrumb-sep">//</li><li>Búsqueda</li>
+      </ul></nav>
+    </div></div></div>
+  </div>
+</div>
+
+<section class="search-results-area">
+  <div class="container">
+    <form class="search-results-form" action="buscar/" method="get" role="search">
+      <label for="results-search-query">Busca productos, marcas, categorías o artículos</label>
+      <div class="search-results-form__control">
+        <input id="results-search-query" name="q" type="search" value="{{ search_results.query.raw }}" maxlength="100" autocomplete="search" placeholder="Ej.: Jordan, cuidado, edición limitada" required>
+        <button class="btn-theme" type="submit">Buscar <i class="fa fa-search" aria-hidden="true"></i></button>
+      </div>
+    </form>
+
+    {% if search_results.query.raw %}
+      <p class="search-results-summary">{% if search_results.total %}{{ search_results.total }} resultado{{ search_results.total|pluralize }} para <strong>“{{ search_results.query.raw }}”</strong>{% else %}No encontramos coincidencias para <strong>“{{ search_results.query.raw }}”</strong>. Prueba con una marca, una etiqueta o una palabra más general.{% endif %}</p>
+
+      {% if search_results.products %}
+      <section class="search-result-group" aria-labelledby="product-results-title">
+        <div class="search-result-group__heading"><h2 id="product-results-title">Productos <span class="search-result-group__count">({{ search_results.products|length }})</span></h2></div>
+        <div class="row">
+          {% for hit in search_results.products %}
+          <article class="col-sm-6 col-lg-4 search-product-card">
+            <a class="search-product-card__image" href="single-product.html?producto={{ hit.item.slug }}"><img src="{{ hit.item.main_image_source }}" width="270" height="274" alt="{{ hit.item.name }}" loading="lazy"></a>
+            <div class="search-product-card__body">
+              <p>{{ hit.item.brand }}</p><h3><a href="single-product.html?producto={{ hit.item.slug }}">{{ hit.item.name }}</a></h3>
+              <strong>${{ hit.item.price|floatformat:0 }} COP</strong>
+              {% if hit.matched_tags %}<ul class="search-tags">{% for tag in hit.matched_tags %}<li>{{ tag }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if search_results.posts %}
+      <section class="search-result-group" aria-labelledby="blog-results-title">
+        <div class="search-result-group__heading"><h2 id="blog-results-title">Blog <span class="search-result-group__count">({{ search_results.posts|length }})</span></h2></div>
+        <div class="row">
+          {% for hit in search_results.posts %}
+          <article class="col-md-6 search-blog-card">
+            <a class="search-blog-card__image" href="{% url 'blog_detail' hit.item.slug %}"><img src="{{ hit.item.image }}" width="240" height="160" alt="{{ hit.item.image_alt }}"></a>
+            <div class="search-blog-card__body">
+              <p class="search-blog-card__meta">{{ hit.item.category.name }} · {{ hit.item.reading_time }} min de lectura</p>
+              <h3><a href="{% url 'blog_detail' hit.item.slug %}">{{ hit.item.title }}</a></h3>
+              <p>{{ hit.item.summary }}</p>
+              {% if hit.matched_tags %}<ul class="search-tags">{% for tag in hit.matched_tags %}<li>{{ tag }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+    {% else %}
+      <p class="search-results-summary">Escribe lo que buscas: productos, marcas, categorías, etiquetas o temas del blog.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

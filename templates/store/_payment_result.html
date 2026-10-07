@@ -1,0 +1,48 @@
+{% load store_extras %}
+{% comment %}
+Resultado del cobro. Lo comparten la confirmación posterior al pago y el detalle
+del pedido en el panel del cliente, para que ambos digan exactamente lo mismo.
+Variable opcional: compact (banner reducido para el detalle del pedido).
+{% endcomment %}
+<section class="payment-result payment-result--{{ order.payment_state }}{% if compact %} payment-result--compact{% endif %}" aria-live="polite">
+  <span class="payment-result__icon" aria-hidden="true">
+    {% if order.payment_state == 'approved' %}<i class="fa fa-check"></i>
+    {% elif order.payment_state == 'processing' %}<i class="fa fa-clock-o"></i>
+    {% elif order.payment_state == 'rejected' %}<i class="fa fa-times"></i>
+    {% elif order.payment_state == 'cancelled' %}<i class="fa fa-ban"></i>
+    {% else %}<i class="fa fa-shopping-bag"></i>{% endif %}
+  </span>
+  <div class="payment-result__body">
+    {% if order.payment_state == 'approved' %}
+    <h3 class="payment-result__title">¡Pago exitoso!</h3>
+    <p class="payment-result__desc">Confirmamos tu pago de <strong>{{ order.total|cop }}</strong> y ya estamos preparando el pedido <strong>{{ order.number }}</strong>.</p>
+    {% elif order.payment_state == 'processing' %}
+    <h3 class="payment-result__title">Estamos confirmando tu pago</h3>
+    <p class="payment-result__desc">{{ order.get_payment_method_display }} está validando el cobro de <strong>{{ order.total|cop }}</strong>. Te avisamos apenas el banco responda.</p>
+    {% elif order.payment_state == 'rejected' %}
+    <h3 class="payment-result__title">El pago no se completó</h3>
+    <p class="payment-result__desc">Tu pedido <strong>{{ order.number }}</strong> sigue reservado. Puedes reintentarlo con otro medio de pago.</p>
+    {% elif order.payment_state == 'cancelled' %}
+    <h3 class="payment-result__title">Pedido cancelado</h3>
+    <p class="payment-result__desc">El pago del pedido <strong>{{ order.number }}</strong> fue anulado y liberamos los artículos reservados.</p>
+    {% else %}
+    <h3 class="payment-result__title">¡Gracias por tu compra, {{ order.recipient_name|default:request.user.username }}!</h3>
+    <p class="payment-result__desc">Recibimos tu pedido <strong>{{ order.number }}</strong>. Te enviaremos las novedades a <strong>{{ order.user.email|default:request.user.email }}</strong>.</p>
+    {% endif %}
+
+    {% if order.payment_state == 'approved' %}
+    <dl class="payment-result__facts">
+      <div><dt>Medio de pago</dt><dd>{{ order.get_payment_method_display }}</dd></div>
+      {% if order.paid_at %}<div><dt>Fecha del pago</dt><dd>{{ order.paid_at|date:"d M Y, H:i" }}</dd></div>{% endif %}
+      {% if order.payment_transaction_id %}<div><dt>Transacción</dt><dd>{{ order.payment_transaction_id }}</dd></div>{% endif %}
+      {% if order.payment_reference %}<div><dt>Referencia</dt><dd>{{ order.payment_reference }}</dd></div>{% endif %}
+    </dl>
+    {% endif %}
+
+    {% if order.awaiting_online_payment %}
+    <a class="btn-theme payment-result__cta" href="{% url 'order_payment' order.number %}">
+      {% if order.payment_state == 'rejected' %}Reintentar el pago{% else %}Completar el pago{% endif %}
+    </a>
+    {% endif %}
+  </div>
+</section>

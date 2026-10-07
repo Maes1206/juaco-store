@@ -1,0 +1,226 @@
+{% extends "store/base.html" %}
+{% load l10n store_extras %}
+
+{% block title %}Finalizar compra - Nexus Luxury Footwear{% endblock %}
+{% block seo %}{% seo_meta title="Finalizar compra" description="Completa tu pedido en Nexus Luxury Footwear." robots="noindex, nofollow" %}{% endblock %}
+
+{% block content %}
+<div class="page-header-area login-page-header" data-bg-img="assets/img/shop/bannerlogin.png">
+  <div class="container pt--0 pb--0">
+    <div class="row">
+      <div class="col-12">
+        <div class="page-header-content">
+          <h2 class="title">Finalizar compra</h2>
+          <nav class="breadcrumb-area">
+            <ul class="breadcrumb">
+              <li><a href="index.html">Inicio</a></li>
+              <li class="breadcrumb-sep">//</li>
+              <li><a href="shop-cart.html">Carrito</a></li>
+              <li class="breadcrumb-sep">//</li>
+              <li>Finalizar compra</li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="checkout-area">
+  <div class="container">
+    {% for message in messages %}
+    <div class="checkout-alert">{{ message }}</div>
+    {% endfor %}
+
+    {% if not items %}
+    <div class="checkout-empty">
+      <h3>Tu carrito está vacío</h3>
+      <p>Agrega productos antes de finalizar la compra.</p>
+      <a class="btn-theme" href="shop.html">Ir a la tienda</a>
+    </div>
+    {% else %}
+    <form action="shop-checkout.html" method="post" class="checkout-form">
+      {% csrf_token %}
+      <div class="row">
+        <!-- Columna izquierda: envío + pago -->
+        <div class="col-lg-7">
+          <div class="checkout-block">
+            <h3 class="checkout-block-title">Método de entrega</h3>
+            <div class="checkout-payment-list">
+              <label class="checkout-payment-option checkout-delivery-option{% if form.delivery_method.value != 'pickup' %} is-selected{% endif %}">
+                <input type="radio" name="delivery_method" value="courier"{% if form.delivery_method.value != 'pickup' %} checked{% endif %}>
+                <span class="checkout-payment-label">Enviar a mi dirección</span>
+              </label>
+              <label class="checkout-payment-option checkout-delivery-option{% if form.delivery_method.value == 'pickup' %} is-selected{% endif %}">
+                <input type="radio" name="delivery_method" value="pickup"{% if form.delivery_method.value == 'pickup' %} checked{% endif %}>
+                <span class="checkout-payment-label">Recoger en Neiva, Huila <small>Gratis</small></span>
+              </label>
+            </div>
+            {% for error in form.delivery_method.errors %}<p class="checkout-field-error">{{ error }}</p>{% endfor %}
+          </div>
+
+          <div class="checkout-block" data-checkout-address-block>
+            <h3 class="checkout-block-title">Dirección de envío</h3>
+            <p class="checkout-pickup-notice" data-pickup-notice{% if form.delivery_method.value != 'pickup' %} hidden{% endif %}>No necesitas agregar una dirección. Te avisaremos cuando el pedido esté listo para recoger en Neiva.</p>
+            {% if addresses %}
+            <div class="checkout-address-list">
+              {% for address in addresses %}
+              <label class="checkout-address-option{% if address == default_address %} is-selected{% endif %}">
+                <input type="radio" name="address" value="{{ address.id }}" {% if address == default_address %}checked{% endif %}>
+                <span class="checkout-address-body">
+                  <span class="checkout-address-label">{{ address.label }}{% if address.is_default %} · Principal{% endif %}</span>
+                  <span class="checkout-address-text">{{ address.recipient_name }} — {{ address.address_line_1 }}{% if address.address_line_2 %}, {{ address.address_line_2 }}{% endif %}, {{ address.city }}, {{ address.department }}. Tel. {{ address.phone }}</span>
+                </span>
+              </label>
+              {% endfor %}
+            </div>
+            {% for error in form.address.errors %}<p class="checkout-field-error">{{ error }}</p>{% endfor %}
+            <a class="checkout-add-address" href="account.html?tab=addresses">+ Agregar o editar direcciones</a>
+            {% else %}
+            <div class="checkout-no-address">
+              <p>Aún no tienes direcciones guardadas. Agrega una para poder enviar tu pedido.</p>
+              <a class="btn-theme checkout-add-address-btn" href="account.html?tab=addresses">Agregar dirección</a>
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="checkout-block">
+            <h3 class="checkout-block-title">Método de pago</h3>
+            <div class="checkout-payment-list">
+              {% for value, label in payment_methods %}
+              <label class="checkout-payment-option{% if value == selected_payment_method %} is-selected{% endif %}">
+                <input type="radio" name="payment_method" value="{{ value }}" {% if value == selected_payment_method %}checked{% endif %}>
+                <span class="checkout-payment-label">{{ label }}{% if value == 'bold' %} <small>Tarjeta, PSE, Nequi o Bancolombia</small>{% endif %}</span>
+              </label>
+              {% endfor %}
+            </div>
+            {% for error in form.payment_method.errors %}<p class="checkout-field-error">{{ error }}</p>{% endfor %}
+          </div>
+
+          <div class="checkout-block">
+            <h3 class="checkout-block-title">Notas del pedido <span class="optional">(opcional)</span></h3>
+            <textarea name="notes" class="form-control" rows="3" placeholder="Indicaciones para la entrega, punto de referencia, etc.">{{ form.notes.value|default:'' }}</textarea>
+          </div>
+        </div>
+
+        <!-- Columna derecha: resumen -->
+        <div class="col-lg-5">
+          <div class="checkout-summary">
+            <h3 class="checkout-block-title">Tu pedido</h3>
+            <ul class="checkout-summary-items">
+              {% for item in items %}
+              <li>
+                <span class="checkout-summary-item-name">{{ item.product.name }} <span class="qty">× {{ item.quantity }}</span>{% if item.size %}<span class="size">Talla {{ item.size }}</span>{% endif %}{% if item.color %}<span class="size">Color {{ item.color }}</span>{% endif %}</span>
+                <span class="checkout-summary-item-price">{{ item.subtotal|cop }}</span>
+              </li>
+              {% endfor %}
+            </ul>
+            <div class="checkout-summary-totals">
+              <div class="row-line"><span>Subtotal</span><span>{{ subtotal|cop }}</span></div>
+{% if coupon %}<div class="row-line checkout-discount"><span>Cupon {{ coupon.code }}</span><span>-{{ discount|cop }}</span></div>{% endif %}
+              <div class="row-line">
+                <span data-delivery-summary-label>{% if form.delivery_method.value == 'pickup' %}Recogida en Neiva, Huila{% else %}Envío{% endif %}</span>
+                <span data-checkout-shipping data-courier-cost="{{ shipping_cost|unlocalize }}">{% if form.delivery_method.value == 'pickup' %}Gratis{% elif shipping_cost > 0 %}{{ shipping_cost|cop }}{% else %}Gratis{% endif %}</span>
+              </div>
+              <div class="row-line row-total"><span>Total</span><span data-checkout-total data-courier-total="{{ total|unlocalize }}" data-subtotal="{{ subtotal|unlocalize }}" data-discount="{{ discount|unlocalize }}">{{ total|cop }}</span></div>
+            </div>
+            {% if shipping_cost > 0 %}
+            <p class="checkout-shipping-hint" data-shipping-hint{% if form.delivery_method.value == 'pickup' %} hidden{% endif %}>Envío gratis en compras superiores a {{ free_shipping_threshold|cop }}.</p>
+            {% endif %}
+            {# El formulario del cupon no puede anidarse dentro del formulario del
+               pedido, asi que los controles se enlazan por id con `form=`. #}
+            {% if coupon %}
+            <div class="checkout-coupon is-applied">
+              <span class="checkout-coupon__badge"><i class="fa fa-ticket" aria-hidden="true"></i><strong>{{ coupon.code }}</strong><small>Ahorras {{ discount|cop }}</small></span>
+              <button type="submit" form="checkout-coupon-remove" class="checkout-coupon__remove">Retirar</button>
+            </div>
+            {% else %}
+            <div class="checkout-coupon">
+              <label for="checkoutCouponCode">¿Tienes un código de descuento?</label>
+              <div class="checkout-coupon__control">
+                <input type="text" id="checkoutCouponCode" name="code" form="checkout-coupon-apply" maxlength="40" required autocomplete="off" placeholder="Ingresa tu código">
+                <button type="submit" form="checkout-coupon-apply" class="checkout-coupon__apply">Aplicar</button>
+              </div>
+            </div>
+            {% endif %}
+            <label class="checkout-terms">
+              <input type="checkbox" name="accept_terms"> He leído y acepto los términos y condiciones.
+            </label>
+            {% for error in form.accept_terms.errors %}<p class="checkout-field-error">{{ error }}</p>{% endfor %}
+            <button type="submit" class="btn-theme checkout-place-order" data-checkout-submit data-has-address="{% if addresses %}true{% else %}false{% endif %}"{% if not addresses and form.delivery_method.value != 'pickup' %} disabled{% endif %}>{% if not addresses and form.delivery_method.value != 'pickup' %}Agrega una dirección primero{% else %}Realizar pedido{% endif %}</button>
+          </div>
+        </div>
+      </div>
+    </form>
+    {# Vive fuera del formulario del pedido: los controles del resumen apuntan
+       aqui con el atributo `form`, porque anidar formularios no es valido. #}
+    {% if coupon %}
+    <form id="checkout-coupon-remove" action="{% url 'coupon_remove' %}" method="post" hidden>{% csrf_token %}<input type="hidden" name="origen" value="checkout"></form>
+    {% else %}
+    <form id="checkout-coupon-apply" action="{% url 'coupon_apply' %}" method="post" hidden>{% csrf_token %}<input type="hidden" name="origen" value="checkout"></form>
+    {% endif %}
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+  function wireGroup(selector, selectedClass) {
+    document.querySelectorAll(selector).forEach(function (option) {
+      var input = option.querySelector('input[type="radio"]');
+      if (!input) return;
+      input.addEventListener('change', function () {
+        document.querySelectorAll(selector).forEach(function (o) { o.classList.remove(selectedClass); });
+        if (input.checked) option.classList.add(selectedClass);
+      });
+    });
+  }
+  wireGroup('.checkout-address-option', 'is-selected');
+  wireGroup('.checkout-payment-option:not(.checkout-delivery-option)', 'is-selected');
+  wireGroup('.checkout-delivery-option', 'is-selected');
+
+  function money(value) {
+    return '$' + Number(value || 0).toLocaleString('es-CO') + ' COP';
+  }
+
+  function updateDelivery() {
+    var selected = document.querySelector('input[name="delivery_method"]:checked');
+    var pickup = selected && selected.value === 'pickup';
+    var addressBlock = document.querySelector('[data-checkout-address-block]');
+    var pickupNotice = document.querySelector('[data-pickup-notice]');
+    var summaryLabel = document.querySelector('[data-delivery-summary-label]');
+    var shippingNode = document.querySelector('[data-checkout-shipping]');
+    var totalNode = document.querySelector('[data-checkout-total]');
+    var hint = document.querySelector('[data-shipping-hint]');
+    var submit = document.querySelector('[data-checkout-submit]');
+
+    if (addressBlock) addressBlock.classList.toggle('is-pickup', pickup);
+    if (pickupNotice) pickupNotice.hidden = !pickup;
+    if (summaryLabel) summaryLabel.textContent = pickup ? 'Recogida en Neiva, Huila' : 'Envío';
+    if (shippingNode) {
+      var courierCost = Number(shippingNode.dataset.courierCost || 0);
+      shippingNode.textContent = pickup || !courierCost ? 'Gratis' : money(courierCost);
+    }
+    if (totalNode) {
+      var courierTotal = Number(totalNode.dataset.courierTotal || 0);
+      var subtotal = Number(totalNode.dataset.subtotal || 0);
+      var discount = Number(totalNode.dataset.discount || 0);
+      totalNode.textContent = money(pickup ? Math.max(0, subtotal - discount) : courierTotal);
+    }
+    if (hint) hint.hidden = pickup;
+    if (submit) {
+      var canSubmit = pickup || submit.dataset.hasAddress === 'true';
+      submit.disabled = !canSubmit;
+      submit.textContent = canSubmit ? 'Realizar pedido' : 'Agrega una dirección primero';
+    }
+  }
+
+  document.querySelectorAll('input[name="delivery_method"]').forEach(function (input) {
+    input.addEventListener('change', updateDelivery);
+  });
+  updateDelivery();
+})();
+</script>
+{% endblock %}

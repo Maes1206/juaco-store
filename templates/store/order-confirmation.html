@@ -1,0 +1,95 @@
+{% extends "store/base.html" %}
+{% load store_extras %}
+
+{% block title %}{% if order.payment_state == 'approved' %}Pago exitoso{% else %}Pedido confirmado{% endif %} - Nexus Luxury Footwear{% endblock %}
+{% block seo %}{% seo_meta title="Pedido confirmado" robots="noindex, nofollow" %}{% endblock %}
+
+{% block content %}
+<div class="page-header-area login-page-header" data-bg-img="assets/img/shop/bannerlogin.png">
+  <div class="container pt--0 pb--0">
+    <div class="row">
+      <div class="col-12">
+        <div class="page-header-content">
+          <h2 class="title">{% if order.payment_state == 'approved' %}Pago exitoso{% else %}Pedido confirmado{% endif %}</h2>
+          <nav class="breadcrumb-area">
+            <ul class="breadcrumb">
+              <li><a href="index.html">Inicio</a></li>
+              <li class="breadcrumb-sep">//</li>
+              <li><a href="account.html?tab=orders">Mis pedidos</a></li>
+              <li class="breadcrumb-sep">//</li>
+              <li>{{ order.number }}</li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="order-confirmation-area">
+  <div class="container">
+    {% for message in messages %}
+    <div class="checkout-alert">{{ message }}</div>
+    {% endfor %}
+    <div class="row justify-content-center">
+      <div class="col-lg-10">
+        <div class="order-confirmation-head">
+          {% include "store/_payment_result.html" %}
+          <div class="order-confirmation-meta order-confirmation-meta--with-product">
+            {% with first_item=order.items.all|first %}
+            {% if first_item %}
+            <div class="order-meta-product">
+              {% if first_item.product_image %}
+              <img src="{{ first_item.product_image }}" alt="{{ first_item.product_name }}" onerror="this.style.display='none'">
+              {% else %}
+              <i class="fa fa-shopping-bag" aria-hidden="true"></i>
+              {% endif %}
+            </div>
+            {% endif %}
+            {% endwith %}
+            <div class="order-meta-item">
+              <span class="label">Número de pedido</span>
+              <span class="value">{{ order.number }}</span>
+            </div>
+            <div class="order-meta-item">
+              <span class="label">Fecha</span>
+              <span class="value">{{ order.created_at|date:"d M Y, H:i" }}</span>
+            </div>
+            <div class="order-meta-item">
+              <span class="label">Tipo de envío</span>
+              <span class="value">{{ order.get_delivery_method_display }}</span>
+            </div>
+            <div class="order-meta-item">
+              <span class="label">Estado del pago</span>
+              <span class="value"><span class="order-status order-status--{{ order.status }}">{{ order.get_status_display }}</span></span>
+            </div>
+            <div class="order-meta-item order-meta-item--total">
+              <span class="label">Total</span>
+              <span class="value">{{ order.total|cop }}</span>
+            </div>
+          </div>
+        </div>
+        {% include "store/_shipping_tracking.html" %}
+        {% include "store/_order_history.html" %}
+        {% include "store/_order_summary.html" %}
+
+        <div class="order-confirmation-actions">
+          <div class="order-confirmation-actions__primary">
+            {% if order.is_paid %}
+            <a class="btn-theme" href="{% url 'order_receipt_pdf' order.number %}"><i class="fa fa-file-pdf-o" aria-hidden="true"></i> Descargar comprobante PDF</a>
+            <a class="btn-theme btn-theme-border" href="{% url 'order_detail' order.number %}">Ver detalle del pedido</a>
+            {% else %}
+            <a class="btn-theme btn-theme-border" href="{% url 'order_detail' order.number %}">Ver detalle del pedido</a>
+            {% endif %}
+          </div>
+          <div class="order-confirmation-actions__links">
+            <a class="order-link" href="shop.html">Seguir comprando</a>
+            <span class="order-confirmation-actions__sep" aria-hidden="true">·</span>
+            <a class="order-link" href="account.html?tab=orders">Ir a mis pedidos</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

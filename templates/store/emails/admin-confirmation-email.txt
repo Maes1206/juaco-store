@@ -1,0 +1,12 @@
+Hola {{ display_name }},
+
+Bienvenidos admins de Nexus Luxury Footwear.
+
+Recibimos una solicitud para crear tu cuenta administrativa. Confirma que este correo te pertenece para activar el acceso al panel:
+
+{{ confirmation_url }}
+
+Por seguridad, la cuenta no tendrá permisos administrativos hasta que abras el enlace.
+
+Visita la tienda:
+{{ shop_url }}

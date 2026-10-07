@@ -1,0 +1,74 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-juaco_store}
+      POSTGRES_USER: ${POSTGRES_USER:-juaco}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Configura POSTGRES_PASSWORD en .env}
+    volumes:
+      - juaco_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-juaco} -d ${POSTGRES_DB:-juaco_store}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  web:
+    build: .
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-juaco_store}
+      POSTGRES_USER: ${POSTGRES_USER:-juaco}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Configura POSTGRES_PASSWORD en .env}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?Configura DJANGO_SECRET_KEY en .env}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-0}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
+      DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:-}
+      DJANGO_SECURE_SSL_REDIRECT: ${DJANGO_SECURE_SSL_REDIRECT:-1}
+      DJANGO_SESSION_COOKIE_SECURE: ${DJANGO_SESSION_COOKIE_SECURE:-1}
+      DJANGO_CSRF_COOKIE_SECURE: ${DJANGO_CSRF_COOKIE_SECURE:-1}
+      DJANGO_SECURE_HSTS_SECONDS: ${DJANGO_SECURE_HSTS_SECONDS:-31536000}
+      DJANGO_LOG_LEVEL: ${DJANGO_LOG_LEVEL:-INFO}
+      AXES_FAILURE_LIMIT: ${AXES_FAILURE_LIMIT:-5}
+      AXES_COOLOFF_MINUTES: ${AXES_COOLOFF_MINUTES:-15}
+      DJANGO_EMAIL_BACKEND: ${DJANGO_EMAIL_BACKEND:-django.core.mail.backends.smtp.EmailBackend}
+      EMAIL_HOST: ${EMAIL_HOST:-}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
+      EMAIL_USE_TLS: ${EMAIL_USE_TLS:-1}
+      EMAIL_USE_SSL: ${EMAIL_USE_SSL:-0}
+      EMAIL_TIMEOUT: ${EMAIL_TIMEOUT:-10}
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-Nexus Luxury Footwear <no-reply@localhost>}
+      PASSWORD_RESET_TIMEOUT_SECONDS: ${PASSWORD_RESET_TIMEOUT_SECONDS:-3600}
+      ADMIN_REGISTRATION_EMAILS: ${ADMIN_REGISTRATION_EMAILS:-}
+      BOLD_IDENTITY_KEY: ${BOLD_IDENTITY_KEY:-}
+      BOLD_SECRET_KEY: ${BOLD_SECRET_KEY:-}
+      BOLD_TEST_MODE: ${BOLD_TEST_MODE:-0}
+      # Nunca se propaga: aceptar webhooks sin firma permitiria falsificar pagos.
+      BOLD_ALLOW_UNSIGNED_WEBHOOKS: "0"
+      BOLD_PUBLIC_BASE_URL: ${BOLD_PUBLIC_BASE_URL:-}
+      PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-}
+      BOLD_TIMEOUT_SECONDS: ${BOLD_TIMEOUT_SECONDS:-10}
+    ports:
+      - "${WEB_PORT:-8000}:8000"
+    volumes:
+      - juaco_media_data:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+    init: true
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; r=urllib.request.Request('http://127.0.0.1:8000/healthz/', headers={'X-Forwarded-Proto':'https'}); urllib.request.urlopen(r, timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  juaco_postgres_data:
+  juaco_media_data:
