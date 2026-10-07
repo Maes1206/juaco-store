@@ -39,7 +39,7 @@ User = get_user_model()
 
 class StoreFlowTests(TestCase):
     def setUp(self):
-        self.product = Product.objects.first()
+        self.product = Product.objects.filter(is_active=True).first()
 
     def section_product_names(self, slug, **filters):
         """Nombres de una seccion recorriendo todas sus paginas."""
@@ -81,26 +81,29 @@ class StoreFlowTests(TestCase):
                     section_type=StoreSection.SectionType.BRAND,
                     is_active=True,
                 )
-                brand_products = Product.objects.filter(brand=section)
-                self.assertEqual(section.brand_products.count(), brand_products.count())
+                brand_products = Product.objects.filter(brand=section, is_active=True)
                 response = self.client.get(f"/secciones/{section.slug}/")
                 self.assertEqual(response.status_code, 200)
                 self.assertContains(response, section.banner_image_url.split("?")[0])
                 self.assertContains(response, brand_products.first().name)
 
-    def test_travis_scott_featured_card_opens_its_own_detail_with_gallery(self):
-        slug = "nike-sb-dunk-low-travis-scott"
-        home = self.client.get("/")
-        detail_url = f"single-product.html?producto={slug}"
-        self.assertContains(home, detail_url, count=3)
-
-        product = Product.objects.get(slug=slug)
-        self.assertEqual(len(product.product_images), 4)
-
-        detail = self.client.get(f"/{detail_url}")
-        self.assertContains(detail, product.name)
-        for image in product.product_images:
-            self.assertContains(detail, image["url"])
+    def test_reported_products_are_inactive_without_public_imagery(self):
+        slugs = (
+            "nike-air-force-1-triple-white",
+            "jordan-4-paris-olympics",
+            "nike-dunk-low-year-rabbit",
+            "nike-sb-dunk-low-travis-scott",
+            "jordan-1-obsidian",
+        )
+        for slug in slugs:
+            with self.subTest(slug=slug):
+                product = Product.objects.get(slug=slug)
+                self.assertFalse(product.is_active)
+                self.assertEqual(product.image, "")
+                self.assertFalse(product.image_file)
+                self.assertEqual(product.gallery, [])
+                detail_url = f"single-product.html?producto={slug}"
+                self.assertEqual(self.client.get(f"/{detail_url}").status_code, 404)
 
     def test_public_routes_render(self):
         routes = [
@@ -1666,7 +1669,7 @@ class StoreFlowTests(TestCase):
             "detailed_description": "Descripcion completa controlada por el administrador.",
             "price": "250000",
             "compare_at_price": "280000",
-            "image": "assets/img/shop/jordan423.png",
+            "image": "assets/img/shop/jordan623.png",
             "image_alt": "Vista principal del producto de prueba",
             "gallery": "assets/img/shop/jordan623.png | Vista lateral\nassets/img/shop/jordan723.png | Vista posterior",
             "tags": "Retro, cuero, Retro",
@@ -1748,7 +1751,8 @@ class StoreFlowTests(TestCase):
             "image_alt", "gallery", "sizes", "colors", "tags", "collection", "is_active",
         ):
             self.assertContains(response, f'id="id_{field_name}"', html=False)
-        self.assertContains(response, "El inventario total se calcula automáticamente")
+        self.assertContains(response, 'id="id_stock"', html=False)
+        self.assertContains(response, "el inventario que escribas aqui se reparte en partes iguales")
         self.assertContains(response, 'id="id_variants-0-stock"', html=False)
         self.assertContains(response, "Dónde se muestra")
         self.assertContains(response, "Marca donde se muestra")
@@ -1784,8 +1788,9 @@ class StoreFlowTests(TestCase):
             "detailed_description": "",
             "price": "320000",
             "compare_at_price": "350000",
+            "stock": "4",
             "weight_kg": "1.00",
-            "image": "assets/img/shop/jordan423.png",
+            "image": "assets/img/shop/jordan623.png",
             "image_alt": "Producto multisección",
             "gallery": "",
             "tags": "Destacado",
@@ -1925,7 +1930,7 @@ class StoreFlowTests(TestCase):
                 brand=jordan,
                 description="Producto para probar la paginacion.",
                 price=Decimal("200000") + index,
-                image="assets/img/shop/jordan423.png",
+                image="assets/img/shop/jordan623.png",
                 audience=Product.Audience.UNISEX,
                 product_type=Product.ProductType.FOOTWEAR,
                 collection=Product.Collection.URBAN,
@@ -1950,7 +1955,7 @@ class StoreFlowTests(TestCase):
             brand=jordan,
             description="Unico con esta talla y color.",
             price=Decimal("999000"),
-            image="assets/img/shop/jordan423.png",
+            image="assets/img/shop/jordan623.png",
             audience=Product.Audience.UNISEX,
             product_type=Product.ProductType.FOOTWEAR,
             collection=Product.Collection.URBAN,
@@ -2021,7 +2026,7 @@ class StoreFlowTests(TestCase):
         self.assertIsNone(nearest_color_name("no es un color"))
 
     def test_unknown_color_name_falls_back_to_the_dominant_color_of_the_photo(self):
-        product = Product.objects.get(slug="nike-sb-dunk-low-travis-scott")
+        product = self.product
         dominant = dominant_color_from_image(product)
 
         self.assertIsNotNone(dominant)
@@ -2068,8 +2073,9 @@ class StoreFlowTests(TestCase):
             "detailed_description": "",
             "price": "300000",
             "compare_at_price": "",
+            "stock": "20",
             "weight_kg": "1.00",
-            "image": "assets/img/shop/jordan423.png",
+            "image": "assets/img/shop/jordan623.png",
             "image_alt": "Producto escrito a mano",
             "gallery": "",
             "sizes": "40, 41, 42",
@@ -2144,6 +2150,7 @@ class StoreFlowTests(TestCase):
             "detailed_description": "",
             "price": str(self.product.price),
             "compare_at_price": "",
+            "stock": "4",
             "weight_kg": "1.00",
             "image": self.product.image,
             "image_alt": "",
@@ -2227,7 +2234,7 @@ class StoreFlowTests(TestCase):
             "compare_at_price": "",
             "stock": "5",
             "weight_kg": "1.00",
-            "image": "assets/img/shop/jordan423.png",
+            "image": "assets/img/shop/jordan623.png",
             "image_alt": "Producto híbrido",
             "gallery": "",
             "sizes": "40, 41",
